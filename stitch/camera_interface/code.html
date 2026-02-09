@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NutriLens Camera Interface</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom styles for elements not easily covered by Tailwind */
+        .camera-overlay-gradient {
+            background: linear-gradient(to bottom, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,0.6) 100%);
+        }
+        
+        .reticle-dash {
+            width: 20px;
+            height: 20px;
+            border-color: rgba(255, 255, 255, 0.6);
+            position: absolute;
+        }
+
+        .shutter-ring {
+            box-shadow: 0 0 0 4px rgba(19, 236, 91, 0.3);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-black font-display antialiased overflow-hidden h-screen w-full relative">
+<!-- Main Viewfinder Container -->
+<div class="absolute inset-0 w-full h-full">
+<!-- Background Image (Simulating Camera Feed) -->
+<div class="w-full h-full bg-cover bg-center" data-alt="Top down view of a fresh healthy salad bowl with greens and vegetables" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAVxL-YQLyrUVftaCMJxGNUS-lSYlVrLIrb3BDPRiJobHNEP5IhTTYxw0omw67KsA7ILY7V7s9aWLEj-NF5fQLAnpvLmCHcKgnhmnxWFep04gtuqj49NfmGM83YhfMDJGFGz-d_Mu5uNMeZv-G5q7wJZIpL2J-i34ZnMbuuAFFjHKtDScTWwGIqXoghnCyz8gyKQZCdQYELx5_lAL0C3o6umYgr-glka7X7CklUlI9146bDTA_cKpQ7AiJ4rTF0LfXfZSPwUoftsv-P');">
+</div>
+<!-- Gradient Overlay for better UI visibility -->
+<div class="absolute inset-0 camera-overlay-gradient pointer-events-none"></div>
+<!-- Focus Reticle (Center) -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-64 pointer-events-none opacity-80">
+<!-- Top Left Corner -->
+<div class="absolute top-0 left-0 size-8 border-t-2 border-l-2 border-white/50 rounded-tl-lg"></div>
+<!-- Top Right Corner -->
+<div class="absolute top-0 right-0 size-8 border-t-2 border-r-2 border-white/50 rounded-tr-lg"></div>
+<!-- Bottom Left Corner -->
+<div class="absolute bottom-0 left-0 size-8 border-b-2 border-l-2 border-white/50 rounded-bl-lg"></div>
+<!-- Bottom Right Corner -->
+<div class="absolute bottom-0 right-0 size-8 border-b-2 border-r-2 border-white/50 rounded-br-lg"></div>
+<!-- Center Plus -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-primary/80">
+<span class="material-symbols-outlined text-4xl">add</span>
+</div>
+</div>
+</div>
+<!-- Interface Layer -->
+<div class="relative z-10 flex flex-col justify-between h-full px-6 py-12 safe-area-inset">
+<!-- Top Controls -->
+<div class="flex items-start justify-between">
+<!-- Flash Toggle -->
+<button class="flex items-center justify-center size-12 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 transition-colors">
+<span class="material-symbols-outlined text-[24px]">flash_off</span>
+</button>
+<!-- Close Button -->
+<button class="flex items-center justify-center size-12 rounded-full bg-black/20 backdrop-blur-md text-white hover:bg-black/40 transition-colors">
+<span class="material-symbols-outlined text-[24px]">close</span>
+</button>
+</div>
+<!-- Bottom Controls Area -->
+<div class="flex flex-col items-center gap-8 pb-8">
+<!-- AI Suggestion / Tooltip -->
+<div class="flex items-center gap-2 px-4 py-2 bg-black/40 backdrop-blur-md rounded-full border border-white/10 animate-pulse">
+<span class="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
+<span class="text-white text-sm font-medium tracking-wide">Keep steady for better accuracy</span>
+</div>
+<!-- Main Actions Row -->
+<div class="w-full flex items-center justify-between px-4">
+<!-- Gallery Preview -->
+<button class="group relative size-14 rounded-lg overflow-hidden border-2 border-white/20 hover:border-white transition-all active:scale-95">
+<div class="absolute inset-0 bg-cover bg-center opacity-80 group-hover:opacity-100 transition-opacity" data-alt="Recent photo thumbnail showing a colorful fruit bowl" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAs5FDlIEuQ1G6FTqEbrrK3hwWKHC8qOIYrff-Qybb2MSeAMtTlTVLc3NEFnVQGQVb8ou71ZJrfggcqg1Z8sPArI0IpeYmra_Vke4-cT7BAetBXOshdQAqmsMtMQ2HSSJNSWcBXTMUYPRgP3VeWNgLKNfsTgAsl0FIcIKCtZ10ZH-60uyLV0x6pxhcCpl96gf_yRLY1Rs11eXvXmZtTwfyHc-6iiIlK3HrpLk-NHBBD3uKAVYBem1HRskVyhiVUl9hVG9rnkLNIlQ10');">
+</div>
+</button>
+<!-- Shutter Button -->
+<button class="relative group flex items-center justify-center size-20 rounded-full bg-transparent outline-none focus:outline-none transition-transform active:scale-95">
+<!-- Outer Ring (AI Indicator) -->
+<div class="absolute inset-0 rounded-full border-[4px] border-primary opacity-80 group-hover:opacity-100 group-hover:shadow-[0_0_20px_rgba(19,236,91,0.5)] transition-all duration-300"></div>
+<!-- Inner White Circle -->
+<div class="size-[66px] rounded-full bg-white shadow-lg flex items-center justify-center">
+<!-- Optional inner icon or just pure white -->
+</div>
+</button>
+<!-- Auxiliary Action (e.g., Scan History or Manual Input) -->
+<button class="flex items-center justify-center size-14 rounded-full bg-black/20 backdrop-blur-md text-white border border-white/10 hover:bg-black/40 transition-colors active:scale-95">
+<span class="material-symbols-outlined text-[28px]">keyboard</span>
+</button>
+</div>
+<!-- Mode Selector (Optional hint of modes) -->
+<div class="flex gap-6 text-sm font-medium text-white/50 pt-2">
+<span class="text-primary cursor-pointer drop-shadow-[0_0_8px_rgba(19,236,91,0.5)]">Scan</span>
+<span class="hover:text-white cursor-pointer transition-colors">Barcode</span>
+<span class="hover:text-white cursor-pointer transition-colors">History</span>
+</div>
+</div>
+</div>
+</body></html>

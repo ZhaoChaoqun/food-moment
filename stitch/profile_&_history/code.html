@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Profile &amp; History - NutriLens</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "primary-dark": "#0ea841",
+                        "secondary": "#34c759", // Apple green-ish
+                        "accent": "#007aff", // Apple blue-ish
+                        "background-light": "#f6f8f6",
+                        "background-dark": "#102216",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1c2e22",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "1.5rem",
+                        "xl": "2rem",
+                        "2xl": "2.5rem",
+                        "3xl": "3rem",
+                        "full": "9999px"
+                    },
+                    boxShadow: {
+                        'soft': '0 10px 40px -10px rgba(0,0,0,0.05)',
+                        'glow': '0 0 20px rgba(19, 236, 91, 0.3)',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        /* Custom scrollbar hide for horizontal scroll */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        /* Ring chart CSS simulation */
+        .ring-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        .ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            border-style: solid;
+            background: transparent;
+        }
+        /* Outer ring */
+        .ring-1 {
+            width: 85%;
+            height: 85%;
+            border-width: 2px;
+            border-color: #e5e7eb; /* base */
+            border-top-color: #13ec5b; /* primary */
+            border-right-color: #13ec5b;
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+        /* Middle ring */
+        .ring-2 {
+            width: 60%;
+            height: 60%;
+            border-width: 2px;
+            border-color: #e5e7eb;
+            border-top-color: #34c759; /* secondary */
+            border-left-color: #34c759;
+            transform: translate(-50%, -50%) rotate(-10deg);
+        }
+        /* Inner ring */
+        .ring-3 {
+            width: 35%;
+            height: 35%;
+            border-width: 2px;
+            border-color: #e5e7eb;
+            border-top-color: #007aff; /* accent */
+            transform: translate(-50%, -50%) rotate(120deg);
+        }
+
+        /* Glassmorphism utility */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .dark .glass {
+            background: rgba(28, 46, 34, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-gray-900 dark:text-white antialiased transition-colors duration-300">
+<div class="relative flex min-h-screen w-full flex-col overflow-hidden max-w-md mx-auto shadow-2xl bg-white dark:bg-black">
+<!-- Top Navigation -->
+<header class="flex items-center justify-between p-6 pb-2 z-10">
+<button class="flex size-10 items-center justify-center rounded-full bg-white dark:bg-surface-dark shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold tracking-tight">Profile</h1>
+<button class="flex size-10 items-center justify-center rounded-full bg-white dark:bg-surface-dark shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors text-gray-900 dark:text-white">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</header>
+<!-- Scrollable Content -->
+<main class="flex-1 overflow-y-auto no-scrollbar pb-24">
+<!-- User Profile Section -->
+<section class="flex flex-col items-center pt-4 pb-8 px-6">
+<div class="relative mb-4">
+<div class="size-28 rounded-full p-1 bg-gradient-to-tr from-primary to-blue-400">
+<div class="size-full rounded-full border-4 border-white dark:border-background-dark overflow-hidden bg-gray-200">
+<img alt="Portrait of a smiling woman with glasses" class="h-full w-full object-cover" data-alt="User profile picture showing a young woman smiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcNBnopUWBafBIReDBLDIiGyZ6wezktbYTua34Fsm5q5Jn1noKYn3kiVmr5B3inE0440tq5hEoMcSCKW5c3Hyu_0O9WTdcknOdyMlWKaJzIaN0BX-0SE78umSJzOXP_QlJbVuihvUdrn56PvRuhzyE_lwUoVyvlknO0cSPLUSCmPh8gWdsTT3UiN7qEdGcHatBVTWM-BEP7e-u67migDbOC80J1j2FNHgrW4zAnZjGvlPjkjLERtXARoR0k2Hm_IL_gSVXQ4F2gN2s"/>
+</div>
+</div>
+<div class="absolute bottom-0 right-0 bg-primary text-white text-[10px] font-bold px-2 py-1 rounded-full border-2 border-white dark:border-background-dark shadow-sm">
+                        PRO
+                    </div>
+</div>
+<h2 class="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Jane Doe</h2>
+<div class="mt-4 flex w-full gap-4">
+<!-- Weight Trend Card -->
+<div class="glass flex-1 rounded-2xl p-4 shadow-soft">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Weight</p>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-xl font-bold text-gray-900 dark:text-white">68</span>
+<span class="text-xs font-medium text-gray-500">kg</span>
+</div>
+</div>
+<div class="flex h-6 items-center rounded-full bg-green-100 dark:bg-green-900/30 px-2 text-xs font-bold text-green-700 dark:text-green-400">
+<span class="material-symbols-outlined text-[14px] mr-0.5">trending_down</span>
+                                0.5kg
+                            </div>
+</div>
+<div class="mt-3">
+<div class="flex justify-between text-[10px] text-gray-400 mb-1">
+<span>Current</span>
+<span>Goal: 65kg</span>
+</div>
+<div class="h-1.5 w-full rounded-full bg-gray-100 dark:bg-gray-700 overflow-hidden">
+<div class="h-full rounded-full bg-primary w-[75%]"></div>
+</div>
+</div>
+</div>
+<!-- Streak Card -->
+<div class="glass flex-1 rounded-2xl p-4 shadow-soft">
+<div class="flex items-start justify-between">
+<div>
+<p class="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Streak</p>
+<div class="flex items-baseline gap-1 mt-1">
+<span class="text-xl font-bold text-gray-900 dark:text-white">12</span>
+<span class="text-xs font-medium text-gray-500">Days</span>
+</div>
+</div>
+<div class="flex size-8 items-center justify-center rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400">
+<span class="material-symbols-outlined text-lg">local_fire_department</span>
+</div>
+</div>
+<p class="mt-3 text-[10px] text-gray-400 leading-tight">You're on fire! Keep it up to earn the Gold badge.</p>
+</div>
+</div>
+</section>
+<!-- Activity History (Calendar) -->
+<section class="px-6 mb-8">
+<div class="flex items-center justify-between mb-4">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Activity History</h3>
+<div class="flex gap-2">
+<button class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-900 transition-colors">
+<span class="material-symbols-outlined text-xl">chevron_left</span>
+</button>
+<span class="text-sm font-semibold text-gray-900 dark:text-white self-center">October</span>
+<button class="p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-900 transition-colors">
+<span class="material-symbols-outlined text-xl">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="bg-white dark:bg-surface-dark rounded-3xl p-4 shadow-soft">
+<!-- Days Header -->
+<div class="grid grid-cols-7 mb-2">
+<div class="text-center text-[10px] font-bold text-gray-400 uppercase">S</div>
+<div class="text-center text-[10px] font-bold text-gray-400 uppercase">M</div>
+<div class="text-center text-[10px] font-bold text-gray-400 uppercase">T</div>
+<div class="text-center text-[10px] font-bold text-gray-400 uppercase">W</div>
+<div class="text-center text-[10px] font-bold text-gray-400 uppercase">T</div>
+<div class="text-center text-[10px] font-bold text-gray-400 uppercase">F</div>
+<div class="text-center text-[10px] font-bold text-gray-400 uppercase">S</div>
+</div>
+<!-- Days Grid -->
+<div class="grid grid-cols-7 gap-y-2 gap-x-1">
+<!-- Empty start days -->
+<div class="aspect-square"></div>
+<div class="aspect-square"></div>
+<div class="aspect-square"></div>
+<!-- Day 1 -->
+<div class="aspect-square flex items-center justify-center relative cursor-pointer group">
+<span class="absolute text-[10px] font-medium text-gray-400 z-10">1</span>
+<div class="ring-container opacity-40 group-hover:scale-110 transition-transform">
+<div class="ring ring-1 !border-gray-200"></div>
+</div>
+</div>
+<!-- Day 2 (Active) -->
+<div class="aspect-square flex items-center justify-center relative cursor-pointer group">
+<span class="absolute text-[10px] font-bold text-gray-700 dark:text-gray-300 z-10">2</span>
+<div class="ring-container group-hover:scale-110 transition-transform">
+<div class="ring ring-1"></div>
+<div class="ring ring-2"></div>
+<div class="ring ring-3"></div>
+</div>
+</div>
+<!-- Day 3 (Active) -->
+<div class="aspect-square flex items-center justify-center relative cursor-pointer group">
+<span class="absolute text-[10px] font-bold text-gray-700 dark:text-gray-300 z-10">3</span>
+<div class="ring-container group-hover:scale-110 transition-transform">
+<div class="ring ring-1 !border-t-transparent !border-r-transparent !rotate-[-45deg]"></div>
+<div class="ring ring-2"></div>
+</div>
+</div>
+<!-- Day 4 (Active) -->
+<div class="aspect-square flex items-center justify-center relative cursor-pointer group">
+<span class="absolute text-[10px] font-bold text-gray-700 dark:text-gray-300 z-10">4</span>
+<div class="ring-container group-hover:scale-110 transition-transform">
+<div class="ring ring-1"></div>
+<div class="ring ring-2 !rotate-[90deg]"></div>
+<div class="ring ring-3"></div>
+</div>
+</div>
+<!-- Day 5 (Current/Today) -->
+<div class="aspect-square flex items-center justify-center relative cursor-pointer group">
+<div class="absolute inset-1 bg-black/5 dark:bg-white/5 rounded-full z-0"></div>
+<span class="absolute text-[10px] font-bold text-primary z-10">5</span>
+<div class="ring-container group-hover:scale-110 transition-transform z-10">
+<div class="ring ring-1 !border-primary"></div>
+<div class="ring ring-2"></div>
+<div class="ring ring-3"></div>
+</div>
+</div>
+<!-- Filler Days to mimic month... simplified for code brevity, just repeating pattern -->
+<script>
+                            // Simple script to generate repeating days for visual demo only
+                            for(let i=6; i<=30; i++) {
+                                let opacity = Math.random() > 0.3 ? 'opacity-100' : 'opacity-40 grayscale';
+                                let rot1 = Math.floor(Math.random() * 360);
+                                let rot2 = Math.floor(Math.random() * 360);
+                                let rot3 = Math.floor(Math.random() * 360);
+                                document.write(`
+                                <div class="aspect-square flex items-center justify-center relative cursor-pointer group">
+                                     <span class="absolute text-[10px] font-medium text-gray-600 dark:text-gray-400 z-10">${i}</span>
+                                     <div class="ring-container ${opacity} group-hover:scale-110 transition-transform">
+                                        <div class="ring ring-1" style="transform: translate(-50%, -50%) rotate(${rot1}deg)"></div>
+                                        <div class="ring ring-2" style="transform: translate(-50%, -50%) rotate(${rot2}deg)"></div>
+                                        <div class="ring ring-3" style="transform: translate(-50%, -50%) rotate(${rot3}deg)"></div>
+                                     </div>
+                                </div>
+                                `);
+                            }
+                        </script>
+</div>
+</div>
+</section>
+<!-- Achievements (Scrollable) -->
+<section class="mb-8">
+<div class="px-6 mb-4 flex justify-between items-end">
+<h3 class="text-lg font-bold text-gray-900 dark:text-white">Achievements</h3>
+<a class="text-xs font-semibold text-primary hover:text-primary-dark" href="#">View All</a>
+</div>
+<div class="flex overflow-x-auto no-scrollbar gap-4 px-6 pb-4">
+<!-- Achievement 1 -->
+<div class="flex-shrink-0 w-32 flex flex-col items-center gap-2">
+<div class="relative size-24 bg-gradient-to-b from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 rounded-full flex items-center justify-center shadow-lg border border-yellow-200/50">
+<!-- Simulated 3D Gold Medal -->
+<div class="size-16 rounded-full bg-gradient-to-br from-[#ffd700] via-[#fbf5b7] to-[#d4af37] shadow-lg flex items-center justify-center border-4 border-[#e6c200]">
+<span class="material-symbols-outlined text-yellow-800 drop-shadow-sm text-3xl">emoji_events</span>
+</div>
+<div class="absolute -bottom-2 bg-yellow-500 text-[10px] font-bold text-white px-2 py-0.5 rounded-full shadow-sm">GOLD</div>
+</div>
+<div class="text-center mt-1">
+<p class="text-sm font-bold text-gray-900 dark:text-white leading-tight">7 Day Streak</p>
+<p class="text-[10px] text-gray-400">Oct 12, 2023</p>
+</div>
+</div>
+<!-- Achievement 2 -->
+<div class="flex-shrink-0 w-32 flex flex-col items-center gap-2">
+<div class="relative size-24 bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-700/30 rounded-full flex items-center justify-center shadow-lg border border-gray-200/50">
+<!-- Simulated 3D Silver Medal -->
+<div class="size-16 rounded-full bg-gradient-to-br from-[#e0e0e0] via-[#ffffff] to-[#bebebe] shadow-lg flex items-center justify-center border-4 border-[#a0a0a0]">
+<span class="material-symbols-outlined text-gray-600 drop-shadow-sm text-3xl">nutrition</span>
+</div>
+<div class="absolute -bottom-2 bg-gray-400 text-[10px] font-bold text-white px-2 py-0.5 rounded-full shadow-sm">SILVER</div>
+</div>
+<div class="text-center mt-1">
+<p class="text-sm font-bold text-gray-900 dark:text-white leading-tight">Veggie King</p>
+<p class="text-[10px] text-gray-400">Oct 05, 2023</p>
+</div>
+</div>
+<!-- Achievement 3 -->
+<div class="flex-shrink-0 w-32 flex flex-col items-center gap-2">
+<div class="relative size-24 bg-gradient-to-b from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-full flex items-center justify-center shadow-lg border border-orange-200/50">
+<!-- Simulated 3D Bronze Medal -->
+<div class="size-16 rounded-full bg-gradient-to-br from-[#cd7f32] via-[#eecfa1] to-[#8b4513] shadow-lg flex items-center justify-center border-4 border-[#a0522d]">
+<span class="material-symbols-outlined text-[#5e2c04] drop-shadow-sm text-3xl">wb_sunny</span>
+</div>
+<div class="absolute -bottom-2 bg-[#cd7f32] text-[10px] font-bold text-white px-2 py-0.5 rounded-full shadow-sm">BRONZE</div>
+</div>
+<div class="text-center mt-1">
+<p class="text-sm font-bold text-gray-900 dark:text-white leading-tight">Early Bird</p>
+<p class="text-[10px] text-gray-400">Sep 28, 2023</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Intake Stats Card -->
+<section class="px-6 mb-8">
+<div class="glass relative overflow-hidden rounded-3xl p-6 shadow-soft">
+<!-- Background blobs for glassmorphism effect -->
+<div class="absolute -top-10 -right-10 size-40 rounded-full bg-primary/10 blur-3xl"></div>
+<div class="absolute bottom-0 left-0 size-32 rounded-full bg-blue-400/10 blur-3xl"></div>
+<div class="relative z-10">
+<div class="flex items-center justify-between mb-6">
+<div>
+<h3 class="text-sm font-semibold text-gray-500 dark:text-gray-400">Average Daily Intake</h3>
+<div class="flex items-baseline gap-2 mt-1">
+<span class="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">1,850</span>
+<span class="text-sm font-medium text-gray-500">kcal</span>
+</div>
+</div>
+<div class="text-right">
+<span class="inline-flex items-center rounded-lg bg-green-100 dark:bg-green-900/40 px-2 py-1 text-xs font-bold text-green-700 dark:text-green-400">
+<span class="material-symbols-outlined text-[14px] mr-1">trending_down</span>
+                                    5%
+                                </span>
+<p class="text-[10px] text-gray-400 mt-1">vs last week</p>
+</div>
+</div>
+<!-- Trend Chart Area -->
+<div class="h-32 w-full flex items-end justify-between gap-2 relative">
+<!-- Grid lines -->
+<div class="absolute inset-0 flex flex-col justify-between pointer-events-none">
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700/50"></div>
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700/50"></div>
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700/50"></div>
+<div class="w-full h-px bg-gray-100 dark:bg-gray-700/50"></div>
+</div>
+<!-- Simplified bars/curve rep -->
+<div class="w-full h-full absolute inset-0 flex items-end justify-between px-2 pb-1 z-10">
+<div class="w-2 bg-primary/20 rounded-t-lg h-[40%]"></div>
+<div class="w-2 bg-primary/30 rounded-t-lg h-[55%]"></div>
+<div class="w-2 bg-primary/40 rounded-t-lg h-[45%]"></div>
+<div class="w-2 bg-primary/50 rounded-t-lg h-[70%]"></div>
+<div class="w-2 bg-primary/40 rounded-t-lg h-[60%]"></div>
+<div class="w-2 bg-primary/60 rounded-t-lg h-[80%]"></div>
+<div class="w-2 bg-primary rounded-t-lg h-[65%] shadow-[0_0_10px_rgba(19,236,91,0.5)]"></div>
+</div>
+<!-- SVG Line Overlay (Abstract representation of curve) -->
+<svg class="absolute inset-0 w-full h-full z-20 overflow-visible" preserveaspectratio="none">
+<path class="drop-shadow-sm" d="M10 80 Q 50 40 90 70 T 170 50 T 250 30 T 330 60" fill="none" stroke="#13ec5b" stroke-linecap="round" stroke-linejoin="round" stroke-width="3"></path>
+<!-- Dot on the last point -->
+<circle class="dark:stroke-surface-dark" cx="330" cy="60" fill="#13ec5b" r="5" stroke="white" stroke-width="2"></circle>
+</svg>
+</div>
+<div class="flex justify-between mt-2 px-2">
+<span class="text-[10px] font-bold text-gray-400">M</span>
+<span class="text-[10px] font-bold text-gray-400">T</span>
+<span class="text-[10px] font-bold text-gray-400">W</span>
+<span class="text-[10px] font-bold text-gray-400">T</span>
+<span class="text-[10px] font-bold text-gray-400">F</span>
+<span class="text-[10px] font-bold text-gray-400">S</span>
+<span class="text-[10px] font-bold text-primary">S</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Floating Bottom Navigation -->
+<div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[360px]">
+<nav class="glass flex items-center justify-between rounded-full p-2 px-6 shadow-2xl bg-white/90 dark:bg-surface-dark/90">
+<a class="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+</a>
+<a class="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">grid_view</span>
+</a>
+<div class="relative -top-6">
+<button class="flex size-14 items-center justify-center rounded-full bg-primary text-white shadow-glow hover:scale-105 transition-transform">
+<span class="material-symbols-outlined text-3xl">add</span>
+</button>
+</div>
+<a class="flex flex-col items-center justify-center p-2 text-gray-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined text-2xl">pie_chart</span>
+</a>
+<a class="flex flex-col items-center justify-center p-2 text-primary" href="#">
+<span class="material-symbols-outlined fill-current text-2xl">person</span>
+</a>
+</nav>
+</div>
+</div>
+<!-- Decorative background elements for desktop viewing context -->
+<div class="fixed top-0 left-0 w-full h-full -z-10 bg-gray-100 dark:bg-black hidden lg:block">
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[600px] bg-primary/20 blur-[120px] rounded-full"></div>
+</div>
+</body></html>

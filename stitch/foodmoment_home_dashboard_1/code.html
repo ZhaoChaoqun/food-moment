@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>FoodMoment Diary Journal</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Noto+Sans+SC:wght@300;400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#13ec5b",
+                        "background-light": "#f8f9fa",
+                        "background-dark": "#102216",
+                        "glass-border": "rgba(255, 255, 255, 0.5)",
+                        "glass-surface": "rgba(255, 255, 255, 0.85)",
+                        "glass-surface-dark": "rgba(30, 30, 30, 0.60)",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "Noto Sans SC", "sans-serif"],
+                        "body": ["Noto Sans SC", "Plus Jakarta Sans", "sans-serif"]
+                    },
+                    boxShadow: {
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.05)',
+                        'card': '0 10px 40px -10px rgba(0,0,0,0.08)',
+                        'glow': '0 0 15px rgba(19, 236, 91, 0.4)',
+                    },
+                    backdropBlur: {
+                        'xs': '2px',
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .timeline-line {
+            position: absolute;
+            left: 24px;
+            top: 0;
+            bottom: 0;
+            width: 1px;
+            background-color: #e5e7eb;
+            z-index: 0;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-white min-h-screen overflow-x-hidden selection:bg-primary selection:text-black">
+<div class="relative mx-auto w-full max-w-md min-h-screen flex flex-col pb-32">
+<header class="sticky top-0 z-50 w-full backdrop-blur-xl bg-glass-surface/90 dark:bg-black/60 border-b border-white/20 dark:border-white/5 pt-12 pb-2 px-0 shadow-sm transition-all duration-300">
+<div class="px-6 flex justify-between items-center mb-4">
+<div class="flex items-center gap-2">
+<h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white font-body">2023年10月</h1>
+<span class="material-symbols-outlined text-slate-400 text-sm">expand_more</span>
+</div>
+<div class="flex gap-4">
+<button class="text-slate-500 hover:text-slate-900 transition-colors">
+<span class="material-symbols-outlined">search</span>
+</button>
+<button class="text-slate-500 hover:text-slate-900 transition-colors">
+<span class="material-symbols-outlined">calendar_today</span>
+</button>
+</div>
+</div>
+<div class="overflow-x-auto no-scrollbar w-full px-4 pb-2">
+<div class="flex justify-between items-center min-w-full">
+<div class="flex flex-col items-center gap-1 w-12 opacity-40">
+<span class="text-[10px] font-medium text-slate-500 uppercase">Mon</span>
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300">23</span>
+</div>
+<div class="flex flex-col items-center gap-1 w-12 opacity-40">
+<span class="text-[10px] font-medium text-slate-500 uppercase">Tue</span>
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300">24</span>
+</div>
+<div class="flex flex-col items-center gap-1 w-12 relative group cursor-pointer">
+<span class="text-[10px] font-bold text-primary uppercase">Wed</span>
+<div class="w-9 h-9 rounded-full bg-slate-900 dark:bg-white flex items-center justify-center shadow-lg shadow-slate-200 dark:shadow-none transform scale-110">
+<span class="text-sm font-bold text-white dark:text-slate-900">25</span>
+</div>
+<div class="absolute -bottom-1 w-1 h-1 rounded-full bg-primary"></div>
+</div>
+<div class="flex flex-col items-center gap-1 w-12 opacity-40">
+<span class="text-[10px] font-medium text-slate-500 uppercase">Thu</span>
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300">26</span>
+</div>
+<div class="flex flex-col items-center gap-1 w-12 opacity-40">
+<span class="text-[10px] font-medium text-slate-500 uppercase">Fri</span>
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300">27</span>
+</div>
+<div class="flex flex-col items-center gap-1 w-12 opacity-40">
+<span class="text-[10px] font-medium text-slate-500 uppercase">Sat</span>
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300">28</span>
+</div>
+<div class="flex flex-col items-center gap-1 w-12 opacity-40">
+<span class="text-[10px] font-medium text-slate-500 uppercase">Sun</span>
+<span class="text-sm font-semibold text-slate-700 dark:text-slate-300">29</span>
+</div>
+</div>
+</div>
+</header>
+<main class="flex-1 relative w-full px-6 pt-6">
+<div class="timeline-line ml-[-8px]"></div>
+<div class="relative pl-8 mb-10 group">
+<div class="absolute left-[-11px] top-0 w-3 h-3 rounded-full bg-white border-2 border-slate-200 z-10 group-hover:border-primary group-hover:scale-125 transition-all"></div>
+<div class="flex flex-col gap-4">
+<div class="relative w-full h-64 rounded-[1.5rem] overflow-hidden shadow-card transform transition-transform duration-500 hover:scale-[1.02]">
+<div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA1fI2JrgnFa0bK6paRH5yiG6xDXQNG-tMNPYkiWVaXY0C2lsev0oHpTru7hwcmpgJsu_z3HzBwquBgziafFgMIl67XJ_3LIZoI_5jTfgn4lcDmpcJoZnxVDQtTy8ZwJBz5S7ZkvEID78lgotxUKfkvynDu46RDs618FPETy5Mdc877AeHIQe0MOqLatc2vXR1X1-9G2EWbfkuTfSbCCAEMNZpY63x_ozjlDIzQMes04SiOnlaSsJytE1SFiDfWkAkB3imk0l3gzDtd');"></div>
+<div class="absolute inset-0 bg-gradient-to-b from-black/10 to-transparent"></div>
+<div class="absolute top-4 left-4 backdrop-blur-md bg-white/30 dark:bg-black/40 border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+<span class="text-white text-xs font-medium tracking-wide font-body">早餐 08:30</span>
+</div>
+<div class="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+<span class="text-slate-900 dark:text-white text-xs font-bold font-display">350 kcal</span>
+</div>
+</div>
+<div class="pl-2">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white font-body">牛油果全麦吐司</h3>
+<p class="text-sm text-slate-500 mt-1 line-clamp-2">全麦面包，半个牛油果，流心蛋，黑胡椒调味。提供优质脂肪和慢碳水。</p>
+<div class="flex gap-2 mt-3">
+<span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-500 font-medium">高蛋白</span>
+<span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-500 font-medium">低GI</span>
+</div>
+</div>
+</div>
+</div>
+<div class="relative pl-8 mb-10 group">
+<div class="absolute left-[-11px] top-0 w-3 h-3 rounded-full bg-white border-2 border-slate-200 z-10 group-hover:border-primary group-hover:scale-125 transition-all"></div>
+<div class="flex flex-col gap-4">
+<div class="relative w-full h-72 rounded-[1.5rem] overflow-hidden shadow-card transform transition-transform duration-500 hover:scale-[1.02]">
+<div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuATqScgZCO8sVeDeadf-T074GwWI12oXZTF0N8wfzfvdjd_5fizp02-7GOjRbBlwbwKUfwKmnvaqNfIYPTKsuIIXKEAFVACrLAJRXuuqrGHHD9K1vZFHlUWJm1FqN-YwhnJYBe8slpz83UyaTKuTBlibZzC_IgWWAgc1gj4Ro2C-W9q47oXDN7gGeMHgVtxIdqBf3kSzKdYzskzcseJ5YODnmCFB72Er_fyHMax-lyNJTd38lRs54EtfiO4X2SAmcZwToMtt6lQHT_l');"></div>
+<div class="absolute top-4 left-4 backdrop-blur-md bg-white/30 dark:bg-black/40 border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+<span class="text-white text-xs font-medium tracking-wide font-body">午餐 12:30</span>
+</div>
+<div class="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+<span class="text-slate-900 dark:text-white text-xs font-bold font-display">520 kcal</span>
+</div>
+</div>
+<div class="pl-2">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white font-body">香煎三文鱼佐芦笋</h3>
+<p class="text-sm text-slate-500 mt-1 line-clamp-2">深海三文鱼煎至金黄，搭配清炒芦笋和藜麦饭。</p>
+<div class="flex gap-2 mt-3">
+<span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-500 font-medium">Omega-3</span>
+<span class="px-2 py-0.5 rounded text-[10px] bg-slate-100 text-slate-500 font-medium">无麸质</span>
+</div>
+</div>
+</div>
+</div>
+<div class="relative pl-8 mb-10 group">
+<div class="absolute left-[-11px] top-0 w-3 h-3 rounded-full bg-white border-2 border-slate-200 z-10 group-hover:border-primary group-hover:scale-125 transition-all"></div>
+<div class="flex flex-col gap-4">
+<div class="relative w-full h-56 rounded-[1.5rem] overflow-hidden shadow-card transform transition-transform duration-500 hover:scale-[1.02]">
+<div class="absolute inset-0 bg-cover bg-center" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDR1fHeiTBLLG_D-XjjZBII4sTOR7-BcxTOhkujI0CmUEaGpU4ITatG08Vmc9AQ3FeTizUoWeZ62RYHZU9qd6uBlD1QV8C2yxz7AQlOEWzCXDSlggjjdDEYcqXsqkL7hf0FVzuP0MgAPcP92VV49R4FjVFJ3SvhEA6UIiHUJCyUHZHNd9UOB0yzBDuZWJunw32KmonJXCLf8HY9RPzOKUS0qNXP0MJ9oHRhyJuwtHDY87bC70RZGO0Sii8OW0D4xT2-U2hosnBFLCT2');"></div>
+<div class="absolute top-4 left-4 backdrop-blur-md bg-white/30 dark:bg-black/40 border border-white/20 px-3 py-1.5 rounded-full flex items-center gap-2">
+<span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+<span class="text-white text-xs font-medium tracking-wide font-body">加餐 15:45</span>
+</div>
+<div class="absolute bottom-4 right-4 bg-white/90 dark:bg-black/80 backdrop-blur-sm px-3 py-1 rounded-full shadow-sm">
+<span class="text-slate-900 dark:text-white text-xs font-bold font-display">210 kcal</span>
+</div>
+</div>
+<div class="pl-2">
+<h3 class="text-lg font-bold text-slate-900 dark:text-white font-body">混合浆果奶昔</h3>
+<p class="text-sm text-slate-500 mt-1 line-clamp-2">蓝莓、树莓与希腊酸奶混合搅打，富含抗氧化剂。</p>
+</div>
+</div>
+</div>
+<div class="h-24 bg-gradient-to-b from-transparent to-background-light dark:to-background-dark absolute bottom-0 left-0 right-0 pointer-events-none"></div>
+</main>
+<div class="fixed bottom-24 left-1/2 transform -translate-x-1/2 w-[90%] max-w-sm z-40">
+<div class="backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/40 dark:border-white/10 rounded-2xl shadow-glass p-4 flex items-center justify-between">
+<div class="flex flex-col gap-1">
+<span class="text-xs font-medium text-slate-500 dark:text-slate-400">本日已达标</span>
+<div class="flex items-baseline gap-1">
+<span class="text-2xl font-bold text-slate-900 dark:text-white font-display">85%</span>
+<span class="text-[10px] text-primary font-bold">▲ Good</span>
+</div>
+</div>
+<div class="w-24 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+<div class="h-full bg-primary rounded-full w-[85%] shadow-[0_0_8px_rgba(19,236,91,0.6)]"></div>
+</div>
+</div>
+</div>
+<div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 w-[90%] max-w-sm z-50">
+<div class="relative bg-white/70 dark:bg-black/60 backdrop-blur-xl border border-white/40 dark:border-white/10 rounded-[2rem] shadow-2xl h-[72px] flex items-center justify-between px-2">
+<div class="flex-1 flex justify-center">
+<button class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+<span class="material-symbols-outlined text-[28px]">home</span>
+</button>
+</div>
+<div class="flex-1 flex justify-center">
+<button class="flex flex-col items-center gap-1 text-primary group">
+<span class="material-symbols-outlined text-[28px] font-variation-settings-FILL-1">book_2</span>
+</button>
+</div>
+<div class="relative -top-6 mx-2">
+<button class="w-16 h-16 rounded-full bg-primary flex items-center justify-center shadow-glow border-4 border-[#f2f4f6] dark:border-[#1a1a1a] transform transition hover:scale-105 active:scale-95 group">
+<span class="material-symbols-outlined text-black text-[32px] font-bold">add</span>
+<div class="absolute inset-0 rounded-full border border-white/50 opacity-50"></div>
+</button>
+</div>
+<div class="flex-1 flex justify-center">
+<button class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+<span class="material-symbols-outlined text-[28px]">restaurant_menu</span>
+</button>
+</div>
+<div class="flex-1 flex justify-center">
+<button class="flex flex-col items-center gap-1 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+<span class="material-symbols-outlined text-[28px]">person</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<script>
+        // Simple script to inject font-variation settings for filled icons
+        const icons = document.querySelectorAll('.material-symbols-outlined');
+        icons.forEach(icon => {
+            if (icon.classList.contains('filled')) {
+                icon.style.fontVariationSettings = "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24";
+            }
+        });
+    </script>
+
+</body></html>
