@@ -1,0 +1,257 @@
+import SwiftUI
+import AVFoundation
+import UIKit
+
+// MARK: - CameraScanMode
+
+/// Camera scan mode
+enum CameraScanMode: String, CaseIterable, Sendable {
+    case scan = "Scan"
+    case barcode = "Barcode"
+    case history = "History"
+}
+
+// MARK: - CameraViewModel
+
+/// ViewModel managing camera state and user interactions.
+@MainActor
+@Observable
+final class CameraViewModel {
+
+    // MARK: - Published Properties
+
+    var flashMode: CameraFlashMode = .off
+    var capturedImage: UIImage?
+    var isShowingAnalysis = false
+    var currentMode: CameraScanMode = .scan {
+        didSet {
+            handleModeChange(from: oldValue, to: currentMode)
+        }
+    }
+    var isCapturing = false
+    var isCameraAuthorized = false
+    var isShowingPermissionAlert = false
+    var focusPoint: CGPoint?
+    var isShowingFocusReticle = false
+
+    /// Barcode scanning state
+    var detectedBarcode: BarcodeResult?
+    var isShowingBarcodeResult = false
+    var isBarcodeScanning = false
+
+    // MARK: - Services
+
+    let cameraService: CameraService
+    private var barcodeScanner: BarcodeScannerService?
+
+    // MARK: - Initialization
+
+    init(cameraService: CameraService = CameraService()) {
+        self.cameraService = cameraService
+    }
+
+    // MARK: - Session Lifecycle
+
+    /// Check authorization and start the camera session
+    func startSession() async {
+        let authorized = await cameraService.checkAuthorization()
+        isCameraAuthorized = authorized
+
+        if authorized {
+            cameraService.configureSession()
+            cameraService.startSession()
+            cameraService.delegate = self
+
+            // Initialize barcode scanner with the camera's capture session
+            barcodeScanner = BarcodeScannerService(captureSession: cameraService.captureSession)
+            await barcodeScanner?.setDelegate(self)
+
+            // Start barcode scanning if in barcode mode
+            if currentMode == .barcode {
+                await startBarcodeScanning()
+            }
+        } else {
+            isShowingPermissionAlert = true
+        }
+    }
+
+    /// Stop the camera session
+    func stopSession() {
+        Task {
+            await stopBarcodeScanning()
+        }
+        cameraService.stopSession()
+    }
+
+    // MARK: - Mode Change Handling
+
+    private func handleModeChange(from oldMode: CameraScanMode, to newMode: CameraScanMode) {
+        // Stop barcode scanning when leaving barcode mode
+        if oldMode == .barcode && newMode != .barcode {
+            Task {
+                await stopBarcodeScanning()
+            }
+        }
+
+        // Start barcode scanning when entering barcode mode
+        if newMode == .barcode && oldMode != .barcode {
+            Task {
+                await startBarcodeScanning()
+            }
+        }
+
+        // Clear any previous barcode results when switching modes
+        if oldMode == .barcode {
+            detectedBarcode = nil
+            isShowingBarcodeResult = false
+        }
+    }
+
+    // MARK: - Barcode Scanning
+
+    /// Start the barcode scanner
+    private func startBarcodeScanning() async {
+        guard !isBarcodeScanning else { return }
+        await barcodeScanner?.startScanning()
+        isBarcodeScanning = true
+    }
+
+    /// Stop the barcode scanner
+    private func stopBarcodeScanning() async {
+        guard isBarcodeScanning else { return }
+        await barcodeScanner?.stopScanning()
+        isBarcodeScanning = false
+    }
+
+    /// Reset barcode detection to scan for a new barcode
+    func resetBarcodeScanning() {
+        detectedBarcode = nil
+        isShowingBarcodeResult = false
+        Task {
+            await barcodeScanner?.resetDebounce()
+        }
+    }
+
+    // MARK: - Actions
+
+    /// Capture a photo
+    func capturePhoto() {
+        guard !isCapturing else { return }
+        isCapturing = true
+        cameraService.capturePhoto()
+    }
+
+    /// Toggle flash mode (off -> on -> auto -> off)
+    func toggleFlash() {
+        flashMode = cameraService.toggleFlash()
+    }
+
+    /// Switch between front and back camera
+    func switchCamera() {
+        cameraService.switchCamera()
+    }
+
+    /// Handle tap-to-focus at a given point in the preview
+    func focus(at point: CGPoint, in viewSize: CGSize) {
+        // Convert view coordinates to camera coordinates (0...1)
+        let normalizedPoint = CGPoint(
+            x: point.y / viewSize.height,
+            y: 1.0 - (point.x / viewSize.width)
+        )
+
+        cameraService.focus(at: normalizedPoint)
+
+        // Show focus reticle at tap location
+        focusPoint = point
+        isShowingFocusReticle = true
+
+        // Hide reticle after a delay
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            withAnimation(.easeOut(duration: 0.3)) {
+                isShowingFocusReticle = false
+            }
+        }
+    }
+
+    /// Set captured image from photo library
+    func setSelectedImage(_ image: UIImage?) {
+        guard let image else { return }
+        capturedImage = image
+        isShowingAnalysis = true
+    }
+
+    /// Reset state after analysis is dismissed
+    func dismissAnalysis() {
+        capturedImage = nil
+        isShowingAnalysis = false
+        isCapturing = false
+    }
+
+    /// Dismiss barcode result and continue scanning
+    func dismissBarcodeResult() {
+        isShowingBarcodeResult = false
+        detectedBarcode = nil
+        Task {
+            await barcodeScanner?.resetDebounce()
+        }
+    }
+}
+
+// MARK: - CameraServiceDelegate
+
+extension CameraViewModel: CameraServiceDelegate {
+
+    nonisolated func cameraService(_ service: CameraService, didCapturePhoto image: UIImage) {
+        Task { @MainActor in
+            self.capturedImage = image
+            self.isCapturing = false
+            self.isShowingAnalysis = true
+        }
+    }
+
+    nonisolated func cameraService(_ service: CameraService, didFailWithError error: CameraServiceError) {
+        Task { @MainActor in
+            self.isCapturing = false
+            // TODO: Show error alert to user
+            print("Camera error: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - BarcodeScannerDelegate
+
+extension CameraViewModel: BarcodeScannerDelegate {
+
+    nonisolated func barcodeScanner(_ scanner: BarcodeScannerService, didDetect result: BarcodeResult) {
+        Task { @MainActor in
+            // Only process if we're in barcode mode and not already showing a result
+            guard currentMode == .barcode, !isShowingBarcodeResult else { return }
+
+            detectedBarcode = result
+            isShowingBarcodeResult = true
+
+            // Haptic feedback on successful scan
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
+        }
+    }
+
+    nonisolated func barcodeScanner(_ scanner: BarcodeScannerService, didFailWithError error: BarcodeScannerError) {
+        Task { @MainActor in
+            // Handle barcode scanning errors silently for now
+            // Could show an alert for persistent errors
+            print("Barcode scanning error: \(error.localizedDescription)")
+        }
+    }
+}
+
+// MARK: - CameraService Extension
+
+extension CameraService {
+
+    /// Set the delegate for photo capture callbacks
+    func setDelegate(_ delegate: CameraServiceDelegate?) {
+        self.delegate = delegate
+    }
+}
