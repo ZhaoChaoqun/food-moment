@@ -1,0 +1,37 @@
+# =============================================================================
+# 开发环境变量值
+# 复制此文件为 terraform.tfvars 并填入实际值
+# =============================================================================
+
+# 基础配置
+project_name = "foodmoment"
+environment  = "dev"
+location     = "eastasia"  # 香港区域，国内访问延迟较低
+
+# 数据库配置
+db_admin_username = "fmadmin"
+db_admin_password = "YourSecurePassword123!"  # 请更改为强密码
+
+# JWT 配置
+jwt_secret_key = "your-super-secret-jwt-key-at-least-32-characters-long"
+
+# AI 服务配置（可选，留空则使用 mock 模式）
+gemini_api_key = ""
+openai_api_key = ""
+
+# CORS 配置
+cors_allowed_origins = [
+  "http://localhost:3000",
+  "http://localhost:8080",
+  "https://*.foodmoment.app"
+]
+
+# 可选功能
+enable_cdn          = false  # CDN 会增加 ~$20-30/月成本
+enable_staging_slot = false  # staging 槽会增加成本
+
+# 额外标签
+extra_tags = {
+  Team    = "FoodMoment"
+  Purpose = "Development"
+}
