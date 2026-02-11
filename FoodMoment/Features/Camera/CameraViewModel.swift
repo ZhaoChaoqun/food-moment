@@ -142,7 +142,7 @@ final class CameraViewModel {
     func resetBarcodeScanning() {
         detectedBarcode = nil
         isShowingBarcodeResult = false
-        let task = Task {
+        let task = Task { () -> Void in
             await barcodeScanner?.resetDebounce()
         }
         pendingTasks.append(task)
@@ -210,7 +210,7 @@ final class CameraViewModel {
     func dismissBarcodeResult() {
         isShowingBarcodeResult = false
         detectedBarcode = nil
-        let task = Task {
+        let task = Task { () -> Void in
             await barcodeScanner?.resetDebounce()
         }
         pendingTasks.append(task)

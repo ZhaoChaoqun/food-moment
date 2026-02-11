@@ -30,7 +30,7 @@ struct RecordUploadData: Sendable {
 final class CloudSyncManager {
     static let shared = CloudSyncManager()
 
-    private static let logger = Logger(subsystem: "com.foodmoment", category: "CloudSyncManager")
+    nonisolated(unsafe) private static let logger = Logger(subsystem: "com.foodmoment", category: "CloudSyncManager")
 
     // MARK: - State
 
