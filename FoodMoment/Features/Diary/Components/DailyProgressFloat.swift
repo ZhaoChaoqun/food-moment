@@ -117,11 +117,15 @@ struct DailyProgressFloat: View {
 
     // MARK: - Helper Methods
 
-    private func formattedCalories(_ value: Int) -> String {
+    private static let calorieFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
         formatter.groupingSeparator = ","
-        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        return formatter
+    }()
+
+    private func formattedCalories(_ value: Int) -> String {
+        Self.calorieFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 
     private var accessibilityProgressLabel: String {

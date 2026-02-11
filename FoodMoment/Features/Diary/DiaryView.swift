@@ -62,6 +62,9 @@ struct DiaryView: View {
             WeekDatePicker(
                 selectedDate: $viewModel.selectedDate,
                 weekDates: viewModel.weekDates,
+                dateHasMeals: { date in
+                    viewModel.dateHasMealsFromCache(date)
+                },
                 onPreviousWeek: {
                     viewModel.previousWeek()
                 },

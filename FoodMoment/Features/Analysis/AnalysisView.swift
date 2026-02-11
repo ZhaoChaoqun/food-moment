@@ -50,7 +50,7 @@ struct AnalysisView: View {
             let screenWidth = geometry.size.width
             let screenHeight = geometry.size.height
             let safeTop = geometry.safeAreaInsets.top
-            let imageHeight = computeImageHeight(screenWidth: screenWidth)
+            let imageHeight = computeImageHeight(screenWidth: screenWidth, screenHeight: screenHeight)
 
             // Scroll-derived values
             let scrollUp = max(-scrollOffset, 0)
@@ -104,7 +104,7 @@ struct AnalysisView: View {
                 updateImageDisplayFrame(screenWidth: screenWidth, imageHeight: imageHeight)
             }
             .onChange(of: geometry.size) { _, newSize in
-                let newImageHeight = computeImageHeight(screenWidth: newSize.width)
+                let newImageHeight = computeImageHeight(screenWidth: newSize.width, screenHeight: newSize.height)
                 updateImageDisplayFrame(screenWidth: newSize.width, imageHeight: newImageHeight)
             }
         }
@@ -218,13 +218,12 @@ struct AnalysisView: View {
 
     /// 根据图片宽高比和屏幕宽度，计算图片显示高度
     /// 竖版图片最多占屏幕 45%，横版图片按比例自然缩放
-    private func computeImageHeight(screenWidth: CGFloat) -> CGFloat {
+    private func computeImageHeight(screenWidth: CGFloat, screenHeight: CGFloat) -> CGFloat {
         guard image.size.width > 0, image.size.height > 0 else { return 300 }
 
         let imageAspect = image.size.width / image.size.height
         let naturalHeight = screenWidth / imageAspect
 
-        let screenHeight = UIScreen.main.bounds.height
         let maxHeight = screenHeight * 0.45
         let minHeight = screenHeight * 0.35
 

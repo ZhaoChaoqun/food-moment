@@ -8,6 +8,8 @@ struct FoodPhotoCard: View {
 
     let meal: MealRecord
 
+    @State private var decodedImage: UIImage?
+
     // MARK: - Computed Properties
 
     private var mealType: MealRecord.MealType {
@@ -68,10 +70,17 @@ struct FoodPhotoCard: View {
 
     @ViewBuilder
     private var photoView: some View {
-        if let imageData = meal.localImageData, let uiImage = UIImage(data: imageData) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
+        if let imageData = meal.localImageData {
+            if let uiImage = decodedImage {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                placeholderView
+                    .task(id: meal.id) {
+                        decodedImage = await Self.decodeThumbnail(from: imageData)
+                    }
+            }
         } else if let assetName = meal.localAssetName, !assetName.isEmpty {
             Image(assetName)
                 .resizable()
@@ -215,5 +224,21 @@ struct FoodPhotoCard: View {
                 Capsule()
                     .stroke(AppTheme.Colors.primary.opacity(0.15), lineWidth: 0.5)
             )
+    }
+
+    // MARK: - Image Decoding
+
+    private static func decodeThumbnail(from data: Data) async -> UIImage? {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                guard let fullImage = UIImage(data: data) else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let targetSize = CGSize(width: 400, height: 400)
+                let thumbnail = fullImage.preparingThumbnail(of: targetSize)
+                continuation.resume(returning: thumbnail ?? fullImage)
+            }
+        }
     }
 }

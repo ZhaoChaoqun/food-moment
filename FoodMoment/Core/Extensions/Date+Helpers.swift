@@ -55,15 +55,31 @@ extension Date {
 
     // MARK: - Formatting
 
+    /// DateFormatter 缓存，避免高频调用时重复创建
+    private static let formatterCache: NSCache<NSString, DateFormatter> = {
+        let cache = NSCache<NSString, DateFormatter>()
+        cache.countLimit = 10
+        return cache
+    }()
+
+    private static func cachedFormatter(for format: String) -> DateFormatter {
+        let key = format as NSString
+        if let cached = formatterCache.object(forKey: key) {
+            return cached
+        }
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatterCache.setObject(formatter, forKey: key)
+        return formatter
+    }
+
     /// 使用指定格式格式化日期
     ///
     /// - Parameter format: 日期格式字符串
     /// - Returns: 格式化后的日期字符串
     func formatted(as format: String) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = format
-        formatter.locale = Locale(identifier: "zh_CN")
-        return formatter.string(from: self)
+        Self.cachedFormatter(for: format).string(from: self)
     }
 
     /// 餐食时间字符串（HH:mm）

@@ -12,6 +12,7 @@ struct FoodTagOverlay: View {
     var onFoodTapped: ((Int) -> Void)?
 
     @State private var visibleIndices: Set<Int> = []
+    @State private var resolvedPositions: [CGPoint] = []
 
     // Estimated tag dimensions for overlap detection
     private enum TagSize {
@@ -23,10 +24,8 @@ struct FoodTagOverlay: View {
     }
 
     var body: some View {
-        let resolvedPositions = resolveOverlaps()
-
-        GeometryReader { _ in
-            ForEach(Array(detectedFoods.enumerated()), id: \.offset) { index, food in
+        ZStack {
+            ForEach(Array(detectedFoods.enumerated()), id: \.element.id) { index, food in
                 if visibleIndices.contains(index), index < resolvedPositions.count {
                     FoodTagPin(food: food) {
                         onFoodTapped?(index)
@@ -37,7 +36,14 @@ struct FoodTagOverlay: View {
             }
         }
         .onAppear {
+            resolvedPositions = computeResolvedPositions()
             animateTagsSequentially()
+        }
+        .onChange(of: detectedFoods.map(\.id)) { _, _ in
+            resolvedPositions = computeResolvedPositions()
+        }
+        .onChange(of: imageDisplayFrame) { _, _ in
+            resolvedPositions = computeResolvedPositions()
         }
     }
 
@@ -45,7 +51,7 @@ struct FoodTagOverlay: View {
 
     /// Computes adjusted positions for all tags so they don't overlap.
     /// Uses a simple iterative push-apart algorithm on the Y axis.
-    private func resolveOverlaps() -> [CGPoint] {
+    private func computeResolvedPositions() -> [CGPoint] {
         guard !detectedFoods.isEmpty else { return [] }
 
         // Start with raw positions

@@ -43,6 +43,8 @@ final class CameraViewModel {
 
     let cameraService: CameraService
     private var barcodeScanner: BarcodeScannerService?
+    private var pendingTasks: [Task<Void, Never>] = []
+    private var focusHideTask: Task<Void, Never>?
 
     // MARK: - Initialization
 
@@ -77,9 +79,15 @@ final class CameraViewModel {
 
     /// Stop the camera session
     func stopSession() {
-        Task {
+        pendingTasks.forEach { $0.cancel() }
+        pendingTasks.removeAll()
+        focusHideTask?.cancel()
+        focusHideTask = nil
+
+        let task = Task {
             await stopBarcodeScanning()
         }
+        pendingTasks.append(task)
         cameraService.stopSession()
     }
 
@@ -88,16 +96,18 @@ final class CameraViewModel {
     private func handleModeChange(from oldMode: CameraScanMode, to newMode: CameraScanMode) {
         // Stop barcode scanning when leaving barcode mode
         if oldMode == .barcode && newMode != .barcode {
-            Task {
+            let task = Task {
                 await stopBarcodeScanning()
             }
+            pendingTasks.append(task)
         }
 
         // Start barcode scanning when entering barcode mode
         if newMode == .barcode && oldMode != .barcode {
-            Task {
+            let task = Task {
                 await startBarcodeScanning()
             }
+            pendingTasks.append(task)
         }
 
         // Clear any previous barcode results when switching modes
@@ -127,9 +137,10 @@ final class CameraViewModel {
     func resetBarcodeScanning() {
         detectedBarcode = nil
         isShowingBarcodeResult = false
-        Task {
+        let task = Task {
             await barcodeScanner?.resetDebounce()
         }
+        pendingTasks.append(task)
     }
 
     // MARK: - Actions
@@ -166,8 +177,10 @@ final class CameraViewModel {
         isShowingFocusReticle = true
 
         // Hide reticle after a delay
-        Task {
+        focusHideTask?.cancel()
+        focusHideTask = Task {
             try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeOut(duration: 0.3)) {
                 isShowingFocusReticle = false
             }
@@ -192,9 +205,10 @@ final class CameraViewModel {
     func dismissBarcodeResult() {
         isShowingBarcodeResult = false
         detectedBarcode = nil
-        Task {
+        let task = Task {
             await barcodeScanner?.resetDebounce()
         }
+        pendingTasks.append(task)
     }
 }
 

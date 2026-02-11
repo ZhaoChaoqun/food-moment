@@ -89,9 +89,11 @@ struct GalleryThumbnail: View {
 
         Task {
             if let data = try? await item.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                thumbnailImage = image
-                selectedImage = image
+               let fullImage = UIImage(data: data) {
+                let thumbSize = CGSize(width: 200, height: 200)
+                let thumb = await fullImage.byPreparingThumbnail(ofSize: thumbSize) ?? fullImage
+                thumbnailImage = thumb
+                selectedImage = fullImage
             }
             selectedItem = nil
         }

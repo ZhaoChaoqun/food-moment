@@ -1,5 +1,4 @@
 import SwiftUI
-import SwiftData
 
 /// 水平周日期选择器，显示 7 天及选中状态和餐食指示器
 struct WeekDatePicker: View {
@@ -8,12 +7,9 @@ struct WeekDatePicker: View {
 
     @Binding var selectedDate: Date
     let weekDates: [Date]
+    let dateHasMeals: (Date) -> Bool
     let onPreviousWeek: () -> Void
     let onNextWeek: () -> Void
-
-    // MARK: - Environment
-
-    @Environment(\.modelContext) private var modelContext
 
     // MARK: - Private Properties
 
@@ -99,23 +95,6 @@ struct WeekDatePicker: View {
         let startStr = first.formatted(as: "M/d")
         let endStr = last.formatted(as: "M/d")
         return "\(startStr) - \(endStr)"
-    }
-
-    // MARK: - Helper Methods
-
-    private func dateHasMeals(_ date: Date) -> Bool {
-        let startOfDay = calendar.startOfDay(for: date)
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)?
-            .addingTimeInterval(-1) else {
-            return false
-        }
-        let predicate = #Predicate<MealRecord> { meal in
-            meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
-        }
-        var descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
-        descriptor.fetchLimit = 1
-        let count = (try? modelContext.fetchCount(descriptor)) ?? 0
-        return count > 0
     }
 }
 

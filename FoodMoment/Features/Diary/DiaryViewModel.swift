@@ -16,6 +16,10 @@ final class DiaryViewModel {
     var selectedMeal: MealRecord?
     var mealToEdit: MealRecord?
 
+    /// 当前周中有餐食记录的日期集合（以 "yyyy-MM-dd" 字符串标识）
+    /// 在 loadMeals 时一次性预计算，避免 WeekDatePicker 逐日查询
+    var datesWithMeals: Set<String> = []
+
     // MARK: - Computed Properties
 
     /// 当前周的 7 天日期数组（周一到周日），包含 selectedDate 所在的周
@@ -110,6 +114,41 @@ final class DiaryViewModel {
         if let profile = try? modelContext.fetch(profileDescriptor).first {
             dailyCalorieGoal = profile.dailyCalorieGoal
         }
+
+        // 一次性预计算当前周有餐食的日期，供 WeekDatePicker 使用
+        precomputeDatesWithMeals(modelContext: modelContext)
+    }
+
+    /// 一次查询当前周 7 天范围的餐食记录，生成有记录日期的 Set
+    private func precomputeDatesWithMeals(modelContext: ModelContext) {
+        let calendar = Calendar.current
+        guard let weekStart = weekDates.first,
+              let weekEnd = calendar.date(byAdding: .day, value: 1, to: weekDates.last ?? weekStart)
+        else {
+            datesWithMeals = []
+            return
+        }
+
+        let predicate = #Predicate<MealRecord> { meal in
+            meal.mealTime >= weekStart && meal.mealTime < weekEnd
+        }
+        let descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
+
+        do {
+            let weekMeals = try modelContext.fetch(descriptor)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            datesWithMeals = Set(weekMeals.map { formatter.string(from: $0.mealTime) })
+        } catch {
+            datesWithMeals = []
+        }
+    }
+
+    /// 检查指定日期在当前周是否有餐食记录（基于预计算缓存，无数据库查询）
+    func dateHasMealsFromCache(_ date: Date) -> Bool {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return datesWithMeals.contains(formatter.string(from: date))
     }
 
     /// 加载演示数据（仅当当天没有记录时）
