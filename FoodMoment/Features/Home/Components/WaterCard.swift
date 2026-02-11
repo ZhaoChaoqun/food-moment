@@ -85,12 +85,12 @@ struct WaterCard: View {
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(formattedWater)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.Jakarta.bold(24))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
 
                 Text("mL")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.Jakarta.medium(12))
                     .foregroundStyle(.secondary)
             }
         }

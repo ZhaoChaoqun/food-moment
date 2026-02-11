@@ -31,11 +31,11 @@ struct CalorieTrendChart: View {
     private var headerSection: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Calorie Trend")
+                Text("热量趋势")
                     .font(.Jakarta.semiBold(18))
                     .foregroundStyle(.primary)
 
-                Text("Daily intake overview")
+                Text("每日摄入概览")
                     .font(.Jakarta.regular(13))
                     .foregroundStyle(.secondary)
             }

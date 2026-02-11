@@ -28,7 +28,7 @@ struct MacroDonutChart: View {
     // MARK: - Title Section
 
     private var titleSection: some View {
-        Text("Macronutrients")
+        Text("宏量营养素")
             .font(.Jakarta.semiBold(18))
             .foregroundStyle(.primary)
     }
@@ -99,19 +99,19 @@ struct MacroDonutChart: View {
         VStack(alignment: .leading, spacing: 16) {
             MacroLegendRow(
                 color: proteinColor,
-                name: "Protein",
+                name: "蛋白质",
                 grams: proteinTotal
             )
 
             MacroLegendRow(
                 color: carbsColor,
-                name: "Carbs",
+                name: "碳水",
                 grams: carbsTotal
             )
 
             MacroLegendRow(
                 color: fatColor,
-                name: "Fat",
+                name: "脂肪",
                 grams: fatTotal
             )
         }

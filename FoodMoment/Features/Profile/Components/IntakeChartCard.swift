@@ -8,7 +8,7 @@ struct IntakeChartCard: View {
     let calorieChange: String
     let dailyData: [Int]
 
-    private let dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    private let dayLabels = ["周一", "周二", "周三", "周四", "周五", "周六", "周日"]
 
     // MARK: - Computed Properties
 
@@ -51,13 +51,13 @@ struct IntakeChartCard: View {
 
     private var calorieInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Average Intake")
+            Text("平均摄入")
                 .font(.headline)
                 .foregroundStyle(.primary)
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(formattedCalories)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.Jakarta.bold(32))
                     .foregroundStyle(.primary)
 
                 Text("kcal")
@@ -74,7 +74,7 @@ struct IntakeChartCard: View {
             Text(calorieChange)
                 .font(.caption.weight(.semibold))
 
-            Text("vs last week")
+            Text("较上周")
                 .font(.caption2)
         }
         .foregroundStyle(isNegativeChange ? AppTheme.Colors.primary : Color(hex: "#F87171"))
@@ -115,6 +115,7 @@ struct IntakeChartCard: View {
                     )
                 )
                 .frame(height: barHeight(for: dailyData[index]))
+                .shadow(color: AppTheme.Colors.primary.opacity(0.2), radius: 4, y: 2)
 
             Text(dayLabels[index])
                 .font(.system(size: 9, weight: .medium))

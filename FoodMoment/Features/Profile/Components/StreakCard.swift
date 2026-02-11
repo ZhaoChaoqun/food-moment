@@ -11,17 +11,17 @@ struct StreakCard: View {
     private var motivationText: String {
         switch streakDays {
         case 0:
-            return "Start today!"
+            return "今天开始！"
         case 1...3:
-            return "Nice start!"
+            return "好的开始！"
         case 4...7:
-            return "Great momentum!"
+            return "势头不错！"
         case 8...14:
-            return "Keep it up!"
+            return "继续加油！"
         case 15...30:
-            return "Amazing streak!"
+            return "太棒了！"
         default:
-            return "Incredible discipline!"
+            return "自律达人！"
         }
     }
 
@@ -32,12 +32,13 @@ struct StreakCard: View {
             flameIcon
             daysCountText
             streakSubtitle
+            Spacer(minLength: 0)
             Divider()
                 .padding(.horizontal, 20)
             motivationLabel
         }
         .padding(16)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .glassCard()
         .accessibilityIdentifier("StreakCard")
     }
@@ -61,17 +62,17 @@ struct StreakCard: View {
 
     private var daysCountText: some View {
         Text("\(streakDays)")
-            .font(.system(size: 21, weight: .bold, design: .rounded))
+            .font(.Jakarta.bold(21))
             .foregroundStyle(.primary)
-        + Text(" Days")
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
+        + Text(" 天")
+            .font(.Jakarta.semiBold(12))
             .foregroundStyle(.primary)
     }
 
     // MARK: - Streak Subtitle
 
     private var streakSubtitle: some View {
-        Text("Streak")
+        Text("连续打卡")
             .font(.subheadline)
             .foregroundStyle(.secondary)
     }

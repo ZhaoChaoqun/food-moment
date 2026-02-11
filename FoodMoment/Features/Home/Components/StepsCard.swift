@@ -60,7 +60,7 @@ struct StepsCard: View {
 
     private var caloriesBadge: some View {
         Text("+\(formattedCalories)")
-            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .font(.Jakarta.bold(10))
             .foregroundStyle(Color(hex: "#076653"))
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
@@ -80,12 +80,12 @@ struct StepsCard: View {
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text(formattedSteps)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.Jakarta.bold(24))
                     .foregroundStyle(.primary)
                     .contentTransition(.numericText())
 
-                Text("Steps")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                Text("步")
+                    .font(.Jakarta.medium(12))
                     .foregroundStyle(.secondary)
             }
         }

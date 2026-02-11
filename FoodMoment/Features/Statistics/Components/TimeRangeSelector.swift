@@ -16,6 +16,9 @@ struct TimeRangeSelector: View {
             }
         }
         .pickerStyle(.segmented)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .glassCard(cornerRadius: 12)
         .padding(.horizontal, 20)
         .accessibilityIdentifier("TimeRangeSelector")
     }

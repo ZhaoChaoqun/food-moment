@@ -22,7 +22,7 @@ struct DiaryView: View {
                 mainContent
                 floatingProgressBar
             }
-            .background(AppTheme.Colors.background.ignoresSafeArea())
+            .premiumBackground()
             .navigationBarHidden(true)
         }
         .searchable(
@@ -44,15 +44,48 @@ struct DiaryView: View {
 
     private var mainContent: some View {
         ScrollView {
-            LazyVStack(spacing: 0, pinnedViews: [.sectionHeaders]) {
-                Section {
-                    contentSection
-                } header: {
-                    stickyHeader
-                }
+            VStack(spacing: 0) {
+                headerSection
+                contentSection
             }
         }
         .scrollIndicators(.hidden)
+    }
+
+    // MARK: - Header Section
+
+    private var headerSection: some View {
+        VStack(spacing: 0) {
+            headerBar
+                .padding(.top, 8)
+
+            WeekDatePicker(
+                selectedDate: $viewModel.selectedDate,
+                weekDates: viewModel.weekDates,
+                onPreviousWeek: {
+                    viewModel.previousWeek()
+                },
+                onNextWeek: {
+                    viewModel.nextWeek()
+                }
+            )
+            .padding(.top, 4)
+            .padding(.bottom, 8)
+
+            // 底部渐变分隔线
+            LinearGradient(
+                colors: [
+                    AppTheme.Colors.primary.opacity(0.2),
+                    AppTheme.Colors.primary.opacity(0.05),
+                    Color.clear
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(height: 1)
+        }
+        .background(.ultraThinMaterial)
+        .accessibilityIdentifier("DiaryView.Header")
     }
 
     // MARK: - Content Section
@@ -83,34 +116,6 @@ struct DiaryView: View {
         }
     }
 
-    // MARK: - Sticky Header
-
-    private var stickyHeader: some View {
-        VStack(spacing: 0) {
-            headerBar
-                .padding(.top, 8)
-
-            WeekDatePicker(
-                selectedDate: $viewModel.selectedDate,
-                weekDates: viewModel.weekDates,
-                onPreviousWeek: {
-                    viewModel.previousWeek()
-                },
-                onNextWeek: {
-                    viewModel.nextWeek()
-                }
-            )
-            .padding(.top, 4)
-            .padding(.bottom, 8)
-        }
-        .background(
-            Rectangle()
-                .fill(.ultraThinMaterial)
-                .ignoresSafeArea(edges: .top)
-        )
-        .accessibilityIdentifier("DiaryView.StickyHeader")
-    }
-
     // MARK: - Header Bar
 
     private var headerBar: some View {
@@ -118,7 +123,13 @@ struct DiaryView: View {
             // 月份标题
             Text(viewModel.monthTitle)
                 .font(.Jakarta.bold(24))
-                .foregroundColor(.primary)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.primary, .primary.opacity(0.7)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
                 .accessibilityIdentifier("DiaryView.MonthTitle")
 
             Spacer()
@@ -138,8 +149,19 @@ struct DiaryView: View {
             isShowingSearchBar.toggle()
         } label: {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 18, weight: .medium))
+                .font(.system(size: 16, weight: .medium))
                 .foregroundColor(.secondary)
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(.white.opacity(0.7))
+                        .background(Circle().fill(.ultraThinMaterial))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
         }
         .accessibilityIdentifier("DiaryView.SearchButton")
         .accessibilityLabel("搜索")
@@ -150,8 +172,19 @@ struct DiaryView: View {
             isShowingCalendarPicker.toggle()
         } label: {
             Image(systemName: "calendar")
-                .font(.system(size: 18, weight: .medium))
-                .foregroundColor(.secondary)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(AppTheme.Colors.primary)
+                .frame(width: 36, height: 36)
+                .background(
+                    Circle()
+                        .fill(.white.opacity(0.7))
+                        .background(Circle().fill(.ultraThinMaterial))
+                )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
         }
         .accessibilityIdentifier("DiaryView.CalendarButton")
         .accessibilityLabel("日历")

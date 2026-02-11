@@ -172,7 +172,16 @@ private struct DateCell: View {
 
     private var backgroundView: some View {
         RoundedRectangle(cornerRadius: 16)
-            .fill(isSelected ? Color.black : Color.clear)
+            .fill(
+                isSelected
+                    ? AnyShapeStyle(LinearGradient(
+                        colors: [Color(hex: "#1A1A2E"), Color(hex: "#16213E")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                      ))
+                    : AnyShapeStyle(Color.clear)
+            )
+            .shadow(color: isSelected ? Color.black.opacity(0.15) : .clear, radius: 6, y: 3)
     }
 
     // MARK: - Computed Properties

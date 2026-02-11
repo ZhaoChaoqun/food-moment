@@ -111,6 +111,7 @@ struct DailyProgressFloat: View {
                 )
             )
             .frame(width: width, height: 6)
+            .shadow(color: AppTheme.Colors.primary.opacity(0.4), radius: 6, y: 0)
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progress)
     }
 

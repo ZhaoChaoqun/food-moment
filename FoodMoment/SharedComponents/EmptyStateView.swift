@@ -43,9 +43,34 @@ struct EmptyStateView: View {
     // MARK: - Icon View
 
     private var iconView: some View {
-        Image(systemName: icon)
-            .font(.system(size: 56))
-            .foregroundStyle(AppTheme.Colors.primary.opacity(0.6))
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            AppTheme.Colors.primary.opacity(0.08),
+                            AppTheme.Colors.primary.opacity(0.02)
+                        ],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: 50
+                    )
+                )
+                .frame(width: 100, height: 100)
+
+            Image(systemName: icon)
+                .font(.system(size: 48))
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            AppTheme.Colors.primary.opacity(0.7),
+                            AppTheme.Colors.primary.opacity(0.4)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        }
     }
 
     // MARK: - Title View

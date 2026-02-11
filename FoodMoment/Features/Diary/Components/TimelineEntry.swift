@@ -92,13 +92,20 @@ struct TimelineEntry: View {
 
     private func dotNode(midY: CGFloat) -> some View {
         Circle()
-            .fill(mealColor)
+            .fill(
+                LinearGradient(
+                    colors: [mealColor, mealColor.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             .frame(width: 10, height: 10)
             .overlay(
                 Circle()
-                    .fill(mealColor.opacity(0.3))
+                    .fill(mealColor.opacity(0.2))
                     .frame(width: 18, height: 18)
             )
+            .shadow(color: mealColor.opacity(0.3), radius: 4, y: 1)
             .position(x: 12, y: midY)
     }
 }

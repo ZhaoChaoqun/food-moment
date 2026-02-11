@@ -1,6 +1,7 @@
 import SwiftUI
 
 /// 全局应用状态管理
+@MainActor
 @Observable
 final class AppState {
 
@@ -28,6 +29,32 @@ final class AppState {
 
     /// 高亮显示的餐食 ID
     var highlightedMealID: UUID?
+
+    // MARK: - Achievement Unlock States
+
+    /// 成就解锁弹窗队列
+    var achievementUnlockQueue: [AchievementItem] = []
+
+    /// 当前正在显示的解锁成就
+    var currentUnlockAchievement: AchievementItem?
+
+    /// 显示队列中的下一个解锁成就弹窗
+    func showNextUnlockAchievement() {
+        guard !achievementUnlockQueue.isEmpty else {
+            currentUnlockAchievement = nil
+            return
+        }
+        currentUnlockAchievement = achievementUnlockQueue.removeFirst()
+    }
+
+    /// 关闭当前弹窗并尝试显示下一个
+    func dismissCurrentUnlockAchievement() {
+        currentUnlockAchievement = nil
+        Task {
+            try? await Task.sleep(for: .milliseconds(500))
+            showNextUnlockAchievement()
+        }
+    }
 
     // MARK: - Sync States
 
@@ -84,11 +111,11 @@ extension AppState {
 
         var title: String {
             switch self {
-            case .home: return "Home"
-            case .statistics: return "Stats"
-            case .camera: return "Scan"
-            case .diary: return "Log"
-            case .profile: return "Profile"
+            case .home: return "首页"
+            case .statistics: return "统计"
+            case .camera: return "扫描"
+            case .diary: return "记录"
+            case .profile: return "我的"
             }
         }
 

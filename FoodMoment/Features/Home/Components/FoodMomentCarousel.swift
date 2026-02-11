@@ -27,9 +27,13 @@ struct FoodMomentCarousel: View {
             Spacer()
 
             Button(action: {}) {
-                Text("View All")
-                    .font(.Jakarta.medium(14))
-                    .foregroundStyle(AppTheme.Colors.primary)
+                HStack(spacing: 4) {
+                    Text("更多")
+                        .font(.Jakarta.medium(14))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 10, weight: .semibold))
+                }
+                .foregroundStyle(AppTheme.Colors.primary)
             }
         }
         .padding(.horizontal, 20)
@@ -65,9 +69,34 @@ struct FoodMomentCarousel: View {
 
     private var emptyStateView: some View {
         VStack(spacing: 12) {
-            Image(systemName: "camera.fill")
-                .font(.system(size: 32))
-                .foregroundStyle(AppTheme.Colors.primary.opacity(0.5))
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                AppTheme.Colors.primary.opacity(0.08),
+                                AppTheme.Colors.primary.opacity(0.02)
+                            ],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 35
+                        )
+                    )
+                    .frame(width: 72, height: 72)
+
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 32))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                AppTheme.Colors.primary.opacity(0.6),
+                                AppTheme.Colors.primary.opacity(0.3)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
 
             Text("还没有记录今天的美食")
                 .font(.Jakarta.medium(14))
@@ -214,7 +243,7 @@ private struct FoodMomentCard: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
+                    .background(Color.black.opacity(0.35))
                     .clipShape(Capsule())
             }
             Spacer()

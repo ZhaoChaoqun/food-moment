@@ -30,9 +30,11 @@ struct WeightCard: View {
             headerRow
             weightDisplay
             targetDisplay
+            Spacer(minLength: 0)
             progressBar
         }
         .padding(16)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .glassCard()
         .onTapGesture {
             onTap?()
@@ -45,14 +47,16 @@ struct WeightCard: View {
     private var headerRow: some View {
         HStack {
             Image(systemName: "scalemass.fill")
-                .font(.title3)
+                .font(.system(size: 14))
                 .foregroundStyle(AppTheme.Colors.primary)
 
-            Text("Weight Tracking")
+            Text("体重")
                 .font(.headline)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
                 .foregroundStyle(.primary)
 
-            Spacer()
+            Spacer(minLength: 4)
 
             trendBadge
         }
@@ -63,6 +67,8 @@ struct WeightCard: View {
     private var trendBadge: some View {
         Text(trend)
             .font(.caption.weight(.semibold))
+            .lineLimit(1)
+            .fixedSize(horizontal: true, vertical: false)
             .foregroundStyle(isDownTrend ? AppTheme.Colors.primary : Color(hex: "#F87171"))
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -81,7 +87,7 @@ struct WeightCard: View {
     private var weightDisplay: some View {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             Text(String(format: "%.1f", currentWeight))
-                .font(.system(size: 21, weight: .bold, design: .rounded))
+                .font(.Jakarta.bold(21))
                 .foregroundStyle(.primary)
 
             Text("kg")
@@ -93,7 +99,7 @@ struct WeightCard: View {
     // MARK: - Target Display
 
     private var targetDisplay: some View {
-        Text(String(format: "Goal: %.1f kg", targetWeight))
+        Text(String(format: "目标: %.1f kg", targetWeight))
             .font(.subheadline)
             .foregroundStyle(.secondary)
     }
@@ -117,6 +123,7 @@ struct WeightCard: View {
                             )
                         )
                         .frame(width: geometry.size.width * progress, height: 6)
+                        .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 4, y: 0)
                 }
             }
             .frame(height: 6)

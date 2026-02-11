@@ -28,13 +28,13 @@ struct CheckinGrid: View {
 
     private var headerSection: some View {
         HStack {
-            Text("Check-in Consistency")
+            Text("打卡记录")
                 .font(.Jakarta.semiBold(18))
                 .foregroundStyle(.primary)
 
             Spacer()
 
-            Text("\(checkedInCount)/14 days")
+            Text("\(checkedInCount)/14 天")
                 .font(.Jakarta.medium(13))
                 .foregroundStyle(.secondary)
         }
@@ -68,9 +68,17 @@ struct CheckinGrid: View {
     private func dayCircleView(for date: Date) -> some View {
         let isChecked = isCheckedIn(date)
         return Circle()
-            .fill(isChecked ? AppTheme.Colors.primary : Color.gray.opacity(0.2))
-            .opacity(isChecked ? 1.0 : 0.2)
+            .fill(
+                isChecked
+                    ? AnyShapeStyle(LinearGradient(
+                        colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                      ))
+                    : AnyShapeStyle(Color.gray.opacity(0.12))
+            )
             .frame(width: 32, height: 32)
+            .shadow(color: isChecked ? AppTheme.Colors.primary.opacity(0.3) : .clear, radius: 4, y: 2)
             .overlay {
                 Text("\(calendar.component(.day, from: date))")
                     .font(.Jakarta.medium(11))

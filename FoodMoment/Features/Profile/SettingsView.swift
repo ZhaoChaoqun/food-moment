@@ -24,32 +24,38 @@ struct SettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        Form {
-            notificationsSection
-            unitsSection
-            appearanceSection
-            aboutSection
-            accountSection
+        ScrollView {
+            VStack(spacing: 20) {
+                notificationsSection
+                unitsSection
+                appearanceSection
+                aboutSection
+                accountSection
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 100)
         }
-        .navigationTitle("Settings")
+        .premiumBackground()
+        .navigationTitle("设置")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Sign Out", isPresented: $isShowingSignOutAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Sign Out", role: .destructive) {
+        .alert("退出登录", isPresented: $isShowingSignOutAlert) {
+            Button("取消", role: .cancel) {}
+            Button("退出登录", role: .destructive) {
                 viewModel.signOut(appState: appState)
                 dismiss()
             }
         } message: {
-            Text("Are you sure you want to sign out?")
+            Text("确定要退出登录吗？")
         }
-        .alert("Delete Account", isPresented: $isShowingDeleteAccountAlert) {
-            Button("Cancel", role: .cancel) {}
-            Button("Delete", role: .destructive) {
+        .alert("删除账户", isPresented: $isShowingDeleteAccountAlert) {
+            Button("取消", role: .cancel) {}
+            Button("删除", role: .destructive) {
                 viewModel.signOut(appState: appState)
                 dismiss()
             }
         } message: {
-            Text("This action is irreversible. All your data, including meal records, achievements, and personal information, will be permanently deleted. Are you sure?")
+            Text("此操作不可撤销。您的所有数据，包括饮食记录、成就和个人信息，都将被永久删除。确定要继续吗？")
         }
         .accessibilityIdentifier("SettingsView")
     }
@@ -57,120 +63,175 @@ struct SettingsView: View {
     // MARK: - Notifications Section
 
     private var notificationsSection: some View {
-        Section {
-            Toggle(isOn: $isMealReminderEnabled) {
-                Label("Meal Reminder", systemImage: "bell.fill")
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("通知")
+
+            VStack(spacing: 0) {
+                Toggle(isOn: $isMealReminderEnabled) {
+                    Label("用餐提醒", systemImage: "bell.fill")
+                }
+                .tint(AppTheme.Colors.primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
-            .tint(AppTheme.Colors.primary)
+            .glassSection()
             .accessibilityIdentifier("MealReminderToggle")
-        } header: {
-            Text("Notifications")
         }
     }
 
     // MARK: - Units Section
 
     private var unitsSection: some View {
-        Section {
-            Picker(selection: $selectedCalorieUnit) {
-                ForEach(CalorieUnit.allCases) { unit in
-                    Text(unit.rawValue).tag(unit)
-                }
-            } label: {
-                Label("Calorie Unit", systemImage: "flame.fill")
-            }
-            .accessibilityIdentifier("CalorieUnitPicker")
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("单位")
 
-            Picker(selection: $selectedWeightUnit) {
-                ForEach(WeightUnit.allCases) { unit in
-                    Text(unit.rawValue).tag(unit)
+            VStack(spacing: 0) {
+                Picker(selection: $selectedCalorieUnit) {
+                    ForEach(CalorieUnit.allCases) { unit in
+                        Text(unit.rawValue).tag(unit)
+                    }
+                } label: {
+                    Label("热量单位", systemImage: "flame.fill")
                 }
-            } label: {
-                Label("Weight Unit", systemImage: "scalemass.fill")
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("CalorieUnitPicker")
+
+                Divider().padding(.leading, 16)
+
+                Picker(selection: $selectedWeightUnit) {
+                    ForEach(WeightUnit.allCases) { unit in
+                        Text(unit.rawValue).tag(unit)
+                    }
+                } label: {
+                    Label("体重单位", systemImage: "scalemass.fill")
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("WeightUnitPicker")
             }
-            .accessibilityIdentifier("WeightUnitPicker")
-        } header: {
-            Text("Units")
+            .glassSection()
         }
     }
 
     // MARK: - Appearance Section
 
     private var appearanceSection: some View {
-        Section {
-            Picker(selection: $selectedAppearanceMode) {
-                ForEach(AppearanceMode.allCases) { mode in
-                    Text(mode.rawValue).tag(mode)
-                }
-            } label: {
-                Label("Appearance", systemImage: "circle.lefthalf.filled")
-            }
-            .accessibilityIdentifier("AppearanceModePicker")
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("外观")
 
-            Picker(selection: $selectedLanguage) {
-                ForEach(AppLanguage.allCases) { lang in
-                    Text(lang.rawValue).tag(lang)
+            VStack(spacing: 0) {
+                Picker(selection: $selectedAppearanceMode) {
+                    ForEach(AppearanceMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                } label: {
+                    Label("外观", systemImage: "circle.lefthalf.filled")
                 }
-            } label: {
-                Label("Language", systemImage: "globe")
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("AppearanceModePicker")
+
+                Divider().padding(.leading, 16)
+
+                Picker(selection: $selectedLanguage) {
+                    ForEach(AppLanguage.allCases) { lang in
+                        Text(lang.rawValue).tag(lang)
+                    }
+                } label: {
+                    Label("语言", systemImage: "globe")
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("LanguagePicker")
             }
-            .accessibilityIdentifier("LanguagePicker")
-        } header: {
-            Text("Appearance")
+            .glassSection()
         }
     }
 
     // MARK: - About Section
 
     private var aboutSection: some View {
-        Section {
-            Link(destination: URL(string: "https://foodmoment.app/privacy")!) {
-                Label("Privacy Policy", systemImage: "hand.raised.fill")
-                    .foregroundStyle(.primary)
-            }
-            .accessibilityIdentifier("PrivacyPolicyLink")
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("关于")
 
-            NavigationLink {
-                aboutView
-            } label: {
-                Label("About FoodMoment", systemImage: "info.circle.fill")
+            VStack(spacing: 0) {
+                Link(destination: URL(string: "https://foodmoment.app/privacy")!) {
+                    HStack {
+                        Label("隐私政策", systemImage: "hand.raised.fill")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("PrivacyPolicyLink")
+
+                Divider().padding(.leading, 16)
+
+                NavigationLink {
+                    aboutView
+                } label: {
+                    Label("关于食刻", systemImage: "info.circle.fill")
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("AboutLink")
             }
-            .accessibilityIdentifier("AboutLink")
-        } header: {
-            Text("About")
+            .glassSection()
         }
     }
 
     // MARK: - Account Section
 
     private var accountSection: some View {
-        Section {
-            Button(role: .destructive) {
-                isShowingSignOutAlert = true
-            } label: {
-                HStack {
-                    Spacer()
-                    Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
-                        .foregroundStyle(.red)
-                    Spacer()
-                }
-            }
-            .accessibilityIdentifier("SignOutButton")
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader("账户")
 
-            Button(role: .destructive) {
-                isShowingDeleteAccountAlert = true
-            } label: {
-                HStack {
-                    Spacer()
-                    Label("Delete Account", systemImage: "trash.fill")
-                        .foregroundStyle(.red)
-                    Spacer()
+            VStack(spacing: 0) {
+                Button {
+                    isShowingSignOutAlert = true
+                } label: {
+                    HStack {
+                        Label("退出登录", systemImage: "rectangle.portrait.and.arrow.right")
+                            .foregroundStyle(.red)
+                        Spacer()
+                    }
                 }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("SignOutButton")
+
+                Divider().padding(.leading, 16)
+
+                Button {
+                    isShowingDeleteAccountAlert = true
+                } label: {
+                    HStack {
+                        Label("删除账户", systemImage: "trash.fill")
+                            .foregroundStyle(.red)
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .accessibilityIdentifier("DeleteAccountButton")
             }
-            .accessibilityIdentifier("DeleteAccountButton")
-        } header: {
-            Text("Account")
+            .glassSection()
         }
+    }
+
+    // MARK: - Section Header
+
+    private func sectionHeader(_ title: String) -> some View {
+        Text(title)
+            .font(.Jakarta.medium(12))
+            .foregroundStyle(.secondary)
+            .textCase(.uppercase)
+            .padding(.horizontal, 4)
     }
 
     // MARK: - About View
@@ -189,7 +250,8 @@ struct SettingsView: View {
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        .navigationTitle("About")
+        .premiumBackground()
+        .navigationTitle("关于")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("AboutView")
     }
@@ -208,17 +270,17 @@ struct SettingsView: View {
 
     private var appInfo: some View {
         VStack(spacing: 8) {
-            Text("FoodMoment")
+            Text("食刻")
                 .font(.title.weight(.bold))
 
-            Text("Version 1.0.0")
+            Text("版本 1.0.0")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }
     }
 
     private var appDescription: some View {
-        Text("AI-powered food tracking for a healthier you.")
+        Text("AI 驱动的食物追踪，助你更健康。")
             .font(.body)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
@@ -245,15 +307,15 @@ extension SettingsView {
     }
 
     enum AppearanceMode: String, CaseIterable, Identifiable {
-        case system = "System"
-        case light = "Light"
-        case dark = "Dark"
+        case system = "跟随系统"
+        case light = "浅色"
+        case dark = "深色"
 
         var id: String { rawValue }
     }
 
     enum AppLanguage: String, CaseIterable, Identifiable {
-        case chinese = "Chinese"
+        case chinese = "中文"
         case english = "English"
 
         var id: String { rawValue }

@@ -135,7 +135,16 @@ struct ActivityCalendar: View {
             .frame(width: 36, height: 36)
             .background(
                 Circle()
-                    .fill(isActive ? AppTheme.Colors.primary : Color.gray.opacity(0.1))
+                    .fill(
+                        isActive
+                            ? AnyShapeStyle(LinearGradient(
+                                colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                              ))
+                            : AnyShapeStyle(Color.gray.opacity(0.06))
+                    )
+                    .shadow(color: isActive ? AppTheme.Colors.primary.opacity(0.25) : .clear, radius: 3, y: 1)
             )
             .accessibilityIdentifier("DayCell_\(day)")
     }

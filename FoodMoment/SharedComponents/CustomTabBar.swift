@@ -10,18 +10,21 @@ struct CustomTabBar: View {
 
     // MARK: - Private Properties
 
-    private let scanButtonSize: CGFloat = 64
-    private let scanButtonOffset: CGFloat = -20
+    private let scanButtonSize: CGFloat = 48
 
     // MARK: - Body
 
     var body: some View {
-        ZStack {
-            tabBarBackground
-            tabButtonsRow
-            scanButtonSection
+        HStack(spacing: 0) {
+            tabButton(for: .home)
+            tabButton(for: .statistics)
+            scanButton
+            tabButton(for: .diary)
+            tabButton(for: .profile)
         }
-        .frame(height: 64)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(tabBarBackground)
         .padding(.horizontal, 16)
         .accessibilityIdentifier("CustomTabBar")
     }
@@ -29,69 +32,59 @@ struct CustomTabBar: View {
     // MARK: - Tab Bar Background
 
     private var tabBarBackground: some View {
-        RoundedRectangle(cornerRadius: 32)
+        RoundedRectangle(cornerRadius: 28)
             .fill(.white.opacity(0.8))
             .background(
-                RoundedRectangle(cornerRadius: 32)
+                RoundedRectangle(cornerRadius: 28)
                     .fill(.ultraThinMaterial)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 32)
-                    .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 28)
+                    .stroke(Color.white.opacity(0.4), lineWidth: 0.5)
             )
             .shadow(color: .black.opacity(0.08), radius: 20, y: -5)
     }
 
-    // MARK: - Tab Buttons Row
+    // MARK: - Scan Button
 
-    private var tabButtonsRow: some View {
-        HStack(spacing: 0) {
-            tabButton(for: .home)
-            tabButton(for: .statistics)
+    private var scanButton: some View {
+        Button(action: onScanTapped) {
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                AppTheme.Colors.primary,
+                                AppTheme.Colors.primary.opacity(0.8)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: scanButtonSize, height: scanButtonSize)
+                    .overlay(
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.2), .clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
+                    )
+                    .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 8, y: 2)
 
-            // 中间占位，给扫描按钮留空间
-            Color.clear
-                .frame(maxWidth: .infinity)
-
-            tabButton(for: .diary)
-            tabButton(for: .profile)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 8)
-    }
-
-    // MARK: - Scan Button Section
-
-    private var scanButtonSection: some View {
-        VStack(spacing: 0) {
-            Button(action: onScanTapped) {
-                scanButtonCircle
+                Image(systemName: "plus")
+                    .font(.system(size: 26, weight: .semibold))
+                    .foregroundStyle(.white)
             }
-            .offset(y: scanButtonOffset)
-
-            Text("Scan")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(AppTheme.Colors.primary)
-                .offset(y: -16)
         }
+        .frame(maxWidth: .infinity)
         .accessibilityIdentifier("ScanTabButton")
-    }
-
-    private var scanButtonCircle: some View {
-        ZStack {
-            Circle()
-                .fill(AppTheme.Colors.accent)
-                .frame(width: scanButtonSize, height: scanButtonSize)
-                .shadow(color: AppTheme.Colors.accent.opacity(0.4), radius: 15)
-                .overlay(
-                    Circle()
-                        .stroke(Color.white.opacity(0.5), lineWidth: 1)
-                )
-
-            Image(systemName: "camera.viewfinder")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(AppTheme.Colors.primary)
-        }
     }
 
     // MARK: - Tab Button
@@ -104,12 +97,12 @@ struct CustomTabBar: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: 24))
+                    .font(.system(size: 20))
 
                 Text(tab.title)
                     .font(.system(size: 10, weight: .medium))
             }
-            .foregroundStyle(selectedTab == tab ? AppTheme.Colors.primary : .gray)
+            .foregroundStyle(selectedTab == tab ? AppTheme.Colors.primary : .gray.opacity(0.6))
             .frame(maxWidth: .infinity)
         }
         .accessibilityIdentifier(tab.accessibilityID)

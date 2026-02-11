@@ -26,7 +26,7 @@ struct StatisticsView: View {
                 }
                 .padding(.top, 8)
             }
-            .background(AppTheme.Colors.background.ignoresSafeArea())
+            .premiumBackground()
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbarContent }
             .sheet(isPresented: $isShowingDatePicker) {
@@ -46,11 +46,17 @@ struct StatisticsView: View {
 
     private var headerSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Statistics")
+            Text("统计")
                 .font(.Jakarta.extraBold(32))
-                .foregroundStyle(.primary)
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [.primary, .primary.opacity(0.7)],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
 
-            Text("Overview & Trends")
+            Text("概览与趋势")
                 .font(.Jakarta.regular(15))
                 .foregroundStyle(.secondary)
         }
@@ -85,7 +91,7 @@ struct StatisticsView: View {
     private var weeklyAverageCard: some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Weekly Average")
+                Text("每周平均")
                     .font(.Jakarta.medium(13))
                     .foregroundStyle(.secondary)
 
@@ -159,7 +165,7 @@ struct StatisticsView: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 16, weight: .semibold))
 
-                    Text("Export Data")
+                    Text("导出数据")
                         .font(.Jakarta.semiBold(15))
                 }
                 .foregroundStyle(AppTheme.Colors.primary)
@@ -167,7 +173,12 @@ struct StatisticsView: View {
                 .padding(.vertical, 14)
                 .background(
                     Capsule()
-                        .fill(AppTheme.Colors.primary.opacity(0.1))
+                        .fill(AppTheme.Colors.primary.opacity(0.08))
+                        .background(Capsule().fill(.ultraThinMaterial))
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(AppTheme.Colors.primary.opacity(0.2), lineWidth: 0.5)
                 )
             }
             .padding(.horizontal, 20)
@@ -191,8 +202,19 @@ struct StatisticsView: View {
                 if let csvURL = viewModel.createCSVFile() {
                     ShareLink(item: csvURL) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundStyle(.secondary)
+                            .frame(width: 36, height: 36)
+                            .background(
+                                Circle()
+                                    .fill(.white.opacity(0.7))
+                                    .background(Circle().fill(.ultraThinMaterial))
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
+                            )
+                            .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
                     }
                     .accessibilityIdentifier("StatisticsView.Toolbar.ShareButton")
                 }
@@ -201,14 +223,19 @@ struct StatisticsView: View {
                     isShowingDatePicker = true
                 } label: {
                     Image(systemName: "calendar")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(AppTheme.Colors.primary)
-                        .padding(8)
+                        .frame(width: 36, height: 36)
                         .background(
                             Circle()
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                                .fill(.white.opacity(0.7))
+                                .background(Circle().fill(.ultraThinMaterial))
                         )
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
+                        )
+                        .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
                 }
                 .accessibilityIdentifier("StatisticsView.Toolbar.CalendarButton")
             }
@@ -249,7 +276,7 @@ struct DatePickerSheet: View {
     // MARK: - Title Section
 
     private var titleSection: some View {
-        Text("Select Date")
+        Text("选择日期")
             .font(.Jakarta.semiBold(18))
     }
 
@@ -271,7 +298,7 @@ struct DatePickerSheet: View {
         Button {
             onDismiss()
         } label: {
-            Text("Done")
+            Text("完成")
                 .font(.Jakarta.semiBold(16))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)

@@ -197,9 +197,9 @@ final class StatisticsViewModel {
         var data: [DailyCalorie] = []
         for i in (0..<count).reversed() {
             guard let date = calendar.date(byAdding: .day, value: -i, to: today) else { continue }
-            let base = 2100
-            let variation = Int.random(in: -300...300)
-            let calories = max(1400, min(2800, base + variation))
+            let base = MockDataProvider.Statistics.baseCalories
+            let variation = Int.random(in: MockDataProvider.Statistics.calorieVariationRange)
+            let calories = max(MockDataProvider.Statistics.calorieMinClamp, min(MockDataProvider.Statistics.calorieMaxClamp, base + variation))
             let protein = Double.random(in: 15...45)
             let carbs = Double.random(in: 30...80)
             let fat = Double.random(in: 10...30)
@@ -207,34 +207,23 @@ final class StatisticsViewModel {
         }
         calorieData = data
 
-        // 计算周平均值
         let recentDays = Array(data.suffix(7))
         let totalCalories = recentDays.reduce(0) { $0 + $1.calories }
         weeklyAverage = recentDays.isEmpty ? 0 : totalCalories / recentDays.count
-
-        // 模拟周变化百分比
         weeklyChange = Double.random(in: -15...20)
     }
 
     private func loadMockMacros() {
+        let ranges: (protein: ClosedRange<Double>, carbs: ClosedRange<Double>, fat: ClosedRange<Double>)
         switch selectedRange {
-        case .day:
-            proteinTotal = Double.random(in: 60...120)
-            carbsTotal = Double.random(in: 180...280)
-            fatTotal = Double.random(in: 50...90)
-        case .week:
-            proteinTotal = Double.random(in: 450...840)
-            carbsTotal = Double.random(in: 1200...2000)
-            fatTotal = Double.random(in: 350...630)
-        case .month:
-            proteinTotal = Double.random(in: 1800...3600)
-            carbsTotal = Double.random(in: 5400...8400)
-            fatTotal = Double.random(in: 1500...2700)
-        case .year:
-            proteinTotal = Double.random(in: 21600...43200)
-            carbsTotal = Double.random(in: 64800...100800)
-            fatTotal = Double.random(in: 18000...32400)
+        case .day:   ranges = MockDataProvider.Statistics.MacroRanges.day
+        case .week:  ranges = MockDataProvider.Statistics.MacroRanges.week
+        case .month: ranges = MockDataProvider.Statistics.MacroRanges.month
+        case .year:  ranges = MockDataProvider.Statistics.MacroRanges.year
         }
+        proteinTotal = Double.random(in: ranges.protein)
+        carbsTotal = Double.random(in: ranges.carbs)
+        fatTotal = Double.random(in: ranges.fat)
     }
 
     private func loadMockCheckins() {
@@ -242,9 +231,8 @@ final class StatisticsViewModel {
         let today = Date()
         var days: [Date] = []
 
-        for i in 0..<14 {
+        for i in 0..<MockDataProvider.Statistics.checkinLookbackDays {
             guard let date = calendar.date(byAdding: .day, value: -i, to: today) else { continue }
-            // 约 70% 概率打卡
             if Bool.random() || Int.random(in: 0...9) < 7 {
                 days.append(date)
             }
@@ -253,12 +241,7 @@ final class StatisticsViewModel {
     }
 
     private func loadMockAIInsight() {
-        let insights = [
-            "本周蛋白质摄入偏低，建议增加鸡蛋、鸡胸肉等高蛋白食物。碳水摄入稳定，继续保持！",
-            "你的饮食习惯正在改善！本周蔬菜摄入增加了 20%，继续保持均衡饮食。",
-            "近期脂肪摄入略高，可以适当减少油炸食品。建议多吃蒸煮类食物。",
-            "打卡连续性很好！坚持记录饮食有助于养成健康的饮食习惯。本周热量控制在合理范围内。"
-        ]
+        let insights = MockDataProvider.Statistics.aiInsights
         aiInsight = insights.randomElement() ?? insights[0]
     }
 }

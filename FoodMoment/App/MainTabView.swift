@@ -30,6 +30,15 @@ struct MainTabView: View {
                 isShowingCamera = true
             }
         }
+        .overlay {
+            if let achievement = appState.currentUnlockAchievement {
+                AchievementUnlockView(achievement: achievement) {
+                    appState.dismissCurrentUnlockAchievement()
+                }
+                .transition(.opacity)
+                .zIndex(999)
+            }
+        }
         .fullScreenCover(isPresented: $isShowingCamera) {
             CameraView()
         }

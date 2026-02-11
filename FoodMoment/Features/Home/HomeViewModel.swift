@@ -185,79 +185,31 @@ final class HomeViewModel {
     }
 
     private func loadMockUserData() {
-        userName = "Alex"
-        userAvatarAssetName = "avatar_alex"
+        userName = MockDataProvider.User.displayName
+        userAvatarAssetName = MockDataProvider.User.avatarAssetName
     }
 
     private func loadMockNutritionData() {
-        // 与 DiaryViewModel 的 mock 数据保持一致
-        // 目标设置使进度显示约 85%
-        dailyCalorieGoal = 1270
-        dailyProteinGoal = 80
-        dailyCarbsGoal = 100
-        dailyFatGoal = 65
+        dailyCalorieGoal = MockDataProvider.NutritionGoals.dailyCalorieGoal
+        dailyProteinGoal = MockDataProvider.NutritionGoals.dailyProteinGoal
+        dailyCarbsGoal = MockDataProvider.NutritionGoals.dailyCarbsGoal
+        dailyFatGoal = MockDataProvider.NutritionGoals.dailyFatGoal
 
-        // 总计: 350 + 520 + 210 = 1080 kcal ≈ 85%
-        consumedCalories = 1080
-        proteinGrams = 65  // 15 + 42 + 8
-        carbsGrams = 88    // 38 + 15 + 35
-        fatGrams = 54      // 18 + 32 + 4
+        consumedCalories = MockDataProvider.ConsumedNutrition.totalCalories
+        proteinGrams = MockDataProvider.ConsumedNutrition.proteinGrams
+        carbsGrams = MockDataProvider.ConsumedNutrition.carbsGrams
+        fatGrams = MockDataProvider.ConsumedNutrition.fatGrams
     }
 
     private func loadMockHealthData() {
-        waterAmount = 1250
-        dailyWaterGoal = 2000
-
-        stepCount = 5432
-        caloriesBurned = 1200
-        dailyStepGoal = 8000
+        waterAmount = MockDataProvider.Health.waterAmount
+        dailyWaterGoal = MockDataProvider.NutritionGoals.dailyWaterGoal
+        stepCount = MockDataProvider.Health.stepCount
+        caloriesBurned = MockDataProvider.Health.caloriesBurned
+        dailyStepGoal = MockDataProvider.NutritionGoals.dailyStepGoal
     }
 
     private func loadMockMeals() {
-        let now = Date()
-        let calendar = Calendar.current
-
-        // 与 DiaryViewModel.generateMockMeals() 保持一致的数据
-        todayMeals = [
-            MealRecord(
-                mealType: "breakfast",
-                mealTime: calendar.date(bySettingHour: 8, minute: 30, second: 0, of: now) ?? now,
-                title: "牛油果全麦吐司",
-                descriptionText: "新鲜牛油果搭配全麦吐司和溏心蛋，营养均衡的早餐选择",
-                totalCalories: 350,
-                proteinGrams: 15,
-                carbsGrams: 38,
-                fatGrams: 18,
-                fiberGrams: 6,
-                tags: ["高蛋白", "低GI"],
-                localAssetName: "meal_avocado_toast"
-            ),
-            MealRecord(
-                mealType: "lunch",
-                mealTime: calendar.date(bySettingHour: 12, minute: 30, second: 0, of: now) ?? now,
-                title: "香煎三文鱼佐芦笋",
-                descriptionText: "挪威三文鱼配新鲜芦笋，富含Omega-3脂肪酸",
-                totalCalories: 520,
-                proteinGrams: 42,
-                carbsGrams: 15,
-                fatGrams: 32,
-                fiberGrams: 4,
-                tags: ["Omega-3", "无麸质"],
-                localAssetName: "meal_salmon"
-            ),
-            MealRecord(
-                mealType: "snack",
-                mealTime: calendar.date(bySettingHour: 15, minute: 45, second: 0, of: now) ?? now,
-                title: "混合浆果奶昔",
-                descriptionText: "蓝莓、草莓、覆盆子搭配希腊酸奶",
-                totalCalories: 210,
-                proteinGrams: 8,
-                carbsGrams: 35,
-                fatGrams: 4,
-                fiberGrams: 5,
-                tags: ["抗氧化", "低脂"],
-                localAssetName: "meal_berry_smoothie"
-            )
-        ]
+        todayMeals = MockDataProvider.generateMockMeals()
     }
 }

@@ -28,8 +28,8 @@ struct ProfileView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             }
-            .background(AppTheme.Colors.background.ignoresSafeArea())
-            .navigationTitle("Profile")
+            .premiumBackground()
+            .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -61,9 +61,14 @@ struct ProfileView: View {
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(Color(.systemBackground))
-                        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+                        .fill(.white.opacity(0.7))
+                        .background(Circle().fill(.ultraThinMaterial))
                 )
+                .overlay(
+                    Circle()
+                        .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
         }
         .accessibilityIdentifier("ProfileSettingsButton")
     }
@@ -139,24 +144,31 @@ struct ProfileView: View {
 
     private var proBadge: some View {
         Text("PRO")
-            .font(.system(size: 10, weight: .bold, design: .rounded))
+            .font(.Jakarta.extraBold(10))
             .foregroundStyle(.white)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(AppTheme.Colors.primary)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             )
             .overlay(
                 Capsule()
                     .stroke(Color(.systemBackground), lineWidth: 2)
             )
+            .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 4, y: 1)
             .offset(x: 0, y: 4)
     }
 
     private var userNameText: some View {
         Text(viewModel.userName)
-            .font(.system(size: 24, weight: .heavy, design: .rounded))
+            .font(.Jakarta.bold(28))
             .foregroundStyle(.primary)
             .accessibilityIdentifier("ProfileUserName")
     }
@@ -164,7 +176,7 @@ struct ProfileView: View {
     // MARK: - Weight and Streak Section
 
     private var weightAndStreakSection: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: .top, spacing: 12) {
             WeightCard(
                 currentWeight: viewModel.currentWeight,
                 targetWeight: viewModel.targetWeight,
@@ -176,6 +188,7 @@ struct ProfileView: View {
 
             StreakCard(streakDays: viewModel.streakDays)
         }
+        .fixedSize(horizontal: false, vertical: true)
         .accessibilityIdentifier("WeightAndStreakSection")
     }
 
@@ -195,15 +208,15 @@ struct ProfileView: View {
     private var achievementsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             achievementsSectionHeader
-            achievementsBadgeList
+            achievementsByCategory
         }
         .accessibilityIdentifier("AchievementsSection")
     }
 
     private var achievementsSectionHeader: some View {
         HStack {
-            Text("Achievements")
-                .font(.headline)
+            Text("成就")
+                .font(.Jakarta.semiBold(20))
                 .foregroundStyle(.primary)
 
             Spacer()
@@ -211,24 +224,54 @@ struct ProfileView: View {
             Button {
                 // View all achievements
             } label: {
-                Text("View All")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.Colors.primary)
+                HStack(spacing: 4) {
+                    Text("更多")
+                        .font(.Jakarta.semiBold(12))
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 9, weight: .semibold))
+                }
+                .foregroundStyle(AppTheme.Colors.primary)
             }
             .accessibilityIdentifier("ViewAllAchievementsButton")
         }
         .padding(.horizontal, 4)
     }
 
-    private var achievementsBadgeList: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 16) {
-                ForEach(viewModel.achievements) { achievement in
-                    AchievementBadge(item: achievement)
+    private var achievementsByCategory: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            ForEach(Achievement.AchievementCategory.allCases, id: \.self) { category in
+                let items = viewModel.achievements.filter { $0.category == category }
+                if !items.isEmpty {
+                    achievementCategoryRow(category: category, items: items)
                 }
             }
+        }
+    }
+
+    private func achievementCategoryRow(
+        category: Achievement.AchievementCategory,
+        items: [AchievementItem]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: category.icon)
+                    .font(.caption)
+                    .foregroundStyle(AppTheme.Colors.primary)
+                Text(category.displayName)
+                    .font(.Jakarta.semiBold(14))
+                    .foregroundStyle(.secondary)
+            }
             .padding(.horizontal, 4)
-            .padding(.vertical, 8)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(items) { achievement in
+                        AchievementBadge(item: achievement, renderMode: .swiftUI)
+                    }
+                }
+                .padding(.horizontal, 4)
+                .padding(.vertical, 4)
+            }
         }
     }
 

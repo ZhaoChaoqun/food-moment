@@ -31,7 +31,7 @@ struct HomeView: View {
                 }
                 .padding(.bottom, 100)
             }
-            .background(AppTheme.Colors.background.ignoresSafeArea())
+            .premiumBackground()
             .refreshable {
                 viewModel.loadTodayData(modelContext: modelContext)
                 viewModel.refresh()
@@ -64,7 +64,13 @@ struct HomeView: View {
 
                 Text(viewModel.userName)
                     .font(.Jakarta.bold(28))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.primary, .primary.opacity(0.7)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
                     .accessibilityIdentifier("UserNameText")
             }
 
@@ -86,6 +92,11 @@ struct HomeView: View {
                     .scaledToFill()
                     .frame(width: 48, height: 48)
                     .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                    )
+                    .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
             } else {
                 defaultAvatarView
             }
@@ -117,12 +128,19 @@ struct HomeView: View {
 
     private var proBadge: some View {
         Text("PRO")
-            .font(.Jakarta.extraBold(7))
+            .font(.Jakarta.extraBold(10))
             .foregroundStyle(.white)
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
-            .background(AppTheme.Colors.primary)
+            .background(
+                LinearGradient(
+                    colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
             .clipShape(Capsule())
+            .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 4, y: 1)
             .offset(x: 2, y: 2)
     }
 
@@ -155,6 +173,20 @@ struct HomeView: View {
         }
         .padding(24)
         .frame(maxWidth: .infinity)
+        .background(
+            ZStack {
+                // 品牌色径向光晕
+                RadialGradient(
+                    colors: [
+                        AppTheme.Colors.primary.opacity(0.06),
+                        Color.clear
+                    ],
+                    center: .center,
+                    startRadius: 20,
+                    endRadius: 200
+                )
+            }
+        )
         .glassCard(cornerRadius: AppTheme.CornerRadius.large)
         .padding(.horizontal, 20)
     }
@@ -167,7 +199,7 @@ struct HomeView: View {
                 .contentTransition(.numericText())
                 .accessibilityIdentifier("CaloriesRemainingText")
 
-            Text("KCAL LEFT")
+            Text("剩余千卡")
                 .font(.Jakarta.semiBold(11))
                 .foregroundStyle(.secondary)
                 .tracking(1.5)

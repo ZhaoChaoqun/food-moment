@@ -61,7 +61,23 @@ struct GradientButton: View {
 
     private var buttonBackground: some View {
         Capsule()
-            .fill(AppTheme.Colors.primary)
+            .fill(
+                LinearGradient(
+                    colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.8)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .overlay(
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [.white.opacity(0.15), .clear],
+                            startPoint: .top,
+                            endPoint: .center
+                        )
+                    )
+            )
             .modifier(GlowShadow())
     }
 

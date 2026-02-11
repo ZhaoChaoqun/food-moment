@@ -112,23 +112,15 @@ final class DiaryViewModel {
         }
     }
 
-    /// 加载演示数据（仅当数据库完全为空时）
+    /// 加载演示数据（仅当当天没有记录时）
     private func loadDemoDataIfNeeded(modelContext: ModelContext) {
-        // 检查数据库是否完全为空
-        let countDescriptor = FetchDescriptor<MealRecord>()
-        let totalCount = (try? modelContext.fetchCount(countDescriptor)) ?? 0
-
-        // 只有数据库完全为空时才插入演示数据
-        guard totalCount == 0 else { return }
-
         let mockMeals = Self.generateMockMeals()
         for meal in mockMeals {
             modelContext.insert(meal)
         }
 
-        // 设置演示模式的卡路里目标（使进度显示约 85%）
-        // 总摄入 1080 kcal，目标 1270 kcal ≈ 85%
-        dailyCalorieGoal = 1270
+        // 设置演示模式的卡路里目标
+        dailyCalorieGoal = MockDataProvider.NutritionGoals.dailyCalorieGoal
 
         try? modelContext.save()
 
@@ -210,57 +202,6 @@ final class DiaryViewModel {
     /// 生成模拟餐食数据，用于 UI 开发和预览
     /// 数据基于原型图设计，展示典型的一日饮食记录
     static func generateMockMeals() -> [MealRecord] {
-        let calendar = Calendar.current
-        let today = Date()
-
-        // 早餐 08:30 - 牛油果全麦吐司 (350 kcal)
-        let breakfast = MealRecord(
-            mealType: MealRecord.MealType.breakfast.rawValue,
-            mealTime: calendar.date(bySettingHour: 8, minute: 30, second: 0, of: today)!,
-            title: "牛油果全麦吐司",
-            descriptionText: "新鲜牛油果搭配全麦吐司和溏心蛋，营养均衡的早餐选择",
-            totalCalories: 350,
-            proteinGrams: 15,
-            carbsGrams: 38,
-            fatGrams: 18,
-            fiberGrams: 6,
-            aiAnalysis: "健康的早餐组合，富含健康脂肪和复合碳水化合物",
-            tags: ["高蛋白", "低GI"],
-            localAssetName: "meal_avocado_toast"
-        )
-
-        // 午餐 12:30 - 香煎三文鱼佐芦笋 (520 kcal)
-        let lunch = MealRecord(
-            mealType: MealRecord.MealType.lunch.rawValue,
-            mealTime: calendar.date(bySettingHour: 12, minute: 30, second: 0, of: today)!,
-            title: "香煎三文鱼佐芦笋",
-            descriptionText: "挪威三文鱼配新鲜芦笋，富含Omega-3脂肪酸",
-            totalCalories: 520,
-            proteinGrams: 42,
-            carbsGrams: 15,
-            fatGrams: 32,
-            fiberGrams: 4,
-            aiAnalysis: "优质蛋白质来源，Omega-3有助于心脑血管健康",
-            tags: ["Omega-3", "无麸质"],
-            localAssetName: "meal_salmon"
-        )
-
-        // 加餐 15:45 - 混合浆果奶昔 (210 kcal)
-        let snack = MealRecord(
-            mealType: MealRecord.MealType.snack.rawValue,
-            mealTime: calendar.date(bySettingHour: 15, minute: 45, second: 0, of: today)!,
-            title: "混合浆果奶昔",
-            descriptionText: "蓝莓、草莓、覆盆子搭配希腊酸奶",
-            totalCalories: 210,
-            proteinGrams: 8,
-            carbsGrams: 35,
-            fatGrams: 4,
-            fiberGrams: 5,
-            aiAnalysis: "富含抗氧化物质的健康加餐",
-            tags: ["抗氧化", "低脂"],
-            localAssetName: "meal_berry_smoothie"
-        )
-
-        return [breakfast, lunch, snack]
+        MockDataProvider.generateMockMeals()
     }
 }

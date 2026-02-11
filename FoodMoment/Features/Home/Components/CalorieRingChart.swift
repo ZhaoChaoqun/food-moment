@@ -138,7 +138,7 @@ struct CalorieRingChart: View {
                 )
                 .frame(width: diameter - lineWidth, height: diameter - lineWidth)
                 .rotationEffect(.degrees(-90))
-                .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         }
     }
 
