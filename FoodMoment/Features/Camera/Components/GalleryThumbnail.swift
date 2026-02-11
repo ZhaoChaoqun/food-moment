@@ -93,6 +93,7 @@ struct GalleryThumbnail: View {
                 thumbnailImage = image
                 selectedImage = image
             }
+            selectedItem = nil
         }
     }
 }

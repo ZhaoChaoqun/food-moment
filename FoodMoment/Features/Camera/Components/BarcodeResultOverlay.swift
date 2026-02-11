@@ -52,7 +52,7 @@ struct BarcodeResultOverlay: View {
             pulsingIcon
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Barcode Detected")
+                Text("已识别条码")
                     .font(.Jakarta.semiBold(16))
                     .foregroundColor(.white)
 
@@ -152,7 +152,7 @@ struct BarcodeResultOverlay: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "arrow.counterclockwise")
-                Text("Scan Again")
+                Text("重新扫描")
             }
             .font(.Jakarta.medium(15))
             .foregroundColor(.white)
@@ -171,7 +171,7 @@ struct BarcodeResultOverlay: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                Text("Look Up")
+                Text("查询")
             }
             .font(.Jakarta.semiBold(15))
             .foregroundColor(.black)

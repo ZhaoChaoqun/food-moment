@@ -3,61 +3,21 @@ import SwiftUI
 // MARK: - AIHintBadge
 
 /// AI hint badge with a glassmorphic capsule background and pulsing opacity animation.
-/// Displays contextual hints based on the current camera mode.
 struct AIHintBadge: View {
-
-    // MARK: - Properties
-
-    var mode: CameraScanMode = .scan
 
     // MARK: - State
 
     @State private var isPulsing = false
 
-    // MARK: - Computed Properties
-
-    private var iconName: String {
-        switch mode {
-        case .scan:
-            return "sparkles"
-        case .barcode:
-            return "barcode.viewfinder"
-        case .history:
-            return "clock.arrow.circlepath"
-        }
-    }
-
-    private var hintText: String {
-        switch mode {
-        case .scan:
-            return "Keep steady for better accuracy"
-        case .barcode:
-            return "Point at barcode to scan"
-        case .history:
-            return "View your recent scans"
-        }
-    }
-
-    private var iconColor: Color {
-        switch mode {
-        case .scan:
-            return AppTheme.Colors.primary
-        case .barcode:
-            return Color.orange
-        case .history:
-            return Color.blue
-        }
-    }
-
     // MARK: - Body
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: iconName)
+            Image(systemName: "sparkles")
                 .font(.system(size: 18, weight: .medium))
-                .foregroundColor(iconColor)
+                .foregroundColor(AppTheme.Colors.primary)
 
-            Text(hintText)
+            Text("保持稳定以获得更准确的识别")
                 .font(.Jakarta.medium(14))
                 .foregroundColor(.white.opacity(0.9))
                 .accessibilityIdentifier("AIHintText")
@@ -71,7 +31,6 @@ struct AIHintBadge: View {
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
         .opacity(isPulsing ? 1.0 : 0.6)
-        .animation(.easeInOut(duration: 0.3), value: mode)
         .onAppear {
             startPulseAnimation()
         }
@@ -97,10 +56,6 @@ struct AIHintBadge: View {
         Color.black
             .ignoresSafeArea()
 
-        VStack(spacing: 20) {
-            AIHintBadge(mode: .scan)
-            AIHintBadge(mode: .barcode)
-            AIHintBadge(mode: .history)
-        }
+        AIHintBadge()
     }
 }

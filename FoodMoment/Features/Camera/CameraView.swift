@@ -51,17 +51,17 @@ struct CameraView: View {
         } content: {
             analysisPlaceholderView
         }
-        .alert("Camera Access Required", isPresented: $viewModel.isShowingPermissionAlert) {
-            Button("Open Settings") {
+        .alert("需要相机权限", isPresented: $viewModel.isShowingPermissionAlert) {
+            Button("打开设置") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
                     UIApplication.shared.open(url)
                 }
             }
-            Button("Cancel", role: .cancel) {
+            Button("取消", role: .cancel) {
                 dismiss()
             }
         } message: {
-            Text("FoodMoment needs camera access to scan and analyze your food. Please enable it in Settings.")
+            Text("食刻需要访问相机来扫描和分析食物。请在设置中启用相机权限。")
         }
     }
 
@@ -136,12 +136,9 @@ struct CameraView: View {
 
             // AI hint badge (hide when showing barcode result)
             if !viewModel.isShowingBarcodeResult {
-                AIHintBadge(mode: viewModel.currentMode)
+                AIHintBadge()
                     .padding(.bottom, 20)
             }
-
-            ModeSelector(selectedMode: $viewModel.currentMode)
-                .padding(.bottom, 24)
 
             bottomControlBar
                 .padding(.bottom, geometry.safeAreaInsets.bottom + 16)
@@ -245,51 +242,13 @@ struct CameraView: View {
         }
     }
 
-    // MARK: - Analysis Placeholder View
+    // MARK: - Analysis View
 
-    /// Placeholder view shown after capturing a photo.
-    /// Will be replaced with the full analysis screen in a later sprint.
+    /// Full analysis screen presented after capturing or selecting a photo.
+    @ViewBuilder
     private var analysisPlaceholderView: some View {
-        NavigationStack {
-            ZStack {
-                Color.black
-                    .ignoresSafeArea()
-
-                VStack(spacing: 24) {
-                    if let image = viewModel.capturedImage {
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium))
-                            .padding(.horizontal, 24)
-                    }
-
-                    VStack(spacing: 8) {
-                        ProgressView()
-                            .tint(AppTheme.Colors.primary)
-                            .scaleEffect(1.2)
-
-                        Text("Analyzing your food...")
-                            .font(.Jakarta.semiBold(17))
-                            .foregroundColor(.white)
-
-                        Text("AI is identifying ingredients and nutrition")
-                            .font(.Jakarta.regular(14))
-                            .foregroundColor(.gray)
-                    }
-                    .padding(.top, 16)
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        viewModel.dismissAnalysis()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .foregroundColor(.white)
-                    }
-                }
-            }
+        if let image = viewModel.capturedImage {
+            AnalysisView(image: image)
         }
     }
 
