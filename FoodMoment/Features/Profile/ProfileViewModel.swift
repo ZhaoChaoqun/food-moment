@@ -8,25 +8,43 @@ struct AchievementItem: Identifiable, Sendable {
     let id = UUID()
     let type: String
     let title: String
+    let subtitle: String
     let icon: String
     let tier: AchievementTier
     let isEarned: Bool
     let earnedDate: Date?
+    let theme: BadgeTheme
+    let category: Achievement.AchievementCategory
+    let isHidden: Bool
+    let description: String
+    let badgeAssetName: String
 
     init(
         type: String,
         title: String,
+        subtitle: String = "",
         icon: String,
         tier: AchievementTier,
         isEarned: Bool,
-        earnedDate: Date? = nil
+        earnedDate: Date? = nil,
+        theme: BadgeTheme = BadgeTheme(primaryHex: "#A0A0A0", highlightHex: "#D0D0D0", shadowHex: "#606060"),
+        category: Achievement.AchievementCategory = .habit,
+        isHidden: Bool = false,
+        description: String = "",
+        badgeAssetName: String = ""
     ) {
         self.type = type
         self.title = title
+        self.subtitle = subtitle
         self.icon = icon
         self.tier = tier
         self.isEarned = isEarned
         self.earnedDate = earnedDate
+        self.theme = theme
+        self.category = category
+        self.isHidden = isHidden
+        self.description = description
+        self.badgeAssetName = badgeAssetName
     }
 
     enum AchievementTier: String, Sendable {
@@ -227,8 +245,8 @@ final class ProfileViewModel {
                 weightTrend = "\u{2193} 0.0kg"
             }
         } else {
-            currentWeight = 68.0
-            weightTrend = "\u{2193} 0.5kg"
+            currentWeight = MockDataProvider.Weight.currentWeight
+            weightTrend = MockDataProvider.Weight.weightTrend
         }
     }
 
@@ -239,7 +257,7 @@ final class ProfileViewModel {
 
         let records = (try? modelContext.fetch(descriptor)) ?? []
         guard !records.isEmpty else {
-            streakDays = 12 // Mock for demo
+            streakDays = MockDataProvider.Streak.days
             return
         }
 
@@ -265,7 +283,7 @@ final class ProfileViewModel {
 
         streakDays = max(streak, 0)
         if streakDays == 0 {
-            streakDays = 12 // Mock for demo
+            streakDays = MockDataProvider.Streak.days
         }
     }
 
@@ -275,16 +293,7 @@ final class ProfileViewModel {
         let earnedTypes = Set(earned.map { $0.type })
 
         if earnedTypes.isEmpty {
-            // Load mock achievements
-            achievements = [
-                AchievementItem(type: "streak_7day", title: "7 Day Streak", icon: "trophy.fill", tier: .gold, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 5)),
-                AchievementItem(type: "veggie_king", title: "Veggie King", icon: "leaf.fill", tier: .silver, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 12)),
-                AchievementItem(type: "early_bird", title: "Early Bird", icon: "sunrise.fill", tier: .bronze, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 20)),
-                AchievementItem(type: "first_meal", title: "First Meal", icon: "fork.knife", tier: .gold, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 30)),
-                AchievementItem(type: "streak_30day", title: "30 Days", icon: "flame.circle.fill", tier: .gold, isEarned: false),
-                AchievementItem(type: "protein_champ", title: "Protein Champ", icon: "dumbbell.fill", tier: .silver, isEarned: false),
-                AchievementItem(type: "water_hero", title: "Water Hero", icon: "drop.fill", tier: .silver, isEarned: false),
-            ]
+            achievements = MockDataProvider.generateMockAchievements()
         } else {
             achievements = Achievement.AchievementType.allCases.map { achievementType in
                 let isEarned = earnedTypes.contains(achievementType.rawValue)
@@ -304,10 +313,16 @@ final class ProfileViewModel {
                 return AchievementItem(
                     type: achievementType.rawValue,
                     title: achievementType.displayName,
+                    subtitle: achievementType.subtitle,
                     icon: achievementType.icon,
                     tier: matchedTier,
                     isEarned: isEarned,
-                    earnedDate: matchedAchievement?.earnedAt
+                    earnedDate: matchedAchievement?.earnedAt,
+                    theme: achievementType.theme,
+                    category: achievementType.category,
+                    isHidden: achievementType.isHidden,
+                    description: achievementType.description,
+                    badgeAssetName: achievementType.badgeAssetName
                 )
             }
         }
@@ -470,35 +485,20 @@ final class ProfileViewModel {
     // MARK: - Mock Data
 
     func loadMockData() {
-        // 原型数据: Jane Doe 用户
-        userName = "Jane Doe"
-        // 原型数据: 用户头像（本地 Asset）
-        avatarAssetName = "avatar_jane"
-        isPro = true
-        // 原型数据: 体重 68kg, 目标 65kg, 趋势 -0.5kg
-        currentWeight = 68.0
-        targetWeight = 65.0
-        weightTrend = "\u{2193} 0.5kg"
-        // 原型数据: 连续 12 天
-        streakDays = 12
-
-        achievements = [
-            AchievementItem(type: "streak_7day", title: "7 Day Streak", icon: "trophy.fill", tier: .gold, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 5)),
-            AchievementItem(type: "veggie_king", title: "Veggie King", icon: "leaf.fill", tier: .silver, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 12)),
-            AchievementItem(type: "early_bird", title: "Early Bird", icon: "sunrise.fill", tier: .bronze, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 20)),
-            AchievementItem(type: "first_meal", title: "First Meal", icon: "fork.knife", tier: .gold, isEarned: true, earnedDate: Date().addingTimeInterval(-86400 * 30)),
-            AchievementItem(type: "streak_30day", title: "30 Days", icon: "flame.circle.fill", tier: .gold, isEarned: false),
-            AchievementItem(type: "protein_champ", title: "Protein Champ", icon: "dumbbell.fill", tier: .silver, isEarned: false),
-            AchievementItem(type: "water_hero", title: "Water Hero", icon: "drop.fill", tier: .silver, isEarned: false),
-        ]
-
+        userName = MockDataProvider.User.displayName
+        avatarAssetName = MockDataProvider.User.avatarAssetName
+        isPro = MockDataProvider.User.isPro
+        currentWeight = MockDataProvider.Weight.currentWeight
+        targetWeight = MockDataProvider.Weight.targetWeight
+        weightTrend = MockDataProvider.Weight.weightTrend
+        streakDays = MockDataProvider.Streak.days
+        achievements = MockDataProvider.generateMockAchievements()
         loadMockCalorieData()
     }
 
     private func loadMockCalorieData() {
-        // 原型数据: 平均 1,850 卡路里，-5%
-        averageCalories = 1850
-        calorieChange = "-5%"
-        dailyCalories = [1800, 1950, 1700, 2100, 1850, 1600, 1900]
+        averageCalories = MockDataProvider.ProfileCalories.averageCalories
+        calorieChange = MockDataProvider.ProfileCalories.calorieChange
+        dailyCalories = MockDataProvider.ProfileCalories.dailyCalories
     }
 }
