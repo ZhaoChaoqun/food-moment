@@ -54,7 +54,7 @@ struct WaterCard: View {
                 .frame(width: iconSize, height: iconSize)
 
             Image(systemName: "drop.fill")
-                .font(.system(size: iconFontSize))
+                .font(.Jakarta.regular(iconFontSize))
                 .foregroundStyle(Color(hex: "#3B82F6"))
         }
     }
@@ -68,7 +68,7 @@ struct WaterCard: View {
                     .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
 
                 Image(systemName: "plus")
-                    .font(.system(size: iconFontSize, weight: .medium))
+                    .font(.Jakarta.medium(iconFontSize))
                     .foregroundStyle(Color.gray.opacity(0.6))
             }
         }
@@ -80,7 +80,7 @@ struct WaterCard: View {
     private var contentSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("饮水量")
-                .font(.system(size: 12, weight: .medium))
+                .font(.Jakarta.medium(12))
                 .foregroundStyle(.secondary)
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {

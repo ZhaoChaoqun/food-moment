@@ -56,17 +56,17 @@ struct FloatingNutritionPanel: View {
         VStack(spacing: 4) {
             Text("总热量")
                 .font(.Jakarta.semiBold(14))
-                .foregroundColor(Color(hex: "#64748B"))
+                .foregroundColor(AppTheme.Colors.textSecondary)
                 .tracking(2)
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {
                 Text("\(result.totalCalories)")
                     .font(.Jakarta.extraBold(48))
-                    .foregroundColor(Color(hex: "#0F172A"))
+                    .foregroundColor(AppTheme.Colors.textPrimary)
 
                 Text("kcal")
                     .font(.Jakarta.bold(20))
-                    .foregroundColor(Color(hex: "#64748B"))
+                    .foregroundColor(AppTheme.Colors.textSecondary)
             }
         }
         .padding(.horizontal, 20)
@@ -98,12 +98,12 @@ struct FloatingNutritionPanel: View {
     private var loadingContent: some View {
         VStack(spacing: 12) {
             ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: Color(hex: "#0F172A")))
+                .progressViewStyle(CircularProgressViewStyle(tint: AppTheme.Colors.textPrimary))
                 .scaleEffect(1.2)
 
             Text("正在分析营养成分...")
                 .font(.Jakarta.medium(14))
-                .foregroundColor(Color(hex: "#0F172A").opacity(0.8))
+                .foregroundColor(AppTheme.Colors.textPrimary.opacity(0.8))
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
@@ -114,23 +114,23 @@ struct FloatingNutritionPanel: View {
     private func errorContent(_ message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 24))
+                .font(.Jakarta.regular(24))
                 .foregroundColor(.orange)
 
             Text(message)
                 .font(.Jakarta.medium(13))
-                .foregroundColor(Color(hex: "#0F172A").opacity(0.8))
+                .foregroundColor(AppTheme.Colors.textPrimary.opacity(0.8))
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
 
             Button(action: onRetry) {
                 Text("重试")
                     .font(.Jakarta.semiBold(14))
-                    .foregroundColor(Color(hex: "#0F172A"))
+                    .foregroundColor(AppTheme.Colors.textPrimary)
                     .padding(.horizontal, 24)
                     .padding(.vertical, 8)
                     .background(
-                        Capsule().stroke(Color(hex: "#0F172A").opacity(0.6), lineWidth: 1.5)
+                        Capsule().stroke(AppTheme.Colors.textPrimary.opacity(0.6), lineWidth: 1.5)
                     )
             }
         }

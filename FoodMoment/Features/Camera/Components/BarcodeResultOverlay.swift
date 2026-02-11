@@ -82,7 +82,7 @@ struct BarcodeResultOverlay: View {
                 .frame(width: 48, height: 48)
 
             Image(systemName: "barcode.viewfinder")
-                .font(.system(size: 22))
+                .font(.Jakarta.regular(22))
                 .foregroundColor(AppTheme.Colors.primary)
         }
     }
@@ -94,7 +94,7 @@ struct BarcodeResultOverlay: View {
             onDismiss()
         } label: {
             Image(systemName: "xmark")
-                .font(.system(size: 14, weight: .medium))
+                .font(.Jakarta.medium(14))
                 .foregroundColor(.gray)
                 .frame(width: 32, height: 32)
                 .background(Color.white.opacity(0.1))
@@ -130,7 +130,7 @@ struct BarcodeResultOverlay: View {
             generator.notificationOccurred(.success)
         } label: {
             Image(systemName: "doc.on.doc")
-                .font(.system(size: 14))
+                .font(.Jakarta.regular(14))
                 .foregroundColor(.gray)
         }
     }

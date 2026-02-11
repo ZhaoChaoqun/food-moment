@@ -27,7 +27,7 @@ struct AIInsightDarkCard: View {
     private var headerSection: some View {
         HStack(spacing: 8) {
             Image(systemName: "lightbulb.fill")
-                .font(.system(size: 18))
+                .font(.Jakarta.regular(18))
                 .foregroundStyle(.yellow)
 
             Text("AI Insight")

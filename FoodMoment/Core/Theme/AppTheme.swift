@@ -56,6 +56,31 @@ enum AppTheme {
 
         /// 膳食纤维颜色 - 蓝色
         static let fiber = Color(hex: "#60A5FA")
+
+        // MARK: - Text Colors
+
+        /// 主文本色
+        static let textPrimary = Color(hex: "#0F172A")
+
+        /// 次文本色
+        static let textSecondary = Color(hex: "#64748B")
+
+        /// 辅助文本色
+        static let textTertiary = Color(hex: "#475569")
+
+        // MARK: - UI Colors
+
+        /// 进度条底色
+        static let trackGray = Color(hex: "#E2E8F0")
+
+        /// 分割线颜色
+        static let divider = Color(hex: "#F1F5F9")
+
+        /// 热量警告色（超标）
+        static let calorieWarning = Color(hex: "#F87171")
+
+        /// 拖拽指示条颜色
+        static let dragIndicator = Color(hex: "#CBD5E1")
     }
 
     // MARK: - Corner Radius

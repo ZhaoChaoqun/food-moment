@@ -31,7 +31,7 @@ struct FoodMomentCarousel: View {
                     Text("更多")
                         .font(.Jakarta.medium(14))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(.Jakarta.semiBold(10))
                 }
                 .foregroundStyle(AppTheme.Colors.primary)
             }
@@ -85,7 +85,7 @@ struct FoodMomentCarousel: View {
                     .frame(width: 72, height: 72)
 
                 Image(systemName: "camera.fill")
-                    .font(.system(size: 32))
+                    .font(.Jakarta.regular(32))
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
@@ -265,7 +265,7 @@ private struct FoodMomentCard: View {
             )
 
             Image(systemName: "fork.knife")
-                .font(.system(size: 36))
+                .font(.Jakarta.regular(36))
                 .foregroundStyle(mealTypeInfo.color.opacity(0.5))
         }
         .frame(width: cardWidth, height: cardHeight)

@@ -120,7 +120,7 @@ struct FoodPhotoCard: View {
 
             VStack(spacing: 8) {
                 Text(mealType.emoji)
-                    .font(.system(size: 40))
+                    .font(.Jakarta.regular(40))
 
                 Text(mealType.displayName)
                     .font(.Jakarta.medium(14))

@@ -59,7 +59,7 @@ struct EmptyStateView: View {
                 .frame(width: 100, height: 100)
 
             Image(systemName: icon)
-                .font(.system(size: 48))
+                .font(.Jakarta.regular(48))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [

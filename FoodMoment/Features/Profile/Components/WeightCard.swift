@@ -47,11 +47,11 @@ struct WeightCard: View {
     private var headerRow: some View {
         HStack {
             Image(systemName: "scalemass.fill")
-                .font(.system(size: 14))
+                .font(.Jakarta.regular(14))
                 .foregroundStyle(AppTheme.Colors.primary)
 
             Text("体重")
-                .font(.headline)
+                .font(.Jakarta.semiBold(17))
                 .lineLimit(1)
                 .fixedSize(horizontal: true, vertical: false)
                 .foregroundStyle(.primary)
@@ -66,7 +66,7 @@ struct WeightCard: View {
 
     private var trendBadge: some View {
         Text(trend)
-            .font(.caption.weight(.semibold))
+            .font(.Jakarta.semiBold(12))
             .lineLimit(1)
             .fixedSize(horizontal: true, vertical: false)
             .foregroundStyle(isDownTrend ? AppTheme.Colors.primary : Color(hex: "#F87171"))
@@ -91,7 +91,7 @@ struct WeightCard: View {
                 .foregroundStyle(.primary)
 
             Text("kg")
-                .font(.system(size: 12, weight: .regular))
+                .font(.Jakarta.regular(12))
                 .foregroundStyle(.secondary)
         }
     }
@@ -100,7 +100,7 @@ struct WeightCard: View {
 
     private var targetDisplay: some View {
         Text(String(format: "目标: %.1f kg", targetWeight))
-            .font(.subheadline)
+            .font(.Jakarta.regular(15))
             .foregroundStyle(.secondary)
     }
 
@@ -135,13 +135,13 @@ struct WeightCard: View {
     private var progressLabels: some View {
         HStack {
             Text(String(format: "%.1f kg", currentWeight))
-                .font(.caption2)
+                .font(.Jakarta.regular(11))
                 .foregroundStyle(.secondary)
 
             Spacer()
 
             Text(String(format: "%.1f kg", targetWeight))
-                .font(.caption2)
+                .font(.Jakarta.regular(11))
                 .foregroundStyle(.secondary)
         }
     }

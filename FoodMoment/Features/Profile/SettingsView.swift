@@ -162,7 +162,7 @@ struct SettingsView: View {
                             .foregroundStyle(.primary)
                         Spacer()
                         Image(systemName: "arrow.up.right")
-                            .font(.caption)
+                            .font(.Jakarta.regular(12))
                             .foregroundStyle(.tertiary)
                     }
                 }
@@ -258,7 +258,7 @@ struct SettingsView: View {
 
     private var appIcon: some View {
         Image(systemName: "fork.knife.circle.fill")
-            .font(.system(size: 80))
+            .font(.Jakarta.regular(80))
             .foregroundStyle(
                 LinearGradient(
                     colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.6)],
@@ -271,17 +271,17 @@ struct SettingsView: View {
     private var appInfo: some View {
         VStack(spacing: 8) {
             Text("食刻")
-                .font(.title.weight(.bold))
+                .font(.Jakarta.bold(28))
 
             Text("版本 1.0.0")
-                .font(.subheadline)
+                .font(.Jakarta.regular(15))
                 .foregroundStyle(.secondary)
         }
     }
 
     private var appDescription: some View {
         Text("AI 驱动的食物追踪，助你更健康。")
-            .font(.body)
+            .font(.Jakarta.regular(17))
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)
             .padding(.horizontal, 40)

@@ -27,7 +27,7 @@ struct AIInsightCard: View {
                         .frame(width: 32, height: 32)
 
                     Image(systemName: "sparkles")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.Jakarta.semiBold(16))
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],

@@ -52,7 +52,7 @@ struct IntakeChartCard: View {
     private var calorieInfo: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("平均摄入")
-                .font(.headline)
+                .font(.Jakarta.semiBold(17))
                 .foregroundStyle(.primary)
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -61,7 +61,7 @@ struct IntakeChartCard: View {
                     .foregroundStyle(.primary)
 
                 Text("kcal")
-                    .font(.subheadline)
+                    .font(.Jakarta.regular(15))
                     .foregroundStyle(.secondary)
             }
         }
@@ -72,10 +72,10 @@ struct IntakeChartCard: View {
     private var changeBadge: some View {
         HStack(spacing: 2) {
             Text(calorieChange)
-                .font(.caption.weight(.semibold))
+                .font(.Jakarta.semiBold(12))
 
             Text("较上周")
-                .font(.caption2)
+                .font(.Jakarta.regular(11))
         }
         .foregroundStyle(isNegativeChange ? AppTheme.Colors.primary : Color(hex: "#F87171"))
         .padding(.horizontal, 10)
@@ -118,7 +118,7 @@ struct IntakeChartCard: View {
                 .shadow(color: AppTheme.Colors.primary.opacity(0.2), radius: 4, y: 2)
 
             Text(dayLabels[index])
-                .font(.system(size: 9, weight: .medium))
+                .font(.Jakarta.medium(9))
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity)

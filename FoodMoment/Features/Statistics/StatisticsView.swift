@@ -163,7 +163,7 @@ struct StatisticsView: View {
             ShareLink(item: csvURL) {
                 HStack(spacing: 8) {
                     Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.Jakarta.semiBold(16))
 
                     Text("导出数据")
                         .font(.Jakarta.semiBold(15))
@@ -202,7 +202,7 @@ struct StatisticsView: View {
                 if let csvURL = viewModel.createCSVFile() {
                     ShareLink(item: csvURL) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 14, weight: .medium))
+                            .font(.Jakarta.medium(14))
                             .foregroundStyle(.secondary)
                             .frame(width: 36, height: 36)
                             .background(
@@ -223,7 +223,7 @@ struct StatisticsView: View {
                     isShowingDatePicker = true
                 } label: {
                     Image(systemName: "calendar")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(.Jakarta.medium(16))
                         .foregroundStyle(AppTheme.Colors.primary)
                         .frame(width: 36, height: 36)
                         .background(

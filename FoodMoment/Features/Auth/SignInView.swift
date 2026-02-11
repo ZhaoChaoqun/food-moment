@@ -28,18 +28,18 @@ struct SignInView: View {
                         .frame(width: 120, height: 120)
 
                     Image(systemName: "fork.knife.circle.fill")
-                        .font(.system(size: 64))
+                        .font(.Jakarta.regular(64))
                         .foregroundColor(Color(hex: "#13EC5B"))
                 }
 
                 // Title
                 VStack(spacing: 8) {
                     Text("FoodMoment")
-                        .font(.system(size: 36, weight: .bold))
+                        .font(.Jakarta.bold(36))
                         .foregroundColor(.white)
 
                     Text("AI 食物识别 · 智能饮食管理")
-                        .font(.system(size: 16))
+                        .font(.Jakarta.regular(16))
                         .foregroundColor(.white.opacity(0.6))
                 }
 
@@ -63,7 +63,7 @@ struct SignInView: View {
 
                     if let error = viewModel.errorMessage {
                         Text(error)
-                            .font(.caption)
+                            .font(.Jakarta.regular(12))
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
                     }
@@ -74,7 +74,7 @@ struct SignInView: View {
                         appState.isAuthenticated = true
                     } label: {
                         Text("跳过登录 (开发模式)")
-                            .font(.system(size: 14))
+                            .font(.Jakarta.regular(14))
                             .foregroundColor(.white.opacity(0.4))
                     }
                     #endif

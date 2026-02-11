@@ -161,7 +161,7 @@ struct FoodSearchView: View {
         } label: {
             VStack(spacing: 8) {
                 Text(food.emoji)
-                    .font(.system(size: 32))
+                    .font(.Jakarta.regular(32))
 
                 Text(food.nameZh)
                     .font(.Jakarta.medium(13))
@@ -197,7 +197,7 @@ struct FoodSearchView: View {
                     } label: {
                         HStack(spacing: 12) {
                             Text(suggestion.emoji)
-                                .font(.system(size: 24))
+                                .font(.Jakarta.regular(24))
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(suggestion.nameZh)
@@ -212,7 +212,7 @@ struct FoodSearchView: View {
                             Spacer()
 
                             Image(systemName: "arrow.up.left")
-                                .font(.system(size: 14))
+                                .font(.Jakarta.regular(14))
                                 .foregroundStyle(.tertiary)
                         }
                         .padding(.horizontal, 16)
@@ -244,7 +244,7 @@ struct FoodSearchView: View {
     private var placeholderView: some View {
         VStack(spacing: 16) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 48))
+                .font(.Jakarta.regular(48))
                 .foregroundStyle(.tertiary)
 
             Text("输入食物名称开始搜索")
@@ -277,7 +277,7 @@ struct FoodSearchView: View {
     private func errorView(message: String) -> some View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
+                .font(.Jakarta.regular(40))
                 .foregroundStyle(.orange)
 
             Text("搜索失败")
@@ -303,7 +303,7 @@ struct FoodSearchView: View {
     private var emptyResultView: some View {
         VStack(spacing: 16) {
             Image(systemName: "fork.knife")
-                .font(.system(size: 40))
+                .font(.Jakarta.regular(40))
                 .foregroundStyle(.tertiary)
 
             Text("未找到相关食物")
@@ -337,7 +337,7 @@ struct FoodSearchView: View {
             HStack(spacing: 14) {
                 // Emoji 图标
                 Text(food.emoji)
-                    .font(.system(size: 36))
+                    .font(.Jakarta.regular(36))
                     .frame(width: 52, height: 52)
                     .background(
                         RoundedRectangle(cornerRadius: 14)

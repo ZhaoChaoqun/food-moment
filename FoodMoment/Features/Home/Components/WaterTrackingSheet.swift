@@ -65,7 +65,7 @@ struct WaterTrackingSheet: View {
                 .frame(width: 140, height: 140)
 
             Image(systemName: "drop.fill")
-                .font(.system(size: 64))
+                .font(.Jakarta.regular(64))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
@@ -141,7 +141,7 @@ struct WaterTrackingSheet: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: "slider.horizontal.3")
-                    .font(.system(size: 18, weight: .semibold))
+                    .font(.Jakarta.semiBold(18))
 
                 Text("自定义")
                     .font(.Jakarta.regular(12))
@@ -232,7 +232,7 @@ struct WaterTrackingSheet: View {
                 .tint(.white)
         } else if isShowingSuccess {
             Image(systemName: "checkmark")
-                .font(.system(size: 18, weight: .bold))
+                .font(.Jakarta.bold(18))
         } else {
             Image(systemName: "drop.fill")
             Text("记录")

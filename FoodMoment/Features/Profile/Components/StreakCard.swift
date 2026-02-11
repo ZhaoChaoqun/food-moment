@@ -47,7 +47,7 @@ struct StreakCard: View {
 
     private var flameIcon: some View {
         Image(systemName: "flame.fill")
-            .font(.system(size: 36))
+            .font(.Jakarta.regular(36))
             .foregroundStyle(
                 LinearGradient(
                     colors: [Color(hex: "#FF6B35"), Color(hex: "#FACC15")],
@@ -73,7 +73,7 @@ struct StreakCard: View {
 
     private var streakSubtitle: some View {
         Text("连续打卡")
-            .font(.subheadline)
+            .font(.Jakarta.regular(15))
             .foregroundStyle(.secondary)
     }
 
@@ -81,7 +81,7 @@ struct StreakCard: View {
 
     private var motivationLabel: some View {
         Text(motivationText)
-            .font(.caption.weight(.medium))
+            .font(.Jakarta.medium(12))
             .foregroundStyle(AppTheme.Colors.primary)
     }
 }

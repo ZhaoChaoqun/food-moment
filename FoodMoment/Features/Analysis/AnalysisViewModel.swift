@@ -394,17 +394,17 @@ struct ShareableAnalysisView: View {
                 // Total calories
                 VStack(spacing: 4) {
                     Text("TOTAL ENERGY")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.Jakarta.medium(11))
                         .foregroundColor(.gray)
                         .tracking(1.5)
 
                     HStack(alignment: .lastTextBaseline, spacing: 4) {
                         Text("\(totalCalories)")
-                            .font(.system(size: 42, weight: .heavy))
+                            .font(.Jakarta.bold(42))
                             .foregroundColor(.black)
 
                         Text("kcal")
-                            .font(.system(size: 16, weight: .medium))
+                            .font(.Jakarta.medium(16))
                             .foregroundColor(.gray)
                     }
                 }
@@ -421,13 +421,13 @@ struct ShareableAnalysisView: View {
                     ForEach(foods, id: \.name) { food in
                         HStack(spacing: 8) {
                             Text(food.emoji)
-                                .font(.system(size: 16))
+                                .font(.Jakarta.regular(16))
                             Text(food.name)
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.Jakarta.medium(14))
                                 .foregroundColor(.black)
                             Spacer()
                             Text("\(food.calories) kcal")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(.Jakarta.medium(14))
                                 .foregroundColor(.gray)
                         }
                     }
@@ -437,13 +437,13 @@ struct ShareableAnalysisView: View {
                 // Branding
                 HStack(spacing: 6) {
                     Text("由")
-                        .font(.system(size: 12))
+                        .font(.Jakarta.regular(12))
                         .foregroundColor(.gray)
                     Text("食刻")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.Jakarta.bold(12))
                         .foregroundColor(AppTheme.Colors.primary)
                     Text("记录")
-                        .font(.system(size: 12))
+                        .font(.Jakarta.regular(12))
                         .foregroundColor(.gray)
                 }
                 .padding(.top, 8)
@@ -462,10 +462,10 @@ struct ShareableAnalysisView: View {
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text("\(Int(value))g")
-                .font(.system(size: 16, weight: .bold))
+                .font(.Jakarta.bold(16))
                 .foregroundColor(.black)
             Text(label)
-                .font(.system(size: 11, weight: .medium))
+                .font(.Jakarta.medium(11))
                 .foregroundColor(.gray)
         }
     }

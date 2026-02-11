@@ -12,7 +12,7 @@ struct LogMealButton: View {
         Button(action: action) {
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.Jakarta.semiBold(20))
                     .rotationEffect(.degrees(isPressed ? 12 : 0))
 
                 Text("记录餐食")

@@ -121,7 +121,7 @@ struct HomeView: View {
             .frame(width: 48, height: 48)
             .overlay(
                 Image(systemName: "person.fill")
-                    .font(.title3)
+                    .font(.Jakarta.regular(20))
                     .foregroundStyle(AppTheme.Colors.primary)
             )
     }

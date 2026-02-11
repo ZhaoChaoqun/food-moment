@@ -79,7 +79,7 @@ struct CustomTabBar: View {
                     .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 8, y: 2)
 
                 Image(systemName: "plus")
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.Jakarta.semiBold(26))
                     .foregroundStyle(.white)
             }
         }
@@ -97,10 +97,10 @@ struct CustomTabBar: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: tab.icon)
-                    .font(.system(size: 20))
+                    .font(.Jakarta.regular(20))
 
                 Text(tab.title)
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.Jakarta.medium(10))
             }
             .foregroundStyle(selectedTab == tab ? AppTheme.Colors.primary : .gray.opacity(0.6))
             .frame(maxWidth: .infinity)

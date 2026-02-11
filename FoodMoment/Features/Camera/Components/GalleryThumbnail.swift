@@ -70,7 +70,7 @@ struct GalleryThumbnail: View {
 
     private var placeholderIcon: some View {
         Image(systemName: "photo.on.rectangle")
-            .font(.system(size: 18))
+            .font(.Jakarta.regular(18))
             .foregroundColor(.white)
     }
 

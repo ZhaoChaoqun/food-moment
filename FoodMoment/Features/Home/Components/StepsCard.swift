@@ -53,7 +53,7 @@ struct StepsCard: View {
                 .frame(width: iconSize, height: iconSize)
 
             Image(systemName: "shoeprints.fill")
-                .font(.system(size: iconFontSize))
+                .font(.Jakarta.regular(iconFontSize))
                 .foregroundStyle(Color(hex: "#076653"))
         }
     }
@@ -75,7 +75,7 @@ struct StepsCard: View {
     private var contentSection: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text("今日步数")
-                .font(.system(size: 12, weight: .medium))
+                .font(.Jakarta.medium(12))
                 .foregroundStyle(.secondary)
 
             HStack(alignment: .lastTextBaseline, spacing: 4) {

@@ -180,7 +180,7 @@ struct AnalysisView: View {
         VStack(spacing: 0) {
             // Decorative drag indicator
             Capsule()
-                .fill(Color(hex: "#CBD5E1"))
+                .fill(AppTheme.Colors.dragIndicator)
                 .frame(width: 48, height: 5)
                 .padding(.top, 12)
                 .padding(.bottom, 8)
@@ -240,7 +240,7 @@ struct AnalysisView: View {
                     dismiss()
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 20, weight: .semibold))
+                        .font(.Jakarta.semiBold(20))
                         .foregroundColor(.white)
                         .frame(width: 40, height: 40)
                         .background(.ultraThinMaterial)
@@ -263,7 +263,7 @@ struct AnalysisView: View {
                         )
                     ) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.Jakarta.semiBold(20))
                             .foregroundColor(.white)
                             .frame(width: 40, height: 40)
                             .background(.ultraThinMaterial)
@@ -278,7 +278,7 @@ struct AnalysisView: View {
                         // Disabled state
                     } label: {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 20, weight: .semibold))
+                            .font(.Jakarta.semiBold(20))
                             .foregroundColor(.white.opacity(0.5))
                             .frame(width: 40, height: 40)
                             .background(.ultraThinMaterial)

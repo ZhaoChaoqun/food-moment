@@ -70,7 +70,7 @@ struct WeightInputSheet: View {
 
     private var weightIcon: some View {
         Image(systemName: "scalemass.fill")
-            .font(.system(size: 40))
+            .font(.Jakarta.regular(40))
             .foregroundStyle(AppTheme.Colors.primary)
             .padding(.bottom, 8)
     }
@@ -95,7 +95,7 @@ struct WeightInputSheet: View {
             let diffSign = diff >= 0 ? "+" : ""
             HStack(spacing: 4) {
                 Image(systemName: diff >= 0 ? "arrow.up.right" : "arrow.down.right")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.Jakarta.semiBold(12))
                 Text("\(diffSign)\(String(format: "%.1f", diff)) kg")
                     .font(.Jakarta.medium(14))
             }
@@ -286,7 +286,7 @@ struct WeightInputSheet: View {
                         .tint(.white)
                 } else if isShowingSuccess {
                     Image(systemName: "checkmark")
-                        .font(.system(size: 18, weight: .bold))
+                        .font(.Jakarta.bold(18))
                 } else {
                     Image(systemName: "scalemass.fill")
                     Text("记录")

@@ -56,7 +56,7 @@ struct ProfileView: View {
             viewModel.isShowingSettings = true
         } label: {
             Image(systemName: "gearshape.fill")
-                .font(.body)
+                .font(.Jakarta.regular(17))
                 .foregroundStyle(.primary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -228,7 +228,7 @@ struct ProfileView: View {
                     Text("更多")
                         .font(.Jakarta.semiBold(12))
                     Image(systemName: "chevron.right")
-                        .font(.system(size: 9, weight: .semibold))
+                        .font(.Jakarta.semiBold(9))
                 }
                 .foregroundStyle(AppTheme.Colors.primary)
             }
@@ -255,7 +255,7 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: category.icon)
-                    .font(.caption)
+                    .font(.Jakarta.regular(12))
                     .foregroundStyle(AppTheme.Colors.primary)
                 Text(category.displayName)
                     .font(.Jakarta.semiBold(14))

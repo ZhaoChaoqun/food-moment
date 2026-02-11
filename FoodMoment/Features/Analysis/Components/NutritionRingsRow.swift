@@ -7,20 +7,20 @@ struct NutritionRingsRow: View {
 
     var body: some View {
         HStack(spacing: 24) {
-            // Protein - green color (matching primary brand) with glow
+            // Protein - green color (matching protein token) with glow
             NutritionRing(
                 value: nutrition.proteinG,
                 label: "蛋白质",
-                color: AppTheme.Colors.primary,
+                color: AppTheme.Colors.protein,
                 maxValue: 80,
                 showGlow: true
             )
 
-            // Carbs - blue color (no glow)
+            // Carbs - yellow color (no glow)
             NutritionRing(
                 value: nutrition.carbsG,
                 label: "碳水",
-                color: Color(hex: "#3B82F6"),
+                color: AppTheme.Colors.carbs,
                 maxValue: 120,
                 showGlow: false
             )
@@ -29,7 +29,7 @@ struct NutritionRingsRow: View {
             NutritionRing(
                 value: nutrition.fatG,
                 label: "脂肪",
-                color: Color(hex: "#F97316"),
+                color: AppTheme.Colors.fat,
                 maxValue: 65,
                 showGlow: false
             )

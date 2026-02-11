@@ -197,7 +197,7 @@ struct CameraView: View {
             }
         } label: {
             Image(systemName: "camera.rotate.fill")
-                .font(.system(size: 20))
+                .font(.Jakarta.regular(20))
                 .foregroundColor(.white)
                 .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial)
@@ -257,7 +257,7 @@ struct CameraView: View {
     private func glassCircleButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .medium))
+                .font(.Jakarta.medium(18))
                 .foregroundColor(.white)
                 .frame(width: 44, height: 44)
                 .background(.ultraThinMaterial)

@@ -71,7 +71,7 @@ struct ActivityCalendar: View {
             }
         } label: {
             Image(systemName: "chevron.left")
-                .font(.body.weight(.semibold))
+                .font(.Jakarta.semiBold(17))
                 .foregroundStyle(.primary)
         }
         .accessibilityIdentifier("PreviousMonthButton")
@@ -84,7 +84,7 @@ struct ActivityCalendar: View {
             }
         } label: {
             Image(systemName: "chevron.right")
-                .font(.body.weight(.semibold))
+                .font(.Jakarta.semiBold(17))
                 .foregroundStyle(.primary)
         }
         .accessibilityIdentifier("NextMonthButton")
@@ -92,7 +92,7 @@ struct ActivityCalendar: View {
 
     private var monthTitleText: some View {
         Text(monthTitle)
-            .font(.headline)
+            .font(.Jakarta.semiBold(17))
             .foregroundStyle(.primary)
     }
 
@@ -102,7 +102,7 @@ struct ActivityCalendar: View {
         LazyVGrid(columns: columns, spacing: 4) {
             ForEach(weekdaySymbols, id: \.self) { symbol in
                 Text(symbol)
-                    .font(.caption2.weight(.medium))
+                    .font(.Jakarta.medium(11))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
             }
@@ -130,7 +130,7 @@ struct ActivityCalendar: View {
         let isActive = activeDays.contains(day)
 
         return Text("\(day)")
-            .font(.caption.weight(isActive ? .bold : .regular))
+            .font(isActive ? .Jakarta.bold(12) : .Jakarta.regular(12))
             .foregroundStyle(isActive ? .white : .secondary)
             .frame(width: 36, height: 36)
             .background(

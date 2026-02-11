@@ -55,7 +55,7 @@ struct NutritionRing: View {
             ZStack {
                 // Track (background circle)
                 Circle()
-                    .stroke(Color(hex: "#E2E8F0").opacity(0.6), lineWidth: 6)
+                    .stroke(AppTheme.Colors.trackGray.opacity(0.6), lineWidth: 6)
 
                 // Progress arc with gradient and shadow
                 Circle()
@@ -75,11 +75,11 @@ struct NutritionRing: View {
                 HStack(alignment: .lastTextBaseline, spacing: 1) {
                     Text(formattedValue)
                         .font(.Jakarta.bold(20))
-                        .foregroundColor(Color(hex: "#0F172A"))
+                        .foregroundColor(AppTheme.Colors.textPrimary)
 
                     Text(unit)
                         .font(.Jakarta.semiBold(13))
-                        .foregroundColor(Color(hex: "#64748B"))
+                        .foregroundColor(AppTheme.Colors.textSecondary)
                 }
             }
             .frame(width: 90, height: 90)
@@ -87,7 +87,7 @@ struct NutritionRing: View {
             // Bottom label
             Text(label)
                 .font(.Jakarta.semiBold(14))
-                .foregroundColor(Color(hex: "#475569"))
+                .foregroundColor(AppTheme.Colors.textTertiary)
         }
         .onAppear {
             withAnimation(.easeOut(duration: 1.0).delay(0.5)) {

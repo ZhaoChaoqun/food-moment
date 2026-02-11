@@ -152,7 +152,7 @@ struct DiaryView: View {
             isShowingSearchBar.toggle()
         } label: {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .medium))
+                .font(.Jakarta.medium(16))
                 .foregroundColor(.secondary)
                 .frame(width: 36, height: 36)
                 .background(
@@ -175,7 +175,7 @@ struct DiaryView: View {
             isShowingCalendarPicker.toggle()
         } label: {
             Image(systemName: "calendar")
-                .font(.system(size: 16, weight: .medium))
+                .font(.Jakarta.medium(16))
                 .foregroundColor(AppTheme.Colors.primary)
                 .frame(width: 36, height: 36)
                 .background(

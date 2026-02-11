@@ -21,7 +21,7 @@ struct DailyProgressFloat: View {
 
     private var progressColor: Color {
         if progress >= 1.0 {
-            return Color(hex: "#F87171") // 超过目标 - 红色
+            return AppTheme.Colors.calorieWarning // 超过目标 - 红色
         } else if progress >= 0.8 {
             return AppTheme.Colors.primary
         } else {

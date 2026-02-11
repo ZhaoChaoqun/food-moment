@@ -108,7 +108,7 @@ struct AchievementBadge: View {
 
     private var badgeIcon: some View {
         Image(systemName: item.icon)
-            .font(.system(size: 20, weight: .medium))
+            .font(.Jakarta.medium(20))
             .foregroundStyle(.white)
     }
 
@@ -184,7 +184,7 @@ struct AchievementBadge: View {
                 .foregroundStyle(Color.gray.opacity(0.5))
         } else {
             Image(systemName: "lock.fill")
-                .font(.system(size: 20, weight: .medium))
+                .font(.Jakarta.medium(20))
                 .foregroundStyle(Color.gray.opacity(0.5))
         }
     }

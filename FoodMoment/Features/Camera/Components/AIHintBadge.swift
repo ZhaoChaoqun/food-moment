@@ -14,7 +14,7 @@ struct AIHintBadge: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "sparkles")
-                .font(.system(size: 18, weight: .medium))
+                .font(.Jakarta.medium(18))
                 .foregroundColor(AppTheme.Colors.primary)
 
             Text("保持稳定以获得更准确的识别")
