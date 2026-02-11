@@ -357,3 +357,4 @@ final class PrefetchManager {
         prefetchedURLs.removeAll()
     }
 }
+

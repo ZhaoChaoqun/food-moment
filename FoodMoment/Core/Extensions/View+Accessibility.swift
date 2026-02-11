@@ -111,7 +111,7 @@ extension View {
         weight: Font.Weight = .regular
     ) -> some View {
         self
-            .font(.system(size: size, weight: weight, design: .rounded))
+            .font(.appFont(weight, size: size))
             .dynamicTypeSize(...DynamicTypeSize.accessibility3)
     }
 
