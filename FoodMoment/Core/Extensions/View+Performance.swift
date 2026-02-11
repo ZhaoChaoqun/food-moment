@@ -130,7 +130,7 @@ final class ImageCacheManager: @unchecked Sendable {
 
     // MARK: - Singleton
 
-    nonisolated(unsafe) static let shared = ImageCacheManager()
+    static let shared = ImageCacheManager()
 
     // MARK: - Private Properties
 

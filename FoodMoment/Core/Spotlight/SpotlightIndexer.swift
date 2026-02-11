@@ -10,7 +10,7 @@ import os
 final class SpotlightIndexer {
     static let shared = SpotlightIndexer()
 
-    private static let logger = Logger(subsystem: "com.foodmoment", category: "SpotlightIndexer")
+    private nonisolated static let logger = Logger(subsystem: "com.foodmoment", category: "SpotlightIndexer")
 
     private let domainIdentifier = "com.zhaochaoqun.FoodMoment.meals"
     private let index = CSSearchableIndex.default()
@@ -21,6 +21,8 @@ final class SpotlightIndexer {
 
     /// 索引单条餐食记录
     func indexMealRecord(_ meal: MealRecord) {
+        let logger = Self.logger
+        let mealTitle = meal.title
         let attributeSet = createAttributeSet(for: meal)
         let uniqueIdentifier = "meal-\(meal.id.uuidString)"
 
@@ -39,9 +41,9 @@ final class SpotlightIndexer {
 
         index.indexSearchableItems([searchableItem]) { error in
             if let error {
-                SpotlightIndexer.logger.error("Failed to index meal: \(error.localizedDescription, privacy: .public)")
+                logger.error("Failed to index meal: \(error.localizedDescription, privacy: .public)")
             } else {
-                SpotlightIndexer.logger.debug("Successfully indexed meal: \(meal.title, privacy: .public)")
+                logger.debug("Successfully indexed meal: \(mealTitle, privacy: .public)")
             }
         }
     }
@@ -50,6 +52,8 @@ final class SpotlightIndexer {
 
     /// 批量索引餐食记录
     func indexMealRecords(_ meals: [MealRecord]) {
+        let logger = Self.logger
+        let mealCount = meals.count
         let items = meals.map { meal -> CSSearchableItem in
             let attributeSet = createAttributeSet(for: meal)
             let uniqueIdentifier = "meal-\(meal.id.uuidString)"
@@ -69,9 +73,9 @@ final class SpotlightIndexer {
 
         index.indexSearchableItems(items) { error in
             if let error {
-                SpotlightIndexer.logger.error("Failed to batch index meals: \(error.localizedDescription, privacy: .public)")
+                logger.error("Failed to batch index meals: \(error.localizedDescription, privacy: .public)")
             } else {
-                SpotlightIndexer.logger.debug("Successfully indexed \(meals.count, privacy: .public) meals")
+                logger.debug("Successfully indexed \(mealCount, privacy: .public) meals")
             }
         }
     }
@@ -80,38 +84,35 @@ final class SpotlightIndexer {
 
     /// 移除单条记录的索引
     func removeMealIndex(mealId: UUID) {
+        let logger = Self.logger
         let uniqueIdentifier = "meal-\(mealId.uuidString)"
         index.deleteSearchableItems(withIdentifiers: [uniqueIdentifier]) { error in
             if let error {
-                SpotlightIndexer.logger.error("Failed to remove index: \(error.localizedDescription, privacy: .public)")
+                logger.error("Failed to remove index: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
 
     /// 移除所有餐食索引
     func removeAllMealIndexes() {
+        let logger = Self.logger
         index.deleteSearchableItems(withDomainIdentifiers: [domainIdentifier]) { error in
             if let error {
-                SpotlightIndexer.logger.error("Failed to remove all indexes: \(error.localizedDescription, privacy: .public)")
+                logger.error("Failed to remove all indexes: \(error.localizedDescription, privacy: .public)")
             } else {
-                SpotlightIndexer.logger.debug("All meal indexes removed")
+                logger.debug("All meal indexes removed")
             }
         }
     }
 
     /// 重建所有索引
-    func rebuildAllIndexes(meals: [MealRecord]) {
-        // 先删除所有现有索引
-        index.deleteSearchableItems(withDomainIdentifiers: [domainIdentifier]) { [weak self] error in
-            if let error {
-                SpotlightIndexer.logger.error("Failed to clear indexes: \(error.localizedDescription, privacy: .public)")
-                return
-            }
-
-            // 重新索引所有记录
-            Task { @MainActor [weak self] in
-                self?.indexMealRecords(meals)
-            }
+    func rebuildAllIndexes(meals: [MealRecord]) async {
+        let logger = Self.logger
+        do {
+            try await index.deleteSearchableItems(withDomainIdentifiers: [domainIdentifier])
+            indexMealRecords(meals)
+        } catch {
+            logger.error("Failed to clear indexes: \(error.localizedDescription, privacy: .public)")
         }
     }
 

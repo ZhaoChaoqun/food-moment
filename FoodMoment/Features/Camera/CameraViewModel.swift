@@ -44,6 +44,9 @@ final class CameraViewModel {
     var isShowingBarcodeResult = false
     var isBarcodeScanning = false
 
+    /// Called when a photo is ready for analysis (captured or selected from gallery)
+    var onImageReadyForAnalysis: ((UIImage) -> Void)?
+
     // MARK: - Services
 
     let cameraService: CameraService
@@ -71,11 +74,11 @@ final class CameraViewModel {
 
             // Initialize barcode scanner with the camera's capture session
             barcodeScanner = BarcodeScannerService(captureSession: cameraService.captureSession)
-            await barcodeScanner?.setDelegate(self)
+            barcodeScanner?.setDelegate(self)
 
             // Start barcode scanning if in barcode mode
             if currentMode == .barcode {
-                await startBarcodeScanning()
+                startBarcodeScanning()
             }
         } else {
             isShowingPermissionAlert = true
@@ -89,10 +92,7 @@ final class CameraViewModel {
         focusHideTask?.cancel()
         focusHideTask = nil
 
-        let task = Task {
-            await stopBarcodeScanning()
-        }
-        pendingTasks.append(task)
+        stopBarcodeScanning()
         cameraService.stopSession()
     }
 
@@ -101,18 +101,12 @@ final class CameraViewModel {
     private func handleModeChange(from oldMode: CameraScanMode, to newMode: CameraScanMode) {
         // Stop barcode scanning when leaving barcode mode
         if oldMode == .barcode && newMode != .barcode {
-            let task = Task {
-                await stopBarcodeScanning()
-            }
-            pendingTasks.append(task)
+            stopBarcodeScanning()
         }
 
         // Start barcode scanning when entering barcode mode
         if newMode == .barcode && oldMode != .barcode {
-            let task = Task {
-                await startBarcodeScanning()
-            }
-            pendingTasks.append(task)
+            startBarcodeScanning()
         }
 
         // Clear any previous barcode results when switching modes
@@ -125,16 +119,16 @@ final class CameraViewModel {
     // MARK: - Barcode Scanning
 
     /// Start the barcode scanner
-    private func startBarcodeScanning() async {
+    private func startBarcodeScanning() {
         guard !isBarcodeScanning else { return }
-        await barcodeScanner?.startScanning()
+        barcodeScanner?.startScanning()
         isBarcodeScanning = true
     }
 
     /// Stop the barcode scanner
-    private func stopBarcodeScanning() async {
+    private func stopBarcodeScanning() {
         guard isBarcodeScanning else { return }
-        await barcodeScanner?.stopScanning()
+        barcodeScanner?.stopScanning()
         isBarcodeScanning = false
     }
 
@@ -142,10 +136,7 @@ final class CameraViewModel {
     func resetBarcodeScanning() {
         detectedBarcode = nil
         isShowingBarcodeResult = false
-        let task = Task { () -> Void in
-            await barcodeScanner?.resetDebounce()
-        }
-        pendingTasks.append(task)
+        barcodeScanner?.resetDebounce()
     }
 
     // MARK: - Actions
@@ -196,7 +187,7 @@ final class CameraViewModel {
     func setSelectedImage(_ image: UIImage?) {
         guard let image else { return }
         capturedImage = image
-        isShowingAnalysis = true
+        onImageReadyForAnalysis?(image)
     }
 
     /// Reset state after analysis is dismissed
@@ -210,10 +201,7 @@ final class CameraViewModel {
     func dismissBarcodeResult() {
         isShowingBarcodeResult = false
         detectedBarcode = nil
-        let task = Task { () -> Void in
-            await barcodeScanner?.resetDebounce()
-        }
-        pendingTasks.append(task)
+        barcodeScanner?.resetDebounce()
     }
 }
 
@@ -225,7 +213,7 @@ extension CameraViewModel: CameraServiceDelegate {
         Task { @MainActor in
             self.capturedImage = image
             self.isCapturing = false
-            self.isShowingAnalysis = true
+            self.onImageReadyForAnalysis?(image)
         }
     }
 

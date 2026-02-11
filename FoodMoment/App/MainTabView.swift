@@ -7,10 +7,6 @@ struct MainTabView: View {
 
     @Environment(AppState.self) private var appState
 
-    // MARK: - State
-
-    @State private var isShowingCamera = false
-
     // MARK: - Initialization
 
     init() {
@@ -27,7 +23,7 @@ struct MainTabView: View {
             tabContent
 
             CustomTabBar(selectedTab: $appState.selectedTab) {
-                isShowingCamera = true
+                appState.activeFullScreen = .camera
             }
         }
         .overlay {
@@ -39,8 +35,13 @@ struct MainTabView: View {
                 .zIndex(999)
             }
         }
-        .fullScreenCover(isPresented: $isShowingCamera) {
-            CameraView()
+        .fullScreenCover(item: $appState.activeFullScreen) { destination in
+            switch destination {
+            case .camera:
+                CameraView()
+            case .analysis(let image):
+                AnalysisView(image: image)
+            }
         }
         .accessibilityIdentifier("MainTabView")
     }

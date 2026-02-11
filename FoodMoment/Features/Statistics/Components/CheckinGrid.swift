@@ -44,7 +44,7 @@ struct CheckinGrid: View {
 
     private var weekdayHeadersSection: some View {
         LazyVGrid(columns: columns, spacing: 8) {
-            ForEach(weekdaySymbols, id: \.self) { symbol in
+            ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
                     .font(.Jakarta.medium(11))
                     .foregroundStyle(.secondary)

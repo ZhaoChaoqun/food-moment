@@ -8,7 +8,7 @@ final class SaliencyDetectionService {
 
     // MARK: - Singleton
 
-    nonisolated(unsafe) private static let logger = Logger(subsystem: "com.foodmoment", category: "SaliencyDetectionService")
+    private nonisolated static let logger = Logger(subsystem: "com.foodmoment", category: "SaliencyDetectionService")
 
     static let shared = SaliencyDetectionService()
     private init() {}

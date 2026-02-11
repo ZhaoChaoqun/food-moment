@@ -15,6 +15,7 @@ struct CameraView: View {
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppState.self) private var appState
 
     // MARK: - State
 
@@ -43,18 +44,21 @@ struct CameraView: View {
         }
         .statusBarHidden()
         .task {
+            viewModel.onImageReadyForAnalysis = { image in
+                dismiss()
+                Task { @MainActor in
+                    try? await Task.sleep(for: .milliseconds(500))
+                    appState.showAnalysis(image: image)
+                }
+            }
             await viewModel.startSession()
         }
         .onDisappear {
             viewModel.stopSession()
         }
         .onChange(of: galleryImage) { _, newImage in
-            viewModel.setSelectedImage(newImage)
-        }
-        .fullScreenCover(isPresented: $viewModel.isShowingAnalysis) {
-            viewModel.dismissAnalysis()
-        } content: {
-            analysisPlaceholderView
+            guard let newImage else { return }
+            viewModel.onImageReadyForAnalysis?(newImage)
         }
         .alert("需要相机权限", isPresented: $viewModel.isShowingPermissionAlert) {
             Button("打开设置") {
@@ -244,16 +248,6 @@ struct CameraView: View {
             )
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .animation(AppTheme.Animation.defaultSpring, value: viewModel.isShowingBarcodeResult)
-        }
-    }
-
-    // MARK: - Analysis View
-
-    /// Full analysis screen presented after capturing or selecting a photo.
-    @ViewBuilder
-    private var analysisPlaceholderView: some View {
-        if let image = viewModel.capturedImage {
-            AnalysisView(image: image)
         }
     }
 

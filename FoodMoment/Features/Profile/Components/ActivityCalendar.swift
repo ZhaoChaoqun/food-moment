@@ -100,7 +100,7 @@ struct ActivityCalendar: View {
 
     private var weekdayHeaderGrid: some View {
         LazyVGrid(columns: columns, spacing: 4) {
-            ForEach(weekdaySymbols, id: \.self) { symbol in
+            ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, symbol in
                 Text(symbol)
                     .font(.Jakarta.medium(11))
                     .foregroundStyle(.secondary)
@@ -112,16 +112,18 @@ struct ActivityCalendar: View {
     // MARK: - Day Grid
 
     private var dayGrid: some View {
-        LazyVGrid(columns: columns, spacing: 8) {
-            // Empty cells for offset
-            ForEach(0..<firstWeekdayOffset, id: \.self) { _ in
-                Color.clear
-                    .frame(height: 36)
-            }
+        let offsetItems = (0..<firstWeekdayOffset).map { -($0 + 1) }
+        let dayItems = Array(1...daysInMonth)
+        let allItems = offsetItems + dayItems
 
-            // Day cells
-            ForEach(1...daysInMonth, id: \.self) { day in
-                dayCell(for: day)
+        return LazyVGrid(columns: columns, spacing: 8) {
+            ForEach(allItems, id: \.self) { item in
+                if item < 0 {
+                    Color.clear
+                        .frame(height: 36)
+                } else {
+                    dayCell(for: item)
+                }
             }
         }
     }

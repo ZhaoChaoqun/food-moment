@@ -4,7 +4,7 @@ import os
 /// App Groups 共享数据管理器
 /// 用于主 App 与 Widget 之间共享数据
 final class SharedDataManager: @unchecked Sendable {
-    nonisolated(unsafe) static let shared = SharedDataManager()
+    static let shared = SharedDataManager()
 
     private static let logger = Logger(subsystem: "com.foodmoment", category: "SharedDataManager")
 

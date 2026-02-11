@@ -6,6 +6,7 @@ struct FoodMomentCarousel: View {
     // MARK: - Properties
 
     let meals: [MealRecord]
+    var onMoreTapped: (() -> Void)?
 
     // MARK: - Body
 
@@ -26,7 +27,7 @@ struct FoodMomentCarousel: View {
 
             Spacer()
 
-            Button(action: {}) {
+            Button(action: { onMoreTapped?() }) {
                 HStack(spacing: 4) {
                     Text("更多")
                         .font(.Jakarta.medium(14))

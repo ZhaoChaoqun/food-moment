@@ -32,17 +32,13 @@ struct CustomTabBar: View {
     // MARK: - Tab Bar Background
 
     private var tabBarBackground: some View {
-        RoundedRectangle(cornerRadius: 28)
-            .fill(.white.opacity(0.8))
-            .background(
-                RoundedRectangle(cornerRadius: 28)
-                    .fill(.ultraThinMaterial)
-            )
+        RoundedRectangle(cornerRadius: 24)
+            .fill(.regularMaterial)
             .overlay(
-                RoundedRectangle(cornerRadius: 28)
-                    .stroke(Color.white.opacity(0.4), lineWidth: 0.5)
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
             )
-            .shadow(color: .black.opacity(0.08), radius: 20, y: -5)
+            .shadow(color: .black.opacity(0.08), radius: 12, y: -2)
     }
 
     // MARK: - Scan Button
@@ -76,7 +72,7 @@ struct CustomTabBar: View {
                         Circle()
                             .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
                     )
-                    .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 8, y: 2)
+                    .shadow(color: AppTheme.Colors.primary.opacity(0.2), radius: 6, y: 1)
 
                 Image(systemName: "plus")
                     .font(.Jakarta.semiBold(26))
@@ -102,7 +98,7 @@ struct CustomTabBar: View {
                 Text(tab.title)
                     .font(.Jakarta.medium(10))
             }
-            .foregroundStyle(selectedTab == tab ? AppTheme.Colors.primary : .gray.opacity(0.6))
+            .foregroundStyle(selectedTab == tab ? AppTheme.Colors.primary : .gray.opacity(0.7))
             .frame(maxWidth: .infinity)
         }
         .accessibilityIdentifier(tab.accessibilityID)

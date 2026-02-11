@@ -3,7 +3,7 @@ import Foundation
 /// App Groups 共享数据管理器 (Widget Extension 版本)
 /// 用于 Widget 读取主 App 共享的数据
 final class SharedDataManager: @unchecked Sendable {
-    nonisolated(unsafe) static let shared = SharedDataManager()
+    static let shared = SharedDataManager()
 
     // MARK: - Constants
 

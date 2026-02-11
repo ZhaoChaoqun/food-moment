@@ -162,6 +162,20 @@ enum AppTheme {
         /// 特大间距 - 24pt
         static let xxl: CGFloat = 24
     }
+
+    // MARK: - Layout
+
+    /// 布局尺寸配置
+    enum Layout {
+        /// 自定义 Tab Bar 的视觉高度
+        static let tabBarHeight: CGFloat = 68
+
+        /// 内容底部预留间距（确保不被 Tab Bar 遮挡）
+        static let tabBarClearance: CGFloat = 88
+
+        /// 浮动组件底部间距（如 DailyProgressFloat）
+        static let floatingElementBottomPadding: CGFloat = 80
+    }
 }
 
 // MARK: - Shadow Modifiers

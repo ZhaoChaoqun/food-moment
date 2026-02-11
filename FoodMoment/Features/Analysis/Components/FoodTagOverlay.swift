@@ -132,7 +132,7 @@ struct FoodTagOverlay: View {
     private func animateTagsSequentially() {
         for index in detectedFoods.indices {
             let delay = Double(index) * 0.25 + 0.3
-            withAnimation(
+            _ = withAnimation(
                 .spring(response: 0.5, dampingFraction: 0.7)
                 .delay(delay)
             ) {

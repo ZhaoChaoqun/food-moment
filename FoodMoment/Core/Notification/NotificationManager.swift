@@ -6,7 +6,7 @@ import os
 final class NotificationManager: NSObject {
     static let shared = NotificationManager()
 
-    private static let logger = Logger(subsystem: "com.foodmoment", category: "NotificationManager")
+    private nonisolated static let logger = Logger(subsystem: "com.foodmoment", category: "NotificationManager")
 
     private let center = UNUserNotificationCenter.current()
 
@@ -299,6 +299,7 @@ final class NotificationManager: NSObject {
         categoryIdentifier: String? = nil,
         userInfo: [String: Any]? = nil
     ) {
+        let logger = Self.logger
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -325,7 +326,7 @@ final class NotificationManager: NSObject {
 
         center.add(request) { error in
             if let error {
-                NotificationManager.logger.error("Failed to schedule \(identifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                logger.error("Failed to schedule \(identifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -336,6 +337,7 @@ final class NotificationManager: NSObject {
         body: String,
         identifier: String = UUID().uuidString
     ) {
+        let logger = Self.logger
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
@@ -349,7 +351,7 @@ final class NotificationManager: NSObject {
 
         center.add(request) { error in
             if let error {
-                NotificationManager.logger.error("Failed to send notification: \(error.localizedDescription, privacy: .public)")
+                logger.error("Failed to send notification: \(error.localizedDescription, privacy: .public)")
             }
         }
     }

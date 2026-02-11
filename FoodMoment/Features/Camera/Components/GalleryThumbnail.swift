@@ -30,7 +30,27 @@ struct GalleryThumbnail: View {
             selection: $selectedItem,
             matching: .images
         ) {
-            thumbnailContent
+            ZStack {
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(Color.white.opacity(0.15))
+                    .frame(width: size, height: size)
+
+                if let thumbnailImage {
+                    Image(uiImage: thumbnailImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: size, height: size)
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                } else {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.Jakarta.regular(18))
+                        .foregroundColor(.white)
+                }
+
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .stroke(Color.white.opacity(0.2), lineWidth: borderWidth)
+                    .frame(width: size, height: size)
+            }
         }
         .onChange(of: selectedItem) { _, newItem in
             loadImage(from: newItem)
@@ -38,56 +58,12 @@ struct GalleryThumbnail: View {
         .accessibilityLabel("照片库")
     }
 
-    // MARK: - Thumbnail Content
-
-    private var thumbnailContent: some View {
-        ZStack {
-            backgroundRectangle
-
-            if let thumbnailImage {
-                Image(uiImage: thumbnailImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: size, height: size)
-                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            } else {
-                placeholderIcon
-            }
-
-            borderOverlay
-        }
-    }
-
-    // MARK: - Background Rectangle
-
-    private var backgroundRectangle: some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(Color.white.opacity(0.15))
-            .frame(width: size, height: size)
-    }
-
-    // MARK: - Placeholder Icon
-
-    private var placeholderIcon: some View {
-        Image(systemName: "photo.on.rectangle")
-            .font(.Jakarta.regular(18))
-            .foregroundColor(.white)
-    }
-
-    // MARK: - Border Overlay
-
-    private var borderOverlay: some View {
-        RoundedRectangle(cornerRadius: cornerRadius)
-            .stroke(Color.white.opacity(0.2), lineWidth: borderWidth)
-            .frame(width: size, height: size)
-    }
-
     // MARK: - Private Methods
 
     private func loadImage(from item: PhotosPickerItem?) {
         guard let item else { return }
 
-        Task {
+        Task { @MainActor in
             if let data = try? await item.loadTransferable(type: Data.self),
                let fullImage = UIImage(data: data) {
                 let thumbSize = CGSize(width: 200, height: 200)

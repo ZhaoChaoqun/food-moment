@@ -18,3 +18,16 @@
   - `uv add <package>` - 添加依赖
   - `uv run <script>` - 运行脚本
   - `uv sync` - 同步依赖
+
+## 后端服务规则
+
+- 后端服务默认启动端口为 **9800**
+- 启动命令：
+  ```bash
+  cd backend && uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 9800
+  ```
+- ngrok 固定域名：`sparkle-regardant-mirella.ngrok-free.dev`
+- ngrok 启动命令：
+  ```bash
+  ngrok http 9800 --url sparkle-regardant-mirella.ngrok-free.dev
+  ```

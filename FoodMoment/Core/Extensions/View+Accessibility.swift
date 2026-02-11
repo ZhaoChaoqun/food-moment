@@ -217,6 +217,7 @@ extension Animation {
     ///
     /// - Parameter animation: 原始动画
     /// - Returns: 如果启用了减少动画则返回 nil，否则返回原始动画
+    @MainActor
     static func respectReduceMotion(_ animation: Animation) -> Animation? {
         if UIAccessibility.isReduceMotionEnabled {
             return nil
@@ -227,6 +228,7 @@ extension Animation {
     /// 适配减少动画设置的弹簧动画
     ///
     /// 如果用户启用了减少动画，则返回 nil。
+    @MainActor
     static var accessibleSpring: Animation? {
         respectReduceMotion(.spring(response: 0.5, dampingFraction: 0.7))
     }
@@ -242,16 +244,19 @@ private struct AccessibilityEnvironmentKey: EnvironmentKey {
 extension EnvironmentValues {
 
     /// VoiceOver 是否正在运行
+    @MainActor
     var isVoiceOverRunning: Bool {
         UIAccessibility.isVoiceOverRunning
     }
 
     /// 是否启用了减少动画
+    @MainActor
     var isReduceMotionEnabled: Bool {
         UIAccessibility.isReduceMotionEnabled
     }
 
     /// 是否启用了粗体文本
+    @MainActor
     var isBoldTextEnabled: Bool {
         UIAccessibility.isBoldTextEnabled
     }

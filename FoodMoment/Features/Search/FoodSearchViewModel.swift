@@ -176,37 +176,29 @@ final class FoodSearchViewModel {
         isSearching = true
         errorMessage = nil
 
-        do {
-            var results: [FoodSearchResultDTO] = []
+        var results: [FoodSearchResultDTO] = []
 
-            // 1. 本地中文库搜索
-            if shouldSearchLocal {
-                let localResults = searchLocalDatabase(query: query)
-                results.append(contentsOf: localResults)
-            }
+        // 1. 本地中文库搜索
+        if shouldSearchLocal {
+            let localResults = searchLocalDatabase(query: query)
+            results.append(contentsOf: localResults)
+        }
 
-            // 2. API 搜索 (USDA + 后端)
-            if shouldSearchUSDA {
-                let apiResults = await performAPISearch(query: query, excludingIds: Set(results.map { $0.id }))
-                results.append(contentsOf: apiResults)
-            }
+        // 2. API 搜索 (USDA + 后端)
+        if shouldSearchUSDA {
+            let apiResults = await performAPISearch(query: query, excludingIds: Set(results.map { $0.id }))
+            results.append(contentsOf: apiResults)
+        }
 
-            // 确认搜索词未发生变化
-            guard !Task.isCancelled else { return }
+        // 确认搜索词未发生变化
+        guard !Task.isCancelled else { return }
 
-            searchResults = results
-            suggestions = []  // 清空建议，显示完整结果
+        searchResults = results
+        suggestions = []  // 清空建议，显示完整结果
 
-            // 保存搜索记录
-            if !results.isEmpty {
-                saveRecentSearch(query)
-            }
-        } catch is CancellationError {
-            // 搜索被取消，忽略
-        } catch {
-            guard !Task.isCancelled else { return }
-            searchResults = []
-            errorMessage = error.localizedDescription
+        // 保存搜索记录
+        if !results.isEmpty {
+            saveRecentSearch(query)
         }
 
         isSearching = false

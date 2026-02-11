@@ -127,7 +127,9 @@ extension FoodMomentApp {
             queue: .main
         ) { notification in
             if let url = notification.userInfo?["url"] as? URL {
-                handleDeepLink(url)
+                Task { @MainActor in
+                    handleDeepLink(url)
+                }
             }
         }
     }

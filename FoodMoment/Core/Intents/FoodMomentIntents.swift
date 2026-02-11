@@ -79,7 +79,7 @@ struct LogMealIntent: AppIntent {
     func perform() async throws -> some IntentResult & OpensIntent {
         // 通过 URL Scheme 打开对应页面
         let urlString = "foodmoment://log-\(mealType.rawValue)"
-        if let url = URL(string: urlString) {
+        if URL(string: urlString) != nil {
             // 存储选择的餐次类型供 App 使用
             UserDefaults.standard.set(mealType.rawValue, forKey: "pendingMealType")
         }
