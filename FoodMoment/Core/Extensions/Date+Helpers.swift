@@ -56,7 +56,7 @@ extension Date {
     // MARK: - Formatting
 
     /// DateFormatter 缓存，避免高频调用时重复创建
-    private static let formatterCache: NSCache<NSString, DateFormatter> = {
+    private nonisolated(unsafe) static let formatterCache: NSCache<NSString, DateFormatter> = {
         let cache = NSCache<NSString, DateFormatter>()
         cache.countLimit = 10
         return cache
