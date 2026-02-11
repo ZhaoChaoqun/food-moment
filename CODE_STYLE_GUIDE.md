@@ -2,8 +2,8 @@
 
 > 本规范由资深 iOS 开发工程师制定，旨在确保代码质量、可维护性和团队协作效率。
 >
-> **版本**: 1.0.0
-> **最后更新**: 2026-02-09
+> **版本**: 1.1.0
+> **最后更新**: 2026-02-10
 > **适用范围**: FoodMoment iOS 客户端
 
 ---
@@ -24,6 +24,9 @@
 12. [安全规范](#12-安全规范)
 13. [Git 提交规范](#13-git-提交规范)
 14. [代码审查清单](#14-代码审查清单)
+15. [设计系统](#15-设计系统)
+16. [Preview 规范](#16-preview-规范)
+17. [无障碍 (Accessibility)](#17-无障碍-accessibility)
 
 ---
 
@@ -462,6 +465,14 @@ Text("Hello")
 
 ### 4.3 计算属性提取规则
 
+**三种拆分方式及选择标准**：
+
+| 方式 | 适用条件 | 示例 |
+|------|----------|------|
+| `private var` 计算属性 | 无参数、无独立状态、未跨文件复用 | `private var headerSection: some View` |
+| `private func` 工厂方法 | 需要参数 | `private func mealRow(_ meal: MealRecord) -> some View` |
+| 独立 `struct` | 满足以下任一：有自己的 `@State`/`@Binding`；被 2+ 个父视图使用；超过 50 行 | `struct NutritionRing: View` |
+
 **必须提取为计算属性的情况**：
 - 代码超过 5 行
 - 包含复杂逻辑（条件、循环）
@@ -638,6 +649,25 @@ final class FeatureViewModel {
 ```
 
 ### 5.2 View-ViewModel 通信
+
+**ModelContext 传递原则**：ViewModel 不持有 `ModelContext`，通过方法参数传入。这避免了生命周期管理问题，也确保 ModelContext 始终由 SwiftUI 的 `@Environment` 管理。
+
+```swift
+// ✅ 正确：ModelContext 通过参数传入
+@MainActor
+@Observable
+final class HomeViewModel {
+    func loadData(modelContext: ModelContext) { ... }
+    func saveMeal(_ meal: MealRecord, modelContext: ModelContext) { ... }
+}
+
+// ❌ 错误：ViewModel 持有 ModelContext
+@Observable
+final class HomeViewModel {
+    private var modelContext: ModelContext  // 禁止！
+    init(modelContext: ModelContext) { ... }
+}
+```
 
 ```swift
 // ✅ 正确：通过方法调用
@@ -1628,85 +1658,158 @@ self.name = name  // 这种注释没有价值
 
 ## 11. 性能优化
 
-### 11.1 SwiftUI 性能
+### 11.1 SwiftUI 视图渲染性能
 
 ```swift
-// ✅ 使用 Lazy 容器处理大量数据
-ScrollView {
-    LazyVStack(spacing: 12) {
-        ForEach(items) { item in
-            ItemRow(item: item)
-        }
-    }
-}
-
-// ✅ 合理使用 @State 和 @Binding
-struct ParentView: View {
-    @State private var count = 0
-
-    var body: some View {
-        // 只传递需要的数据
-        ChildView(count: $count)  // ✅ Binding
-        DisplayView(count: count)  // ✅ 值传递（只读）
-    }
-}
-
-// ✅ 避免在 body 中进行计算
+// ✅ 避免在 body 中创建重量级对象
 struct ItemRow: View {
     let item: Item
 
-    // ✅ 使用计算属性缓存格式化结果
+    // ✅ 静态属性：DateFormatter 只创建一次
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MM月dd日 HH:mm"
+        return f
+    }()
+
+    // ✅ 计算属性缓存格式化结果
     private var formattedDate: String {
-        item.date.formatted(as: "MM月dd日")
+        Self.dateFormatter.string(from: item.date)
     }
 
     var body: some View {
-        Text(formattedDate)  // ✅ 不会每次重新计算
+        Text(formattedDate)  // ✅ 不在 body 中创建 DateFormatter
     }
 }
 
-// ✅ 使用 EquatableView 优化重绘
-struct OptimizedRow: View, Equatable {
-    let title: String
-    let value: Int
-
-    static func == (lhs: Self, rhs: Self) -> Bool {
-        lhs.title == rhs.title && lhs.value == rhs.value
-    }
-
-    var body: some View {
-        HStack {
-            Text(title)
-            Spacer()
-            Text("\(value)")
-        }
-    }
+// ❌ 错误：每次 body 求值都创建新 DateFormatter
+var body: some View {
+    let formatter = DateFormatter()  // 每次重绘都创建！
+    formatter.dateFormat = "MM月dd日"
+    Text(formatter.string(from: date))
 }
 ```
 
-### 11.2 图片优化
+**View 重绘控制**：
 
 ```swift
-// ✅ 异步加载网络图片
-AsyncImage(url: URL(string: imageURL)) { phase in
+// ✅ 使用 let 传值避免不必要的重绘
+struct CalorieDisplay: View {
+    let value: Int     // ✅ let：值不变时不触发重绘
+    let goal: Int
+
+    var body: some View {
+        Text("\(value) / \(goal) kcal")
+    }
+}
+
+// ✅ 使用 Equatable 优化复杂视图的重绘频率
+struct NutrientBar: View, Equatable {
+    let name: String
+    let current: Double
+    let goal: Double
+
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.name == rhs.name
+            && lhs.current == rhs.current
+            && lhs.goal == rhs.goal
+    }
+
+    var body: some View {
+        // 仅在属性变化时重绘
+        ProgressView(value: current, total: goal)
+    }
+}
+
+// ✅ 条件渲染：优先 if/else，避免 opacity(0) 隐藏
+@ViewBuilder
+private var badge: some View {
+    if isEarned {
+        earnedBadge   // ✅ 未显示的分支不参与渲染
+    } else {
+        lockedBadge
+    }
+}
+// ❌ 避免 opacity 隐藏（视图仍在渲染树中）
+earnedBadge.opacity(isEarned ? 1 : 0)
+```
+
+### 11.2 列表与滚动性能
+
+```swift
+// ✅ 大量数据必须使用 Lazy 容器
+ScrollView {
+    LazyVStack(spacing: 12) {  // ✅ 按需创建
+        ForEach(meals) { meal in
+            MealCard(meal: meal)
+        }
+    }
+}
+
+// ❌ 禁止对大量数据使用 VStack
+ScrollView {
+    VStack {  // ❌ 一次性创建所有子视图
+        ForEach(meals) { meal in
+            MealCard(meal: meal)
+        }
+    }
+}
+
+// ✅ LazyVGrid 配合 ScrollView
+ScrollView {
+    LazyVGrid(columns: gridColumns, spacing: 12) {
+        ForEach(items) { item in
+            ItemCard(item: item)
+        }
+    }
+    .padding(.horizontal, 20)
+}
+
+// ✅ 水平滚动使用 LazyHStack + scrollTargetLayout
+ScrollView(.horizontal, showsIndicators: false) {
+    LazyHStack(spacing: 16) {
+        ForEach(cards) { card in
+            CardView(card: card)
+        }
+    }
+    .scrollTargetLayout()
+}
+.scrollTargetBehavior(.viewAligned)
+
+// ✅ 阈值判断：
+// - 数据量 < 20 且不会增长 → VStack/HStack 即可
+// - 数据量 >= 20 或动态增长 → 必须 LazyVStack/LazyHStack
+```
+
+### 11.3 图片加载与缓存
+
+```swift
+// ✅ AsyncImage 标准用法
+AsyncImage(url: url) { phase in
     switch phase {
     case .empty:
         ProgressView()
     case .success(let image):
         image
             .resizable()
-            .aspectRatio(contentMode: .fill)
+            .scaledToFill()
+            .frame(width: cardWidth, height: cardHeight)
+            .clipped()   // ✅ 必须 clipped 防止溢出
     case .failure:
-        Image(systemName: "photo")
-            .foregroundColor(.secondary)
+        placeholderView
     @unknown default:
-        EmptyView()
+        placeholderView
     }
 }
-.frame(width: 100, height: 100)
-.clipShape(RoundedRectangle(cornerRadius: 12))
 
-// ✅ 图片压缩
+// ✅ 使用 prepareForDisplay() 在后台线程解码大图
+func loadThumbnail(from data: Data) async -> UIImage? {
+    guard let original = UIImage(data: data) else { return nil }
+    // 在后台线程解码和缩放，避免主线程卡顿
+    return await original.byPreparingThumbnail(ofSize: CGSize(width: 200, height: 200))
+}
+
+// ✅ 图片压缩上传
 extension UIImage {
     func compressed(maxSizeKB: Int = 1024) -> Data? {
         var compression: CGFloat = 1.0
@@ -1728,72 +1831,175 @@ extension UIImage {
     }
 }
 
-// ✅ 图片缓存
-actor ImageCacheManager {
-    static let shared = ImageCacheManager()
+// ⚠️ 注意：AsyncImage 没有内置磁盘缓存
+// 仅有内存级 URLCache。频繁访问的图片建议搭配自定义缓存或第三方库。
+```
 
-    private let cache = NSCache<NSString, UIImage>()
+### 11.4 SwiftData 查询性能
 
-    func image(for url: URL) -> UIImage? {
-        cache.object(forKey: url.absoluteString as NSString)
+```swift
+// ✅ 使用 fetchLimit 限制结果数量
+func fetchRecentMeals(modelContext: ModelContext, limit: Int = 10) -> [MealRecord] {
+    var descriptor = FetchDescriptor<MealRecord>(
+        sortBy: [SortDescriptor(\.mealTime, order: .reverse)]
+    )
+    descriptor.fetchLimit = limit  // ✅ 避免加载全部数据
+    return (try? modelContext.fetch(descriptor)) ?? []
+}
+
+// ✅ 使用 #Predicate 缩小查询范围
+func fetchTodayMeals(modelContext: ModelContext) -> [MealRecord] {
+    let startOfDay = Calendar.current.startOfDay(for: Date())
+    let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)!
+
+    let predicate = #Predicate<MealRecord> { meal in
+        meal.mealTime >= startOfDay && meal.mealTime < endOfDay
     }
 
-    func setImage(_ image: UIImage, for url: URL) {
-        cache.setObject(image, forKey: url.absoluteString as NSString)
+    let descriptor = FetchDescriptor<MealRecord>(
+        predicate: predicate,
+        sortBy: [SortDescriptor(\.mealTime)]
+    )
+    return (try? modelContext.fetch(descriptor)) ?? []
+}
+
+// ❌ 避免全表扫描后在内存中过滤
+let allMeals = try modelContext.fetch(FetchDescriptor<MealRecord>())  // ❌ 全表！
+let todayMeals = allMeals.filter { Calendar.current.isDateInToday($0.mealTime) }  // ❌ 内存过滤
+
+// ✅ 批量操作使用事务
+func deleteOldRecords(modelContext: ModelContext, before date: Date) {
+    let predicate = #Predicate<MealRecord> { $0.mealTime < date }
+    let descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
+
+    if let records = try? modelContext.fetch(descriptor) {
+        for record in records {
+            modelContext.delete(record)
+        }
+        try? modelContext.save()  // 一次性提交
     }
 }
 ```
 
-### 11.3 数据加载优化
+### 11.5 内存管理
 
 ```swift
-// ✅ 分页加载
+// ✅ 大数据使用 @Attribute(.externalStorage) 存储到文件
+@Model
+final class MealRecord {
+    @Attribute(.externalStorage) var localImageData: Data?  // ✅ 图片不在内存中常驻
+
+    var thumbnailData: Data?  // 缩略图可内联（< 50KB）
+}
+
+// ✅ 分页加载大数据集
 @MainActor
 @Observable
-final class PaginatedViewModel {
-    var items: [Item] = []
-    var isLoading = false
-    var hasMore = true
+final class DiaryViewModel {
+    var meals: [MealRecord] = []
+    private var currentOffset = 0
+    private let batchSize = 20
 
-    private var currentPage = 0
-    private let pageSize = 20
+    func loadNextBatch(modelContext: ModelContext) {
+        var descriptor = FetchDescriptor<MealRecord>(
+            sortBy: [SortDescriptor(\.mealTime, order: .reverse)]
+        )
+        descriptor.fetchOffset = currentOffset
+        descriptor.fetchLimit = batchSize
 
-    func loadMore() async {
-        guard !isLoading, hasMore else { return }
-
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            let newItems: [Item] = try await APIClient.shared.request(
-                .getItems(page: currentPage, size: pageSize)
-            )
-
-            items.append(contentsOf: newItems)
-            hasMore = newItems.count == pageSize
-            currentPage += 1
-        } catch {
-            // 错误处理
+        if let batch = try? modelContext.fetch(descriptor) {
+            meals.append(contentsOf: batch)
+            currentOffset += batch.count
         }
     }
 }
 
-// ✅ 预加载
-struct ItemList: View {
-    @State private var viewModel = PaginatedViewModel()
+// ✅ 及时释放不再需要的大对象
+func processAndUpload(image: UIImage) async throws {
+    let compressed = image.compressed(maxSizeKB: 1024)
+    // image 在此作用域结束后即可被 ARC 释放
+    guard let data = compressed else { return }
+    let _: AnalysisResponse = try await APIClient.shared.upload(
+        .analyzeFood, imageData: data
+    )
+}
+```
 
-    var body: some View {
-        List(viewModel.items) { item in
-            ItemRow(item: item)
-                .onAppear {
-                    // 距离底部 5 个时预加载
-                    if item == viewModel.items.suffix(5).first {
-                        Task {
-                            await viewModel.loadMore()
-                        }
-                    }
-                }
+### 11.6 动画性能
+
+```swift
+// ✅ 基础动画使用 AppTheme.Animation.defaultSpring
+withAnimation(AppTheme.Animation.defaultSpring) {
+    isExpanded.toggle()
+}
+
+// ✅ 对复杂渐变/阴影使用 drawingGroup() 启用 Metal 渲染
+ZStack {
+    Circle()
+        .fill(RadialGradient(
+            colors: [.blue, .purple, .pink],
+            center: .center,
+            startRadius: 2,
+            endRadius: 100
+        ))
+    Circle()
+        .strokeBorder(
+            LinearGradient(colors: [.white, .gray], startPoint: .top, endPoint: .bottom),
+            lineWidth: 3
+        )
+}
+.drawingGroup()  // ✅ 将复合渲染扁平化为单个 Metal 纹理
+
+// ✅ 数值变化动画绑定到具体值
+Text("\(calories)")
+    .animation(.spring, value: calories)  // ✅ 只在 calories 变化时触发
+
+// ❌ 避免无限制的隐式动画
+someView.animation(.spring)  // ❌ 任何状态变化都触发动画
+```
+
+### 11.7 并发性能
+
+```swift
+// ✅ 使用 TaskGroup 并行加载独立数据
+func loadDashboard(modelContext: ModelContext) async {
+    isLoading = true
+    defer { isLoading = false }
+
+    await withTaskGroup(of: Void.self) { group in
+        group.addTask { @MainActor in
+            self.todayMeals = self.fetchTodayMeals(modelContext: modelContext)
         }
+        group.addTask { @MainActor in
+            self.waterIntake = await HealthKitManager.shared.fetchWaterIntake()
+        }
+        group.addTask { @MainActor in
+            self.stepCount = await HealthKitManager.shared.fetchStepCount()
+        }
+    }
+}
+
+// ✅ 合理取消不再需要的任务
+struct SearchView: View {
+    @State private var searchTask: Task<Void, Never>?
+
+    func onSearchTextChanged(_ text: String) {
+        searchTask?.cancel()  // ✅ 取消上一次搜索
+
+        searchTask = Task {
+            try? await Task.sleep(for: .milliseconds(300))  // 防抖
+            guard !Task.isCancelled else { return }
+            await viewModel.search(text)
+        }
+    }
+}
+
+// ✅ 在 ViewModel 中检查取消状态
+func loadAllPages() async {
+    for page in 0..<totalPages {
+        guard !Task.isCancelled else { return }  // ✅ 每轮检查
+        let items: [Item] = try await APIClient.shared.request(.getItems(page: page))
+        self.items.append(contentsOf: items)
     }
 }
 ```
@@ -2036,6 +2242,299 @@ Fixes #456
 
 ---
 
+## 15. 设计系统
+
+### 15.1 设计令牌（Design Tokens）
+
+所有视觉常量集中管理在 `AppTheme` 枚举中，禁止在业务代码中硬编码。
+
+```swift
+enum AppTheme {
+    // MARK: - Colors
+    enum Colors {
+        // 品牌色
+        static let primary = Color(hex: "#13EC5B")      // 活力绿
+        static let accent = Color(hex: "#E3EF26")       // 强调黄
+
+        // 背景
+        static let background = Color(hex: "#F8F9FA")
+        static let darkBackground = Color(hex: "#102216")
+
+        // 餐次颜色
+        static let breakfast = Color(hex: "#FACC15")     // 早餐
+        static let lunch = Color(hex: "#FB923C")         // 午餐
+        static let dinner = Color(hex: "#F87171")        // 晚餐
+        static let snack = Color(hex: "#60A5FA")         // 加餐
+
+        // 营养素颜色
+        static let protein = Color(hex: "#4ADE80")       // 蛋白质
+        static let carbs = Color(hex: "#FACC15")         // 碳水
+        static let fat = Color(hex: "#FB923C")           // 脂肪
+        static let fiber = Color(hex: "#60A5FA")         // 纤维
+    }
+
+    // MARK: - Corner Radius（三档）
+    enum CornerRadius {
+        static let small: CGFloat = 16
+        static let medium: CGFloat = 24
+        static let large: CGFloat = 32
+    }
+
+    // MARK: - Spacing
+    enum Spacing {
+        static let xs: CGFloat = 4
+        static let small: CGFloat = 8
+        static let medium: CGFloat = 12
+        static let large: CGFloat = 16
+        static let xl: CGFloat = 20
+        static let xxl: CGFloat = 24
+    }
+
+    // MARK: - Animation
+    enum Animation {
+        static let springResponse: Double = 0.5
+        static let springDamping: Double = 0.7
+        static var defaultSpring: SwiftUI.Animation {
+            .spring(response: springResponse, dampingFraction: springDamping)
+        }
+    }
+}
+```
+
+### 15.2 颜色使用规范
+
+```swift
+// ✅ 从 AppTheme.Colors 获取颜色
+Text("蛋白质")
+    .foregroundStyle(AppTheme.Colors.protein)
+    .padding(.horizontal, AppTheme.Spacing.large)
+
+// ✅ 通过 ShapeStyle 扩展使用品牌色
+extension ShapeStyle where Self == Color {
+    static var brandPrimary: Color { AppTheme.Colors.primary }
+    static var mealBreakfast: Color { AppTheme.Colors.breakfast }
+}
+
+// ❌ 禁止硬编码颜色
+Text("蛋白质")
+    .foregroundStyle(Color(hex: "#4ADE80"))  // ❌ 应使用 AppTheme.Colors.protein
+    .foregroundStyle(.green)                  // ❌ 应使用语义化颜色
+
+// ⚠️ 例外：组件内部的一次性装饰色可硬编码，但需注释说明
+Circle()
+    .fill(Color(hex: "#ECECEC"))  // neumorphism 凹陷效果，仅 lockedBadge 使用
+```
+
+### 15.3 字体使用规范
+
+```swift
+// ✅ 使用 .Jakarta 命名空间
+Text("标题")
+    .font(.Jakarta.bold(28))
+
+Text("正文")
+    .font(.Jakarta.regular(16))
+
+Text("标签")
+    .font(.Jakarta.semiBold(10))
+
+// ✅ 可用字重
+// .Jakarta.regular(size)     — 正文、说明
+// .Jakarta.medium(size)      — 次要标题、标签
+// .Jakarta.semiBold(size)    — 副标题、强调
+// .Jakarta.bold(size)        — 标题、数值
+// .Jakarta.extraBold(size)   — 超大标题（如首页日期）
+
+// ❌ 禁止使用系统字体
+Text("标题")
+    .font(.system(size: 28, weight: .bold))  // ❌
+    .font(.title)                             // ❌
+```
+
+### 15.4 玻璃态组件
+
+```swift
+// ✅ 使用 .glassCard() 修饰符
+VStack {
+    // 内容
+}
+.padding(24)
+.glassCard()                                           // 默认圆角
+.glassCard(cornerRadius: AppTheme.CornerRadius.large)  // 自定义圆角
+
+// ✅ glassCard 内部实现（View+Glass.swift）
+// - 白色半透明背景 (.white.opacity(0.6))
+// - .ultraThinMaterial 毛玻璃
+// - RoundedRectangle 裁切
+// - 白色细描边
+// - 阴影
+```
+
+### 15.5 卡片与阴影
+
+```swift
+// ✅ 使用 CardShadow 修饰符
+.modifier(CardShadow())
+
+// ✅ 标准卡片尺寸约定
+// 食物卡片：220 × 280，圆角 32
+// 信息卡片：全宽 - 40 边距，圆角 24
+// 网格卡片：(屏宽 - 52) / 2，圆角 24
+```
+
+---
+
+## 16. Preview 规范
+
+### 16.1 基本要求
+
+- 每个 `View` 文件必须包含至少一个 `#Preview`
+- 使用 `#Preview` 宏（非旧版 `PreviewProvider`）
+- Preview 放在文件最末尾，`// MARK: - Preview` 之后
+
+### 16.2 标准 Preview 模板
+
+```swift
+// MARK: - Preview
+
+// 基础 Preview
+#Preview {
+    HomeView()
+        .environment(AppState())
+        .modelContainer(for: [MealRecord.self, UserProfile.self])
+}
+
+// 命名 Preview（多状态）
+#Preview("Empty State") {
+    DiaryView()
+        .environment(AppState())
+        .modelContainer(for: [MealRecord.self])
+}
+
+#Preview("With Data") {
+    let container = try! ModelContainer(
+        for: [MealRecord.self],
+        configurations: [ModelConfiguration(isStoredInMemoryOnly: true)]
+    )
+
+    container.mainContext.insert(MealRecord(
+        mealType: "lunch",
+        mealTime: Date(),
+        title: "牛油果吐司",
+        totalCalories: 350,
+        proteinGrams: 12.5,
+        carbsGrams: 45.0,
+        fatGrams: 18.0
+    ))
+
+    return DiaryView()
+        .modelContainer(container)
+}
+```
+
+### 16.3 特殊场景 Preview
+
+```swift
+// 暗色背景上的组件
+#Preview {
+    ZStack {
+        Color.black.ignoresSafeArea()
+        GalleryThumbnail(selectedImage: .constant(nil))
+    }
+}
+
+// 暗色模式
+#Preview("Dark Mode") {
+    HomeView()
+        .preferredColorScheme(.dark)
+        .environment(AppState())
+}
+
+// 独立组件（无环境依赖）
+#Preview {
+    NutritionRing(progress: 0.65, color: AppTheme.Colors.protein)
+        .frame(width: 100, height: 100)
+        .padding()
+}
+```
+
+### 16.4 Preview 注意事项
+
+- `try!` 和 `fatalError` 仅允许在 Preview 中使用
+- 使用 `isStoredInMemoryOnly: true` 创建内存数据库
+- 复杂组件建议提供空态、数据态、错误态三种 Preview
+- Preview 中的模拟数据应该是有意义的中文内容，而非 "Lorem ipsum"
+
+---
+
+## 17. 无障碍 (Accessibility)
+
+### 17.1 基本原则
+
+- 所有可交互元素必须有 `accessibilityLabel`
+- 数值展示必须有 `accessibilityValue`
+- 最小触摸目标：44 × 44 pt
+
+### 17.2 标准无障碍修饰符
+
+```swift
+// ✅ 按钮和可交互元素
+Button(action: { }) {
+    Image(systemName: "camera.fill")
+}
+.accessibilityLabel("拍照记录食物")
+
+// ✅ 数值信息
+Text("\(calories)")
+    .font(.Jakarta.extraBold(48))
+    .calorieAccessibility(value: calories, goal: dailyGoal)
+
+// ✅ 图表和可视化
+CalorieRingChart(progress: progress)
+    .accessibilityLabel("今日卡路里进度")
+    .accessibilityValue("已摄入\(consumed)千卡，目标\(goal)千卡，完成\(percentage)%")
+
+// ✅ 最小触摸目标
+Button(action: { }) {
+    Image(systemName: "plus")
+        .font(.system(size: 12))
+}
+.minTouchTarget()  // 扩展到 44 × 44pt
+```
+
+### 17.3 无障碍辅助扩展
+
+```swift
+// View+Accessibility.swift 提供的便捷方法
+extension View {
+    /// 卡路里无障碍信息
+    func calorieAccessibility(value: Int, goal: Int) -> some View
+
+    /// 营养素无障碍信息
+    func nutrientAccessibility(name: String, amount: Double, unit: String) -> some View
+
+    /// 最小触摸目标 (44 × 44pt)
+    func minTouchTarget() -> some View
+}
+```
+
+### 17.4 测试标识符
+
+```swift
+// ✅ 为 UI 测试提供稳定标识符
+Button("开始分析") { }
+    .accessibilityIdentifier("AnalysisStartButton")
+
+// ✅ 命名约定：PascalCase + 组件类型
+// 格式：<Feature><Element><Role>
+// 示例：
+.accessibilityIdentifier("HomeCalorieRing")
+.accessibilityIdentifier("ProfileSettingsButton")
+.accessibilityIdentifier("AchievementBadge_first_glimpse")
+```
+
+---
+
 ## 附录
 
 ### A. 快捷键（Xcode）
@@ -2065,6 +2564,6 @@ Fixes #456
 
 ---
 
-> **最后更新**: 2026-02-09
+> **最后更新**: 2026-02-10
 > **维护者**: FoodMoment iOS Team
-> **版本**: 1.0.0
+> **版本**: 1.1.0
