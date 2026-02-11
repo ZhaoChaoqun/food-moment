@@ -11,6 +11,7 @@ from app.schemas.user import (
     WeightLogCreate,
     WeightLogResponse,
     StreakResponse,
+    AchievementResponse,
 )
 from app.api.deps import CurrentUserId, DbSession
 from app.models.user import User
@@ -66,7 +67,7 @@ async def update_profile(
     return UserProfileResponse.model_validate(user)
 
 
-@router.get("/achievements")
+@router.get("/achievements", response_model=list[AchievementResponse])
 async def get_achievements(user_id: CurrentUserId, db: DbSession):
     """Get user achievements based on tracking data.
 

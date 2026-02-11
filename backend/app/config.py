@@ -18,16 +18,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
 
-    # AI Services
-    gemini_api_key: str = ""
-    openai_api_key: str = ""
-
-    # Agent Maestro Proxy (本地代理 - Gemini API)
-    agent_maestro_enabled: bool = True
-    agent_maestro_gemini_base_url: str = "http://localhost:23333/api/gemini"
-    agent_maestro_gemini_model: str = "gemini-3-pro-preview"
-
-    # Anthropic Claude API (via proxy)
+    # AI Service - Anthropic Claude (via Agent Maestro proxy)
     anthropic_base_url: str = "http://localhost:23333/api/anthropic"
     anthropic_model: str = "claude-opus-4.6-fast"
     anthropic_enabled: bool = True

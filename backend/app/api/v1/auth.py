@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status
 from sqlalchemy import select, delete
 
 from app.config import settings
-from app.schemas.auth import AppleAuthRequest, TokenResponse, RefreshTokenRequest
+from app.schemas.auth import AppleAuthRequest, DeviceAuthRequest, TokenResponse, RefreshTokenRequest
 from app.api.deps import CurrentUserId, DbSession
 from app.services import auth_service
 from app.models.user import User
@@ -14,6 +14,33 @@ from app.models.water import WaterLog, WeightLog
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
+
+
+@router.post("/device", response_model=TokenResponse)
+async def device_auth(request: DeviceAuthRequest, db: DbSession):
+    """Authenticate with a device UUID (anonymous auth).
+
+    First-time: creates a new user associated with the device ID.
+    Subsequent: finds existing user and returns a new token.
+    No Apple Sign-In required.
+    """
+    if not request.device_id or len(request.device_id) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid device_id",
+        )
+
+    user = await auth_service.find_or_create_user_by_device_id(db, request.device_id)
+    logger.info(f"Device auth for user: {user.id} (device_id={request.device_id[:8]}...)")
+
+    access_token = auth_service.create_access_token(user.id)
+    refresh_token = auth_service.create_refresh_token(user.id)
+
+    return TokenResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        expires_in=settings.access_token_expire_minutes * 60,
+    )
 
 
 @router.post("/apple", response_model=TokenResponse)

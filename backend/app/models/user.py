@@ -12,7 +12,8 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    apple_user_id: Mapped[str] = mapped_column(String(255), unique=True, index=True)
+    apple_user_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
+    device_id: Mapped[str | None] = mapped_column(String(255), unique=True, index=True, nullable=True)
     display_name: Mapped[str] = mapped_column(String(100))
     email: Mapped[str | None] = mapped_column(String(255), nullable=True)
     avatar_url: Mapped[str | None] = mapped_column(String(500), nullable=True)

@@ -55,3 +55,13 @@ class StreakResponse(BaseModel):
     current_streak: int
     longest_streak: int
     total_days_logged: int
+
+
+class AchievementResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    emoji: str
+    unlocked: bool
+    progress: int
+    target: int

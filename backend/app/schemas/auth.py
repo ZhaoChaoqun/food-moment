@@ -8,6 +8,10 @@ class AppleAuthRequest(BaseModel):
     email: str | None = None
 
 
+class DeviceAuthRequest(BaseModel):
+    device_id: str
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str

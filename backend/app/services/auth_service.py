@@ -186,6 +186,32 @@ async def find_user_by_apple_id(db: AsyncSession, apple_user_id: str) -> User | 
     return result.scalar_one_or_none()
 
 
+async def find_or_create_user_by_device_id(db: AsyncSession, device_id: str) -> User:
+    """Find a user by device ID, or create a new one if not found.
+
+    Args:
+        db: Database session
+        device_id: iOS device UUID (stored in Keychain)
+
+    Returns:
+        Existing or newly created User
+    """
+    result = await db.execute(
+        select(User).where(User.device_id == device_id)
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None:
+        user = User(
+            device_id=device_id,
+            display_name="用户",
+        )
+        db.add(user)
+        await db.flush()
+
+    return user
+
+
 async def create_user_from_apple(
     db: AsyncSession,
     apple_user_id: str,
