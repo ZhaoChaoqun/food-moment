@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -7,6 +8,13 @@ from app.config import settings
 from app.database import engine, Base
 from app.models import User, MealRecord, DetectedFood, WaterLog, WeightLog  # noqa: F401 - register models with Base
 from app.api.v1.router import api_router
+
+# 配置 logging，确保所有 app 模块的日志都能输出
+logging.basicConfig(
+    level=getattr(logging, settings.log_level.upper(), logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 
 @asynccontextmanager

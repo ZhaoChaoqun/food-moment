@@ -1,10 +1,12 @@
 """AI food recognition service using Gemini Vision / GPT-4o / Agent Maestro."""
 
 import base64
+import io
 import json
 import logging
 
 import httpx
+from PIL import Image
 
 from app.config import settings
 from app.schemas.food import (
@@ -13,6 +15,30 @@ from app.schemas.food import (
     DetectedFoodResponse,
     BoundingBox,
 )
+
+logger = logging.getLogger(__name__)
+
+
+def _resize_image(image_data: bytes, max_size: int = 512, quality: int = 70) -> bytes:
+    """Resize and compress image to reduce token usage."""
+    try:
+        img = Image.open(io.BytesIO(image_data))
+
+        # Convert to RGB if necessary
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+
+        # Resize if larger than max_size
+        if max(img.size) > max_size:
+            img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+
+        # Save to bytes with compression
+        buffer = io.BytesIO()
+        img.save(buffer, format="JPEG", quality=quality, optimize=True)
+        return buffer.getvalue()
+    except Exception as e:
+        logger.warning(f"Failed to resize image: {e}")
+        return image_data
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +53,7 @@ For each food item, provide:
 7. protein_grams
 8. carbs_grams
 9. fat_grams
+10. color (a unique hex color for each food item, use visually distinct colors)
 
 Also provide:
 - total_calories: sum of all food items
@@ -48,10 +75,22 @@ Return ONLY valid JSON in this exact format:
       "carbs_grams": 0.0,
       "fat_grams": 12.0,
       "color": "#FF6B6B"
+    },
+    {
+      "name": "White Rice",
+      "name_zh": "白米饭",
+      "emoji": "🍚",
+      "confidence": 0.90,
+      "bounding_box": {"x": 0.5, "y": 0.3, "w": 0.3, "h": 0.3},
+      "calories": 200,
+      "protein_grams": 4.0,
+      "carbs_grams": 45.0,
+      "fat_grams": 0.5,
+      "color": "#4ECDC4"
     }
   ],
-  "total_calories": 250,
-  "total_nutrition": {"protein_g": 30.0, "carbs_g": 0.0, "fat_g": 12.0, "fiber_g": 2.0},
+  "total_calories": 450,
+  "total_nutrition": {"protein_g": 34.0, "carbs_g": 45.0, "fat_g": 12.5, "fiber_g": 2.0},
   "ai_analysis": "这顿饭蛋白质含量丰富...",
   "tags": ["high-protein"]
 }"""
@@ -110,11 +149,19 @@ def _get_mock_analysis() -> dict:
     }
 
 
+_FOOD_COLORS = [
+    "#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4",
+    "#FFEAA7", "#DDA0DD", "#98D8C8", "#F7DC6F",
+    "#BB8FCE", "#85C1E9", "#F0B27A", "#82E0AA",
+]
+
+
 def _parse_ai_response(raw: dict) -> AnalysisResponse:
     """Parse raw AI response dict into structured AnalysisResponse."""
     detected_foods = []
-    for food_data in raw.get("detected_foods", []):
+    for i, food_data in enumerate(raw.get("detected_foods", [])):
         bb = food_data.get("bounding_box", {})
+        color = food_data.get("color") or _FOOD_COLORS[i % len(_FOOD_COLORS)]
         detected_foods.append(
             DetectedFoodResponse(
                 name=food_data.get("name", "Unknown"),
@@ -131,7 +178,7 @@ def _parse_ai_response(raw: dict) -> AnalysisResponse:
                 protein_grams=food_data.get("protein_grams", 0),
                 carbs_grams=food_data.get("carbs_grams", 0),
                 fat_grams=food_data.get("fat_grams", 0),
-                color=food_data.get("color", "#FF6B6B"),
+                color=color,
             )
         )
 
@@ -160,11 +207,13 @@ async def _analyze_with_gemini(image_data: bytes) -> dict | None:
         Parsed dict on success, None on failure
     """
     if not settings.gemini_api_key:
+        logger.info("Gemini API Key 未配置，跳过")
         return None
 
     try:
         b64_image = base64.b64encode(image_data).decode("utf-8")
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={settings.gemini_api_key}"
+        logger.info(f"Gemini: 图片 base64 长度: {len(b64_image)} 字符")
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={settings.gemini_api_key[:8]}..."
 
         payload = {
             "contents": [
@@ -186,13 +235,19 @@ async def _analyze_with_gemini(image_data: bytes) -> dict | None:
             },
         }
 
+        real_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={settings.gemini_api_key}"
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, json=payload)
+            logger.info("发送请求到 Gemini Vision API...")
+            response = await client.post(real_url, json=payload)
+            logger.info(f"Gemini 响应状态码: {response.status_code}")
+            if response.status_code != 200:
+                logger.error(f"Gemini 错误响应: {response.text[:1000]}")
             response.raise_for_status()
             result = response.json()
 
         # Extract text from Gemini response
         text = result["candidates"][0]["content"]["parts"][0]["text"]
+        logger.info(f"Gemini 原始响应 (完整): {text}")
         # Clean up markdown code fences if present
         text = text.strip()
         if text.startswith("```json"):
@@ -203,10 +258,14 @@ async def _analyze_with_gemini(image_data: bytes) -> dict | None:
             text = text[:-3]
         text = text.strip()
 
-        return json.loads(text)
+        parsed = json.loads(text)
+        logger.info(f"Gemini JSON 解析成功，包含 {len(parsed.get('detected_foods', []))} 种食物")
+        return parsed
 
     except Exception as e:
-        logger.error(f"Gemini API call failed: {e}")
+        logger.error(f"Gemini API 调用失败: {e}")
+        import traceback
+        logger.error(f"完整堆栈: {traceback.format_exc()}")
         return None
 
 
@@ -273,30 +332,121 @@ async def _analyze_with_openai(image_data: bytes) -> dict | None:
 
 
 async def _analyze_with_agent_maestro(image_data: bytes) -> dict | None:
-    """Call Agent Maestro proxy (Anthropic Claude) to analyze food image.
+    """Call Agent Maestro proxy (Gemini API) to analyze food image.
 
     Returns:
         Parsed dict on success, None on failure
     """
     if not settings.agent_maestro_enabled:
+        logger.info("Agent Maestro 未启用 (agent_maestro_enabled=False)")
         return None
 
     try:
-        # 检查代理是否可用
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            try:
-                health_check = await client.get("http://localhost:23333/health")
-                if health_check.status_code != 200:
-                    logger.warning("Agent Maestro proxy not available")
-                    return None
-            except Exception:
-                logger.warning("Agent Maestro proxy not reachable")
-                return None
+        # Resize image to reduce token usage
+        logger.info(f"压缩前图片大小: {len(image_data)} bytes")
+        resized_image = _resize_image(image_data, max_size=512, quality=70)
+        logger.info(f"压缩后图片大小: {len(resized_image)} bytes (max_size=512, quality=70)")
 
-        b64_image = base64.b64encode(image_data).decode("utf-8")
+        # 记录压缩后的图片信息
+        try:
+            resized_img = Image.open(io.BytesIO(resized_image))
+            logger.info(f"压缩后图片尺寸: {resized_img.size[0]}x{resized_img.size[1]}, 模式: {resized_img.mode}")
+        except Exception:
+            pass
+
+        b64_image = base64.b64encode(resized_image).decode("utf-8")
+        logger.info(f"Base64 编码后长度: {len(b64_image)} 字符")
+
+        url = f"{settings.agent_maestro_gemini_base_url}/v1beta/models/{settings.agent_maestro_gemini_model}:generateContent"
 
         payload = {
-            "model": settings.agent_maestro_model,
+            "contents": [
+                {
+                    "parts": [
+                        {"text": FOOD_ANALYSIS_PROMPT},
+                        {
+                            "inline_data": {
+                                "mime_type": "image/jpeg",
+                                "data": b64_image,
+                            }
+                        },
+                    ]
+                }
+            ],
+            "generationConfig": {
+                "temperature": 0.1,
+                "maxOutputTokens": 2048,
+            },
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "x-goog-api-key": "agent-maestro",
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            logger.info(f"发送请求到 Agent Maestro: {url}")
+            logger.info(f"模型: {settings.agent_maestro_gemini_model}")
+            logger.info(f"Prompt 长度: {len(FOOD_ANALYSIS_PROMPT)} 字符")
+            response = await client.post(url, json=payload, headers=headers)
+            logger.info(f"响应状态码: {response.status_code}")
+            if response.status_code != 200:
+                logger.error(f"响应内容: {response.text[:1000]}")
+            response.raise_for_status()
+            result = response.json()
+
+        # Extract and concatenate text from all parts (Gemini may split response into multiple parts)
+        parts = result["candidates"][0]["content"]["parts"]
+        logger.info(f"响应包含 {len(parts)} 个 parts")
+        text = "".join(part.get("text", "") for part in parts)
+        logger.info(f"AI 原始响应文本 (完整): {text}")
+
+        # Clean up markdown code fences if present
+        text = text.strip()
+        if text.startswith("```json"):
+            text = text[7:]
+        if text.startswith("```"):
+            text = text[3:]
+        if text.endswith("```"):
+            text = text[:-3]
+        text = text.strip()
+
+        logger.info(f"清理后 JSON 文本: {text}")
+        parsed = json.loads(text)
+        logger.info(f"JSON 解析成功，包含 {len(parsed.get('detected_foods', []))} 种食物")
+        return parsed
+
+    except json.JSONDecodeError as e:
+        logger.error(f"Agent Maestro JSON 解析失败: {e}")
+        logger.error(f"无法解析的文本: {text if 'text' in dir() else 'N/A'}")
+        return None
+    except Exception as e:
+        logger.error(f"Agent Maestro (Gemini) API 调用失败: {e}")
+        logger.error(f"错误类型: {type(e).__name__}")
+        import traceback
+        logger.error(f"完整堆栈: {traceback.format_exc()}")
+        return None
+
+
+async def _analyze_with_anthropic(image_data: bytes) -> dict | None:
+    """Call Anthropic Claude API (via proxy) to analyze food image.
+
+    Returns:
+        Parsed dict on success, None on failure
+    """
+    if not settings.anthropic_enabled:
+        logger.info("Anthropic Claude 未启用")
+        return None
+
+    try:
+        resized_image = _resize_image(image_data, max_size=512, quality=70)
+        b64_image = base64.b64encode(resized_image).decode("utf-8")
+        logger.info(f"Anthropic: 压缩后图片大小: {len(resized_image)} bytes, base64 长度: {len(b64_image)}")
+
+        url = f"{settings.anthropic_base_url}/v1/messages"
+
+        payload = {
+            "model": settings.anthropic_model,
             "max_tokens": 2048,
             "messages": [
                 {
@@ -321,24 +471,27 @@ async def _analyze_with_agent_maestro(image_data: bytes) -> dict | None:
 
         headers = {
             "Content-Type": "application/json",
+            "x-api-key": "agent-maestro",
             "anthropic-version": "2023-06-01",
         }
 
         async with httpx.AsyncClient(timeout=60.0) as client:
-            response = await client.post(
-                settings.agent_maestro_endpoint,
-                json=payload,
-                headers=headers,
-            )
+            logger.info(f"发送请求到 Anthropic Claude: {url}")
+            logger.info(f"模型: {settings.anthropic_model}")
+            response = await client.post(url, json=payload, headers=headers)
+            logger.info(f"Anthropic 响应状态码: {response.status_code}")
+            if response.status_code != 200:
+                logger.error(f"Anthropic 错误响应: {response.text[:1000]}")
             response.raise_for_status()
             result = response.json()
 
-        # 解析 Anthropic 响应格式
+        # Extract text from Claude response
         text = ""
         for block in result.get("content", []):
             if block.get("type") == "text":
-                text = block.get("text", "")
-                break
+                text += block.get("text", "")
+
+        logger.info(f"Anthropic 原始响应 (完整): {text}")
 
         # Clean up markdown code fences if present
         text = text.strip()
@@ -350,10 +503,17 @@ async def _analyze_with_agent_maestro(image_data: bytes) -> dict | None:
             text = text[:-3]
         text = text.strip()
 
-        return json.loads(text)
+        parsed = json.loads(text)
+        logger.info(f"Anthropic JSON 解析成功，包含 {len(parsed.get('detected_foods', []))} 种食物")
+        return parsed
 
+    except json.JSONDecodeError as e:
+        logger.error(f"Anthropic JSON 解析失败: {e}")
+        return None
     except Exception as e:
-        logger.error(f"Agent Maestro API call failed: {e}")
+        logger.error(f"Anthropic Claude API 调用失败: {e}")
+        import traceback
+        logger.error(f"完整堆栈: {traceback.format_exc()}")
         return None
 
 
@@ -361,26 +521,82 @@ async def analyze_food_image(image_data: bytes) -> AnalysisResponse:
     """Analyze a food image using cloud AI service.
 
     Strategy:
-    1. Try Agent Maestro proxy (Anthropic Claude) - 本地代理优先
-    2. Try Gemini Vision API
-    3. Fallback to GPT-4o if Gemini fails
-    4. Return mock data if neither is configured
-    5. Parse response into structured AnalysisResponse
+    1. Try Anthropic Claude (fastest, ~3.6s) - 首选
+    2. Try Agent Maestro proxy (Gemini) - 备选
+    3. Try Gemini Vision API (direct)
+    4. Fallback to GPT-4o
+    5. Return mock data if none available
     """
-    # Try Agent Maestro first (本地代理)
-    result = await _analyze_with_agent_maestro(image_data)
+    logger.info("========== 开始食物图片分析 ==========")
+    logger.info(f"收到图片数据: {len(image_data)} bytes ({len(image_data)/1024:.1f} KB)")
 
-    # Try Gemini
+    # 记录图片基本信息
+    try:
+        img = Image.open(io.BytesIO(image_data))
+        logger.info(f"图片格式: {img.format}, 模式: {img.mode}, 尺寸: {img.size[0]}x{img.size[1]}")
+    except Exception as e:
+        logger.warning(f"无法解析图片元数据: {e}")
+
+    # 记录可用的 AI 服务
+    logger.info(f"Anthropic Claude 启用: {settings.anthropic_enabled}")
+    logger.info(f"Agent Maestro 启用: {settings.agent_maestro_enabled}")
+    logger.info(f"Gemini API Key 已配置: {bool(settings.gemini_api_key)}")
+    logger.info(f"OpenAI API Key 已配置: {bool(settings.openai_api_key)}")
+
+    # 1. Try Anthropic Claude first (最快)
+    logger.info("--- 尝试 Anthropic Claude ---")
+    result = await _analyze_with_anthropic(image_data)
+    if result is not None:
+        logger.info("Anthropic Claude 返回成功")
+    else:
+        logger.info("Anthropic Claude 未返回结果，尝试下一个")
+
+    # 2. Try Agent Maestro (Gemini proxy)
     if result is None:
+        logger.info("--- 尝试 Agent Maestro (Gemini) ---")
+        result = await _analyze_with_agent_maestro(image_data)
+        if result is not None:
+            logger.info("Agent Maestro 返回成功")
+        else:
+            logger.info("Agent Maestro 未返回结果，尝试下一个")
+
+    # 3. Try Gemini direct
+    if result is None:
+        logger.info("--- 尝试 Gemini Vision API ---")
         result = await _analyze_with_gemini(image_data)
+        if result is not None:
+            logger.info("Gemini 返回成功")
+        else:
+            logger.info("Gemini 未返回结果，尝试下一个")
 
-    # Fallback to OpenAI
+    # 4. Fallback to OpenAI
     if result is None:
+        logger.info("--- 尝试 OpenAI GPT-4o ---")
         result = await _analyze_with_openai(image_data)
+        if result is not None:
+            logger.info("OpenAI 返回成功")
+        else:
+            logger.info("OpenAI 未返回结果")
 
     # If no AI service available, use mock data
     if result is None:
-        logger.info("No AI API available, returning mock analysis data")
+        logger.warning("所有 AI 服务均不可用，使用 mock 数据！")
         result = _get_mock_analysis()
 
-    return _parse_ai_response(result)
+    # 打印原始 AI 返回结果
+    logger.info(f"AI 原始结果 (detected_foods 数量): {len(result.get('detected_foods', []))}")
+    for i, food in enumerate(result.get("detected_foods", [])):
+        logger.info(
+            f"  [{i}] {food.get('emoji','')} {food.get('name','')} ({food.get('name_zh','')}) "
+            f"置信度={food.get('confidence',0):.2f} "
+            f"热量={food.get('calories',0)} kcal "
+            f"bbox=({food.get('bounding_box',{}).get('x',0):.3f}, {food.get('bounding_box',{}).get('y',0):.3f}, "
+            f"{food.get('bounding_box',{}).get('w',0):.3f}, {food.get('bounding_box',{}).get('h',0):.3f})"
+        )
+    logger.info(f"总热量: {result.get('total_calories', 0)}")
+    logger.info(f"AI分析: {result.get('ai_analysis', '')}")
+    logger.info(f"标签: {result.get('tags', [])}")
+
+    parsed = _parse_ai_response(result)
+    logger.info("========== 食物分析完成 ==========")
+    return parsed

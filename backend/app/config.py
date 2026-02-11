@@ -22,10 +22,15 @@ class Settings(BaseSettings):
     gemini_api_key: str = ""
     openai_api_key: str = ""
 
-    # Agent Maestro Proxy (本地代理)
+    # Agent Maestro Proxy (本地代理 - Gemini API)
     agent_maestro_enabled: bool = True
-    agent_maestro_endpoint: str = "http://localhost:23333/api/anthropic"
-    agent_maestro_model: str = "claude-opus-4.6-fast"
+    agent_maestro_gemini_base_url: str = "http://localhost:23333/api/gemini"
+    agent_maestro_gemini_model: str = "gemini-3-pro-preview"
+
+    # Anthropic Claude API (via proxy)
+    anthropic_base_url: str = "http://localhost:23333/api/anthropic"
+    anthropic_model: str = "claude-opus-4.6-fast"
+    anthropic_enabled: bool = True
 
     # Storage - MinIO / S3 兼容
     storage_provider: str = "minio"  # minio, s3, azure

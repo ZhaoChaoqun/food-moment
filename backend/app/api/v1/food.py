@@ -1,25 +1,26 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
+import logging
 
 from app.schemas.food import AnalysisResponse, FoodSearchResponse, BarcodeResponse
-from app.api.deps import CurrentUserId
 from app.services import ai_service, food_db_service
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/food", tags=["Food Recognition"])
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
 async def analyze_food(
-    user_id: CurrentUserId,
     image: UploadFile = File(...),
 ):
-    """Upload a food image for AI recognition and nutrition analysis.
+    """Upload a food image for AI recognition and nutrition analysis."""
+    logger.info("========== /food/analyze 收到请求 ==========")
+    logger.info(f"文件名: {image.filename}")
+    logger.info(f"Content-Type: {image.content_type}")
 
-    Accepts JPEG/PNG images. The image is analyzed using Gemini Vision API
-    (primary) or GPT-4o (fallback). If no AI API key is configured,
-    returns mock data for development.
-    """
     # Validate file type
     if image.content_type not in ("image/jpeg", "image/png", "image/webp"):
+        logger.warning(f"不支持的图片格式: {image.content_type}")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Unsupported image format. Use JPEG, PNG, or WebP.",
@@ -27,16 +28,22 @@ async def analyze_food(
 
     # Read image data
     image_data = await image.read()
+    logger.info(f"读取图片数据: {len(image_data)} bytes ({len(image_data)/1024:.1f} KB)")
 
     # Validate size (max 10MB)
     if len(image_data) > 10 * 1024 * 1024:
+        logger.warning(f"图片过大: {len(image_data)} bytes")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Image too large. Maximum size is 10MB.",
         )
 
     # Call AI analysis service
+    logger.info("调用 AI 分析服务...")
     analysis = await ai_service.analyze_food_image(image_data)
+
+    logger.info(f"分析完成，返回 {len(analysis.detected_foods)} 种食物，总热量 {analysis.total_calories} kcal")
+    logger.info("========== /food/analyze 请求完成 ==========")
 
     return analysis
 
