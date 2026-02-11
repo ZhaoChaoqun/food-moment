@@ -118,8 +118,8 @@ final class SyncManager {
 
     /// 将单条 MealRecord 上传至后端
     private func uploadMealRecord(_ record: MealRecord) async throws {
-        let payload = MealUploadPayload(
-            id: record.id.uuidString,
+        let createDTO = MealCreateDTO(
+            imageUrl: record.imageURL,
             mealType: record.mealType,
             mealTime: record.mealTime,
             totalCalories: record.totalCalories,
@@ -130,28 +130,27 @@ final class SyncManager {
             title: record.title,
             descriptionText: record.descriptionText,
             aiAnalysis: record.aiAnalysis,
-            tags: record.tags
+            tags: record.tags,
+            detectedFoods: record.detectedFoods.map { food in
+                DetectedFoodCreateDTO(
+                    name: food.name,
+                    nameZh: food.nameZh,
+                    emoji: food.emoji,
+                    confidence: food.confidence,
+                    boundingBoxX: food.boundingBoxX,
+                    boundingBoxY: food.boundingBoxY,
+                    boundingBoxW: food.boundingBoxW,
+                    boundingBoxH: food.boundingBoxH,
+                    calories: food.calories,
+                    proteinGrams: food.proteinGrams,
+                    carbsGrams: food.carbsGrams,
+                    fatGrams: food.fatGrams
+                )
+            }
         )
 
-        try await APIClient.shared.requestVoid(.createMeal, body: payload)
+        let _: MealResponseDTO = try await APIClient.shared.request(.createMeal, body: createDTO)
     }
-}
-
-// MARK: - Upload Payload
-
-private struct MealUploadPayload: Encodable {
-    let id: String
-    let mealType: String
-    let mealTime: Date
-    let totalCalories: Int
-    let proteinGrams: Double
-    let carbsGrams: Double
-    let fatGrams: Double
-    let fiberGrams: Double
-    let title: String
-    let descriptionText: String?
-    let aiAnalysis: String?
-    let tags: [String]
 }
 
 // MARK: - Notification Name

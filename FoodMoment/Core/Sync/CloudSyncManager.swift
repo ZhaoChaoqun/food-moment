@@ -30,7 +30,7 @@ struct RecordUploadData: Sendable {
 final class CloudSyncManager {
     static let shared = CloudSyncManager()
 
-    nonisolated(unsafe) private static let logger = Logger(subsystem: "com.foodmoment", category: "CloudSyncManager")
+    private nonisolated static let logger = Logger(subsystem: "com.foodmoment", category: "CloudSyncManager")
 
     // MARK: - State
 
@@ -197,22 +197,18 @@ final class CloudSyncManager {
 
         syncStatus = .syncing
 
-        do {
-            // 1. 上传本地未同步的记录
-            await uploadPendingRecords(modelContext: modelContext)
+        // 1. 上传本地未同步的记录
+        await uploadPendingRecords(modelContext: modelContext)
 
-            // 2. SwiftData 配合 CloudKit 会自动处理下载和合并
-            // 这里主要是触发和监控
+        // 2. SwiftData 配合 CloudKit 会自动处理下载和合并
+        // 这里主要是触发和监控
 
-            syncStatus = .completed
-            lastSyncDate = Date()
+        syncStatus = .completed
+        lastSyncDate = Date()
 
-            // 3 秒后重置状态
-            try? await Task.sleep(for: .seconds(3))
-            syncStatus = .idle
-        } catch {
-            syncStatus = .error(error.localizedDescription)
-        }
+        // 3 秒后重置状态
+        try? await Task.sleep(for: .seconds(3))
+        syncStatus = .idle
     }
 
     /// 上传待同步记录（使用 TaskGroup 批量上传）
@@ -378,14 +374,15 @@ final class CloudSyncManager {
             try imageData.write(to: tempURL)
             ckRecord["image"] = CKAsset(fileURL: tempURL)
 
-            // 上传后清理临时文件
-            defer {
-                try? FileManager.default.removeItem(at: tempURL)
-            }
-        }
+            // 保存到 CloudKit
+            _ = try await database.save(ckRecord)
 
-        // 保存到 CloudKit
-        _ = try await database.save(ckRecord)
+            // 上传后清理临时文件
+            try? FileManager.default.removeItem(at: tempURL)
+        } else {
+            // 保存到 CloudKit
+            _ = try await database.save(ckRecord)
+        }
     }
 
     /// 更新待上传计数
