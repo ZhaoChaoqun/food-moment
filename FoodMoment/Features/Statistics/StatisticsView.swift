@@ -32,7 +32,7 @@ struct StatisticsView: View {
             .sheet(isPresented: $isShowingDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.selectedDate) {
                     isShowingDatePicker = false
-                    viewModel.loadStatistics()
+                    Task { await viewModel.loadStatistics() }
                 }
                 .presentationDetents([.medium])
             }
@@ -190,7 +190,7 @@ struct StatisticsView: View {
 
     private var tabBarSpacerSection: some View {
         Spacer()
-            .frame(height: 100)
+            .frame(height: AppTheme.Layout.tabBarClearance)
     }
 
     // MARK: - Toolbar Content

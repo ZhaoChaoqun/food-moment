@@ -17,8 +17,18 @@ final class DiaryViewModel {
     var mealToEdit: MealRecord?
 
     /// 当前周中有餐食记录的日期集合（以 "yyyy-MM-dd" 字符串标识）
-    /// 在 loadMeals 时一次性预计算，避免 WeekDatePicker 逐日查询
     var datesWithMeals: Set<String> = []
+
+    // MARK: - Private
+
+    private let mealService: MealServiceProtocol
+    private let userService: UserServiceProtocol
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
 
     // MARK: - Computed Properties
 
@@ -75,18 +85,18 @@ final class DiaryViewModel {
 
     // MARK: - Initialization
 
-    init() {
-        // 轻量级初始化，避免耗时操作
+    init(
+        mealService: MealServiceProtocol = MealService.shared,
+        userService: UserServiceProtocol = UserService.shared
+    ) {
+        self.mealService = mealService
+        self.userService = userService
     }
 
     // MARK: - Public Methods
 
-    /// 从 SwiftData 加载选中日期的餐食记录
-    /// 当数据库为空时，自动加载演示数据
+    /// 从 SwiftData 缓存加载（同步，立即显示）
     func loadMeals(modelContext: ModelContext) {
-        isLoading = true
-        defer { isLoading = false }
-
         let startOfDay = selectedDate.startOfDay
         let endOfDay = selectedDate.endOfDay
 
@@ -98,16 +108,7 @@ final class DiaryViewModel {
             sortBy: [SortDescriptor(\.mealTime, order: .forward)]
         )
 
-        do {
-            meals = try modelContext.fetch(descriptor)
-
-            // 如果当天没有数据且是今天，加载演示数据
-            if meals.isEmpty && Calendar.current.isDateInToday(selectedDate) {
-                loadDemoDataIfNeeded(modelContext: modelContext)
-            }
-        } catch {
-            meals = []
-        }
+        meals = (try? modelContext.fetch(descriptor)) ?? []
 
         // 同时从用户配置加载卡路里目标
         let profileDescriptor = FetchDescriptor<UserProfile>()
@@ -119,65 +120,75 @@ final class DiaryViewModel {
         precomputeDatesWithMeals(modelContext: modelContext)
     }
 
-    /// 一次查询当前周 7 天范围的餐食记录，生成有记录日期的 Set
-    private func precomputeDatesWithMeals(modelContext: ModelContext) {
-        let calendar = Calendar.current
-        guard let weekStart = weekDates.first,
-              let weekEnd = calendar.date(byAdding: .day, value: 1, to: weekDates.last ?? weekStart)
-        else {
-            datesWithMeals = []
+    /// 从 API 刷新数据并更新 SwiftData 缓存
+    func refreshFromAPI(modelContext: ModelContext) async {
+        isLoading = true
+        defer { isLoading = false }
+
+        let dateString = Self.dateFormatter.string(from: selectedDate)
+
+        // 并发获取餐食和用户配置
+        async let mealsTask = mealService.getMeals(date: dateString)
+        async let profileTask = userService.getProfile()
+
+        do {
+            let (mealDTOs, profile) = try await (mealsTask, profileTask)
+            dailyCalorieGoal = profile.dailyCalorieGoal
+
+            // 清除当天旧缓存
+            let startOfDay = selectedDate.startOfDay
+            let endOfDay = selectedDate.endOfDay
+            let predicate = #Predicate<MealRecord> { meal in
+                meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
+            }
+            let existing = (try? modelContext.fetch(FetchDescriptor<MealRecord>(predicate: predicate))) ?? []
+            for record in existing {
+                modelContext.delete(record)
+            }
+
+            // 将 API 数据写入 SwiftData 缓存
+            for dto in mealDTOs {
+                let record = MealRecord(
+                    id: dto.id,
+                    mealType: dto.mealType,
+                    mealTime: dto.mealTime,
+                    title: dto.title,
+                    descriptionText: dto.descriptionText,
+                    totalCalories: dto.totalCalories,
+                    proteinGrams: dto.proteinGrams,
+                    carbsGrams: dto.carbsGrams,
+                    fatGrams: dto.fatGrams,
+                    fiberGrams: dto.fiberGrams,
+                    aiAnalysis: dto.aiAnalysis,
+                    tags: dto.tags ?? [],
+                    imageURL: dto.imageUrl,
+                    isSynced: true
+                )
+                modelContext.insert(record)
+            }
+            try? modelContext.save()
+
+            // 重新从 SwiftData 加载以保持一致性
+            loadMeals(modelContext: modelContext)
+        } catch {
+            // API 失败时保持 SwiftData 缓存数据
+        }
+
+        // 预计算周数据
+        await precomputeWeekDatesFromAPI()
+    }
+
+    /// 删除餐食记录（先 API 后本地）
+    func deleteMeal(_ meal: MealRecord, modelContext: ModelContext) async {
+        // 先从 API 删除
+        do {
+            try await mealService.deleteMeal(id: meal.id.uuidString)
+        } catch {
+            // API 删除失败，不从本地删除
             return
         }
 
-        let predicate = #Predicate<MealRecord> { meal in
-            meal.mealTime >= weekStart && meal.mealTime < weekEnd
-        }
-        let descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
-
-        do {
-            let weekMeals = try modelContext.fetch(descriptor)
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            datesWithMeals = Set(weekMeals.map { formatter.string(from: $0.mealTime) })
-        } catch {
-            datesWithMeals = []
-        }
-    }
-
-    /// 检查指定日期在当前周是否有餐食记录（基于预计算缓存，无数据库查询）
-    func dateHasMealsFromCache(_ date: Date) -> Bool {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        return datesWithMeals.contains(formatter.string(from: date))
-    }
-
-    /// 加载演示数据（仅当当天没有记录时）
-    private func loadDemoDataIfNeeded(modelContext: ModelContext) {
-        let mockMeals = Self.generateMockMeals()
-        for meal in mockMeals {
-            modelContext.insert(meal)
-        }
-
-        // 设置演示模式的卡路里目标
-        dailyCalorieGoal = MockDataProvider.NutritionGoals.dailyCalorieGoal
-
-        try? modelContext.save()
-
-        // 重新加载当天数据
-        let startOfDay = selectedDate.startOfDay
-        let endOfDay = selectedDate.endOfDay
-        let predicate = #Predicate<MealRecord> { meal in
-            meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
-        }
-        let descriptor = FetchDescriptor<MealRecord>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.mealTime, order: .forward)]
-        )
-        meals = (try? modelContext.fetch(descriptor)) ?? []
-    }
-
-    /// 删除餐食记录
-    func deleteMeal(_ meal: MealRecord, modelContext: ModelContext) {
+        // 成功后从本地删除
         modelContext.delete(meal)
         try? modelContext.save()
         loadMeals(modelContext: modelContext)
@@ -202,23 +213,12 @@ final class DiaryViewModel {
         }
     }
 
-    // MARK: - Helper Methods
-
-    /// 检查指定日期是否有餐食记录（用于指示点显示）
-    func dateHasMeals(_ date: Date, modelContext: ModelContext) -> Bool {
-        let startOfDay = Calendar.current.startOfDay(for: date)
-        guard let endOfDay = Calendar.current.date(byAdding: .day, value: 1, to: startOfDay)?
-            .addingTimeInterval(-1) else {
-            return false
-        }
-        let predicate = #Predicate<MealRecord> { meal in
-            meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
-        }
-        var descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
-        descriptor.fetchLimit = 1
-        let count = (try? modelContext.fetchCount(descriptor)) ?? 0
-        return count > 0
+    /// 检查指定日期在当前周是否有餐食记录（基于预计算缓存，无数据库查询）
+    func dateHasMealsFromCache(_ date: Date) -> Bool {
+        datesWithMeals.contains(Self.dateFormatter.string(from: date))
     }
+
+    // MARK: - Helper Methods
 
     /// 从 MealRecord 的原始字符串解析 MealType
     static func mealType(for record: MealRecord) -> MealRecord.MealType {
@@ -236,11 +236,44 @@ final class DiaryViewModel {
         }
     }
 
-    // MARK: - Mock Data
+    // MARK: - Private Methods
 
-    /// 生成模拟餐食数据，用于 UI 开发和预览
-    /// 数据基于原型图设计，展示典型的一日饮食记录
-    static func generateMockMeals() -> [MealRecord] {
-        MockDataProvider.generateMockMeals()
+    /// 一次查询当前周 7 天范围的餐食记录，生成有记录日期的 Set
+    private func precomputeDatesWithMeals(modelContext: ModelContext) {
+        let calendar = Calendar.current
+        guard let weekStart = weekDates.first,
+              let weekEnd = calendar.date(byAdding: .day, value: 1, to: weekDates.last ?? weekStart)
+        else {
+            datesWithMeals = []
+            return
+        }
+
+        let predicate = #Predicate<MealRecord> { meal in
+            meal.mealTime >= weekStart && meal.mealTime < weekEnd
+        }
+        let descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
+
+        do {
+            let weekMeals = try modelContext.fetch(descriptor)
+            datesWithMeals = Set(weekMeals.map { Self.dateFormatter.string(from: $0.mealTime) })
+        } catch {
+            datesWithMeals = []
+        }
+    }
+
+    /// 从 API 预计算当前周每天是否有餐食记录
+    private func precomputeWeekDatesFromAPI() async {
+        let calendar = Calendar.current
+        guard let weekStart = weekDates.first else { return }
+
+        var dates = Set<String>()
+        for offset in 0..<7 {
+            guard let date = calendar.date(byAdding: .day, value: offset, to: weekStart) else { continue }
+            let dateString = Self.dateFormatter.string(from: date)
+            if let meals = try? await mealService.getMeals(date: dateString), !meals.isEmpty {
+                dates.insert(dateString)
+            }
+        }
+        datesWithMeals = dates
     }
 }

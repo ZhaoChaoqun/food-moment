@@ -98,9 +98,9 @@ struct DailyActivityData: Identifiable {
     let id = UUID()
     let day: Int
     let date: Date
-    let proteinProgress: Double // 0-1
-    let carbsProgress: Double   // 0-1
-    let fatProgress: Double     // 0-1
+    let proteinProgress: Double
+    let carbsProgress: Double
+    let fatProgress: Double
     let hasActivity: Bool
 
     var isToday: Bool {
@@ -110,19 +110,10 @@ struct DailyActivityData: Identifiable {
 
 // MARK: - Nutrition Goals
 
-/// 每日营养目标配置
 private enum NutritionGoals {
     static let dailyProteinGrams: Double = 50.0
     static let dailyCarbsGrams: Double = 250.0
     static let dailyFatGrams: Double = 65.0
-}
-
-// MARK: - Date Range Configuration
-
-/// 日期范围配置
-private enum DateRangeConfig {
-    static let oneWeekDays = -7
-    static let twoWeeksDays = -14
 }
 
 // MARK: - Profile View Model
@@ -148,6 +139,11 @@ final class ProfileViewModel {
     var dailyActivities: [DailyActivityData] = []
     var dailyCalories: [Int] = []
 
+    // MARK: - Private
+
+    private let userService: UserServiceProtocol
+    private let statsService: StatsServiceProtocol
+
     // MARK: - Computed Properties
 
     var hasAchievements: Bool {
@@ -156,12 +152,17 @@ final class ProfileViewModel {
 
     // MARK: - Initialization
 
-    init() {
-        // 轻量级初始化，避免耗时操作
+    init(
+        userService: UserServiceProtocol = UserService.shared,
+        statsService: StatsServiceProtocol = StatsService.shared
+    ) {
+        self.userService = userService
+        self.statsService = statsService
     }
 
     // MARK: - Public Methods
 
+    /// 从 SwiftData 缓存同步加载
     func loadProfile(modelContext: ModelContext) {
         loadUserProfile(modelContext: modelContext)
         loadWeightData(modelContext: modelContext)
@@ -171,14 +172,97 @@ final class ProfileViewModel {
         loadDailyActivities(modelContext: modelContext)
     }
 
-    func logWeight(_ weight: Double, modelContext: ModelContext) {
-        let log = WeightLog(weightKg: weight, recordedAt: Date())
-        modelContext.insert(log)
-        try? modelContext.save()
+    /// 从 API 刷新数据
+    func refreshFromAPI() async {
+        // 并发获取所有数据
+        async let profileTask = userService.getProfile()
+        async let streaksTask = userService.getStreaks()
+        async let achievementsTask = userService.getAchievements()
 
+        // 获取当前月的月统计
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM"
+        let currentMonth = dateFormatter.string(from: Date())
+        async let monthlyTask = statsService.getMonthlyStats(month: currentMonth)
+
+        // 获取本周的周统计
+        let weekFormatter = DateFormatter()
+        weekFormatter.dateFormat = "yyyy-MM-dd"
+        let weekStart = Date().startOfWeek
+        let weekString = weekFormatter.string(from: weekStart)
+        async let weeklyTask = statsService.getWeeklyStats(week: weekString)
+
+        do {
+            let profile = try await profileTask
+            userName = profile.displayName
+            isPro = profile.isPro
+            targetWeight = profile.targetWeight ?? 65.0
+        } catch {
+            // 保持缓存
+        }
+
+        do {
+            let streakDTO = try await streaksTask
+            streakDays = streakDTO.currentStreak
+        } catch {}
+
+        do {
+            let achievementDTOs = try await achievementsTask
+            achievements = achievementDTOs.map { mapAchievement($0) }
+        } catch {}
+
+        do {
+            let weeklyStats = try await weeklyTask
+            averageCalories = Int(weeklyStats.avgCalories)
+            dailyCalories = weeklyStats.dailyStats.map { $0.totalCalories }
+
+            // 计算变化率（简化：对比平均与目标）
+            if averageCalories > 0 {
+                calorieChange = "+0%"
+            }
+        } catch {}
+
+        do {
+            let monthlyStats = try await monthlyTask
+            let calendar = Calendar.current
+            let now = Date()
+            let range = calendar.range(of: .day, in: .month, for: now) ?? 1..<31
+            let daysInMonth = range.count
+
+            dailyActivities = (1...daysInMonth).map { day in
+                guard let date = calendar.date(bySetting: .day, value: day, of: now) else {
+                    return DailyActivityData(day: day, date: now, proteinProgress: 0, carbsProgress: 0, fatProgress: 0, hasActivity: false)
+                }
+
+                let dayString = weekFormatter.string(from: date)
+                let dayStats = monthlyStats.dailyStats.first { $0.date == dayString }
+                let hasActivity = (dayStats?.mealCount ?? 0) > 0
+
+                return DailyActivityData(
+                    day: day,
+                    date: date,
+                    proteinProgress: hasActivity ? min(dayStats!.proteinGrams / NutritionGoals.dailyProteinGrams, 1.0) : 0,
+                    carbsProgress: hasActivity ? min(dayStats!.carbsGrams / NutritionGoals.dailyCarbsGrams, 1.0) : 0,
+                    fatProgress: hasActivity ? min(dayStats!.fatGrams / NutritionGoals.dailyFatGrams, 1.0) : 0,
+                    hasActivity: hasActivity
+                )
+            }
+        } catch {}
+    }
+
+    func logWeight(_ weight: Double) async {
         let previousWeight = currentWeight
         currentWeight = weight
         weightTrend = formatWeightTrend(current: weight, previous: previousWeight)
+
+        do {
+            let _ = try await userService.logWeight(
+                WeightLogCreateDTO(weightKg: weight, recordedAt: Date())
+            )
+        } catch {
+            // 回滚
+            currentWeight = previousWeight
+        }
 
         // 同步到 HealthKit
         Task {
@@ -186,8 +270,9 @@ final class ProfileViewModel {
         }
     }
 
-    func signOut(appState: AppState) {
+    func deleteAccount(appState: AppState) {
         Task {
+            try? await APIClient.shared.requestVoid(.deleteAccount)
             await TokenManager.shared.clearTokens()
             appState.isAuthenticated = false
             appState.currentUser = nil
@@ -196,12 +281,6 @@ final class ProfileViewModel {
 
     // MARK: - Private Methods
 
-    /// 格式化体重变化趋势
-    ///
-    /// - Parameters:
-    ///   - current: 当前体重
-    ///   - previous: 上次体重
-    /// - Returns: 格式化的趋势字符串
     private func formatWeightTrend(current: Double, previous: Double) -> String {
         let diff = current - previous
         if diff < 0 {
@@ -213,18 +292,36 @@ final class ProfileViewModel {
         }
     }
 
+    private func mapAchievement(_ dto: AchievementResponseDTO) -> AchievementItem {
+        let ratio = dto.target > 0 ? Double(dto.progress) / Double(dto.target) : 0
+        let tier: AchievementItem.AchievementTier = switch ratio {
+            case 1.0: .gold
+            case 0.5...: .silver
+            default: .bronze
+        }
+
+        return AchievementItem(
+            type: dto.id,
+            title: dto.title,
+            subtitle: dto.description,
+            icon: dto.emoji,
+            tier: tier,
+            isEarned: dto.unlocked,
+            description: dto.description
+        )
+    }
+
+    // MARK: - SwiftData Cache Methods (for initial sync load)
+
     private func loadUserProfile(modelContext: ModelContext) {
         let descriptor = FetchDescriptor<UserProfile>(
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
-
         if let profile = try? modelContext.fetch(descriptor).first {
             userName = profile.displayName
             avatarAssetName = profile.avatarAssetName
             isPro = profile.isPro
             targetWeight = profile.targetWeight ?? 65.0
-        } else {
-            loadMockData()
         }
     }
 
@@ -232,21 +329,15 @@ final class ProfileViewModel {
         let descriptor = FetchDescriptor<WeightLog>(
             sortBy: [SortDescriptor(\.recordedAt, order: .reverse)]
         )
-
         let logs = (try? modelContext.fetch(descriptor)) ?? []
-
         if let latest = logs.first {
             currentWeight = latest.weightKg
-
             if logs.count >= 2 {
                 let previous = logs[1].weightKg
                 weightTrend = formatWeightTrend(current: latest.weightKg, previous: previous)
             } else {
                 weightTrend = "\u{2193} 0.0kg"
             }
-        } else {
-            currentWeight = MockDataProvider.Weight.currentWeight
-            weightTrend = MockDataProvider.Weight.weightTrend
         }
     }
 
@@ -254,10 +345,9 @@ final class ProfileViewModel {
         let descriptor = FetchDescriptor<MealRecord>(
             sortBy: [SortDescriptor(\.mealTime, order: .reverse)]
         )
-
         let records = (try? modelContext.fetch(descriptor)) ?? []
         guard !records.isEmpty else {
-            streakDays = MockDataProvider.Streak.days
+            streakDays = 0
             return
         }
 
@@ -268,11 +358,9 @@ final class ProfileViewModel {
         while true {
             let dayStart = checkDate
             let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart)!
-
             let hasRecord = records.contains { record in
                 record.mealTime >= dayStart && record.mealTime < dayEnd
             }
-
             if hasRecord {
                 streak += 1
                 checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate)!
@@ -280,11 +368,7 @@ final class ProfileViewModel {
                 break
             }
         }
-
         streakDays = max(streak, 0)
-        if streakDays == 0 {
-            streakDays = MockDataProvider.Streak.days
-        }
     }
 
     private func loadAchievements(modelContext: ModelContext) {
@@ -292,9 +376,7 @@ final class ProfileViewModel {
         let earned = (try? modelContext.fetch(descriptor)) ?? []
         let earnedTypes = Set(earned.map { $0.type })
 
-        if earnedTypes.isEmpty {
-            achievements = MockDataProvider.generateMockAchievements()
-        } else {
+        if !earnedTypes.isEmpty {
             achievements = Achievement.AchievementType.allCases.map { achievementType in
                 let isEarned = earnedTypes.contains(achievementType.rawValue)
                 let matchedAchievement = earned.first(where: { $0.type == achievementType.rawValue })
@@ -331,11 +413,8 @@ final class ProfileViewModel {
     private func loadCalorieData(modelContext: ModelContext) {
         let calendar = Calendar.current
         let now = Date()
-
-        guard let weekAgo = calendar.date(byAdding: .day, value: DateRangeConfig.oneWeekDays, to: now),
-              let twoWeeksAgo = calendar.date(byAdding: .day, value: DateRangeConfig.twoWeeksDays, to: now) else {
-            averageCalories = 0
-            calorieChange = "0%"
+        guard let weekAgo = calendar.date(byAdding: .day, value: -7, to: now),
+              let twoWeeksAgo = calendar.date(byAdding: .day, value: -14, to: now) else {
             return
         }
 
@@ -344,7 +423,6 @@ final class ProfileViewModel {
                 record.mealTime >= weekAgo && record.mealTime <= now
             }
         )
-
         let lastWeekDescriptor = FetchDescriptor<MealRecord>(
             predicate: #Predicate<MealRecord> { record in
                 record.mealTime >= twoWeeksAgo && record.mealTime < weekAgo
@@ -354,14 +432,12 @@ final class ProfileViewModel {
         let thisWeekRecords = (try? modelContext.fetch(thisWeekDescriptor)) ?? []
         let lastWeekRecords = (try? modelContext.fetch(lastWeekDescriptor)) ?? []
 
-        // 计算每日卡路里用于图表展示
         var dailyCaloriesDict: [Date: Int] = [:]
         for record in thisWeekRecords {
             let day = calendar.startOfDay(for: record.mealTime)
             dailyCaloriesDict[day, default: 0] += record.totalCalories
         }
 
-        // 生成最近 7 天数据
         dailyCalories = (0..<7).reversed().map { daysAgo in
             let day = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -daysAgo, to: now)!)
             return dailyCaloriesDict[day] ?? 0
@@ -377,27 +453,16 @@ final class ProfileViewModel {
 
         if lastWeekAvg > 0 {
             let change = Double(averageCalories - lastWeekAvg) / Double(lastWeekAvg) * 100
-            if change < 0 {
-                calorieChange = String(format: "%.0f%%", change)
-            } else {
-                calorieChange = String(format: "+%.0f%%", change)
-            }
+            calorieChange = change < 0 ? String(format: "%.0f%%", change) : String(format: "+%.0f%%", change)
         } else {
             calorieChange = "0%"
-        }
-
-        if averageCalories == 0 {
-            loadMockCalorieData()
         }
     }
 
     private func loadDailyActivities(modelContext: ModelContext) {
         let calendar = Calendar.current
         let now = Date()
-
-        guard let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else {
-            return
-        }
+        guard let startOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: now)) else { return }
 
         let range = calendar.range(of: .day, in: .month, for: now) ?? 1..<31
         let daysInMonth = range.count
@@ -407,98 +472,35 @@ final class ProfileViewModel {
                 record.mealTime >= startOfMonth
             }
         )
-
         let records = (try? modelContext.fetch(descriptor)) ?? []
 
-        // 按天分组
         var recordsByDay: [Int: [MealRecord]] = [:]
         for record in records {
             let day = calendar.component(.day, from: record.mealTime)
             recordsByDay[day, default: []].append(record)
         }
 
-        // 生成每日活动数据，演示时使用随机进度
         dailyActivities = (1...daysInMonth).map { day in
             guard let date = calendar.date(bySetting: .day, value: day, of: now) else {
-                return DailyActivityData(
-                    day: day,
-                    date: now,
-                    proteinProgress: 0,
-                    carbsProgress: 0,
-                    fatProgress: 0,
-                    hasActivity: false
-                )
+                return DailyActivityData(day: day, date: now, proteinProgress: 0, carbsProgress: 0, fatProgress: 0, hasActivity: false)
             }
-
             let dayRecords = recordsByDay[day] ?? []
-            let currentDay = calendar.component(.day, from: now)
-            let isPastOrToday = day <= currentDay
-            let mockActivityProbability = 0.7
-            let hasActivity = !dayRecords.isEmpty || (isPastOrToday && Double.random(in: 0...1) < mockActivityProbability)
+            let hasActivity = !dayRecords.isEmpty
 
-            // 计算或模拟进度
-            let progress = calculateNutritionProgress(from: dayRecords, withMockActivity: hasActivity && dayRecords.isEmpty)
-
-            return DailyActivityData(
-                day: day,
-                date: date,
-                proteinProgress: progress.protein,
-                carbsProgress: progress.carbs,
-                fatProgress: progress.fat,
-                hasActivity: hasActivity
-            )
+            if !dayRecords.isEmpty {
+                let totalProtein = dayRecords.reduce(0.0) { $0 + $1.proteinGrams }
+                let totalCarbs = dayRecords.reduce(0.0) { $0 + $1.carbsGrams }
+                let totalFat = dayRecords.reduce(0.0) { $0 + $1.fatGrams }
+                return DailyActivityData(
+                    day: day, date: date,
+                    proteinProgress: min(totalProtein / NutritionGoals.dailyProteinGrams, 1.0),
+                    carbsProgress: min(totalCarbs / NutritionGoals.dailyCarbsGrams, 1.0),
+                    fatProgress: min(totalFat / NutritionGoals.dailyFatGrams, 1.0),
+                    hasActivity: hasActivity
+                )
+            } else {
+                return DailyActivityData(day: day, date: date, proteinProgress: 0, carbsProgress: 0, fatProgress: 0, hasActivity: false)
+            }
         }
-    }
-
-    /// 计算营养进度
-    ///
-    /// - Parameters:
-    ///   - records: 餐食记录列表
-    ///   - hasMockActivity: 是否使用模拟数据
-    /// - Returns: 蛋白质、碳水、脂肪的进度元组
-    private func calculateNutritionProgress(
-        from records: [MealRecord],
-        withMockActivity hasMockActivity: Bool
-    ) -> (protein: Double, carbs: Double, fat: Double) {
-        if !records.isEmpty {
-            let totalProtein = records.reduce(0.0) { $0 + $1.proteinGrams }
-            let totalCarbs = records.reduce(0.0) { $0 + $1.carbsGrams }
-            let totalFat = records.reduce(0.0) { $0 + $1.fatGrams }
-
-            return (
-                protein: min(totalProtein / NutritionGoals.dailyProteinGrams, 1.0),
-                carbs: min(totalCarbs / NutritionGoals.dailyCarbsGrams, 1.0),
-                fat: min(totalFat / NutritionGoals.dailyFatGrams, 1.0)
-            )
-        } else if hasMockActivity {
-            // 演示时使用随机进度
-            return (
-                protein: Double.random(in: 0.3...1.0),
-                carbs: Double.random(in: 0.4...1.0),
-                fat: Double.random(in: 0.2...0.9)
-            )
-        } else {
-            return (protein: 0, carbs: 0, fat: 0)
-        }
-    }
-
-    // MARK: - Mock Data
-
-    func loadMockData() {
-        userName = MockDataProvider.User.displayName
-        avatarAssetName = MockDataProvider.User.avatarAssetName
-        isPro = MockDataProvider.User.isPro
-        currentWeight = MockDataProvider.Weight.currentWeight
-        targetWeight = MockDataProvider.Weight.targetWeight
-        weightTrend = MockDataProvider.Weight.weightTrend
-        streakDays = MockDataProvider.Streak.days
-        achievements = MockDataProvider.generateMockAchievements()
-        loadMockCalorieData()
-    }
-
-    private func loadMockCalorieData() {
-        averageCalories = MockDataProvider.ProfileCalories.averageCalories
-        calorieChange = MockDataProvider.ProfileCalories.calorieChange
-        dailyCalories = MockDataProvider.ProfileCalories.dailyCalories
     }
 }

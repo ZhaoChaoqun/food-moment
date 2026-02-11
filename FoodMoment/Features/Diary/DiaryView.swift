@@ -33,9 +33,15 @@ struct DiaryView: View {
         )
         .onChange(of: viewModel.selectedDate) { _, _ in
             viewModel.loadMeals(modelContext: modelContext)
+            Task {
+                await viewModel.refreshFromAPI(modelContext: modelContext)
+            }
         }
         .onAppear {
             viewModel.loadMeals(modelContext: modelContext)
+        }
+        .task {
+            await viewModel.refreshFromAPI(modelContext: modelContext)
         }
         .accessibilityIdentifier("DiaryView")
     }
@@ -113,7 +119,7 @@ struct DiaryView: View {
                 consumed: viewModel.dailyCalories,
                 goal: viewModel.dailyCalorieGoal
             )
-            .padding(.bottom, 8)
+            .padding(.bottom, AppTheme.Layout.floatingElementBottomPadding)
             .transition(.move(edge: .bottom).combined(with: .opacity))
             .accessibilityIdentifier("DiaryView.FloatingProgressBar")
         }
@@ -206,12 +212,15 @@ struct DiaryView: View {
                     isFirst: index == 0,
                     isLast: index == count - 1,
                     onDelete: {
-                        withAnimation {
-                            viewModel.deleteMeal(meal, modelContext: modelContext)
+                        Task {
+                            withAnimation {
+                                // 先做乐观 UI 更新
+                            }
+                            await viewModel.deleteMeal(meal, modelContext: modelContext)
                         }
                     }
                 )
-                .padding(.bottom, index == count - 1 ? 120 : 8)
+                .padding(.bottom, index == count - 1 ? AppTheme.Layout.tabBarClearance + 32 : 8)
             }
         }
         .padding(.top, 16)

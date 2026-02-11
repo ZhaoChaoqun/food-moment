@@ -48,7 +48,7 @@ struct AnalysisView: View {
     var body: some View {
         GeometryReader { geometry in
             let screenWidth = geometry.size.width
-            let screenHeight = geometry.size.height
+            let screenHeight = geometry.size.height + geometry.safeAreaInsets.top + geometry.safeAreaInsets.bottom
             let safeTop = geometry.safeAreaInsets.top
             let imageHeight = computeImageHeight(screenWidth: screenWidth, screenHeight: screenHeight)
 
@@ -82,9 +82,11 @@ struct AnalysisView: View {
                         )
 
                         // MARK: - Nutrition Content Section
-                        nutritionContentSection(screenHeight: screenHeight)
+                        nutritionContentSection(screenHeight: screenHeight, imageHeight: imageHeight)
+                            .padding(.top, -Layout.contentCornerRadius)
                     }
                 }
+                .ignoresSafeArea()
                 .coordinateSpace(name: "scroll")
                 .onPreferenceChange(ScrollOffsetKey.self) { value in
                     scrollOffset = value
@@ -108,7 +110,6 @@ struct AnalysisView: View {
                 updateImageDisplayFrame(screenWidth: newSize.width, imageHeight: newImageHeight)
             }
         }
-        .ignoresSafeArea()
         // MARK: - Food edit sheet
         .sheet(isPresented: $viewModel.isEditingFood) {
             foodEditSheet
@@ -172,12 +173,14 @@ struct AnalysisView: View {
         }
         .frame(width: screenWidth, height: imageHeight)
         .clipped()
+        .background(Color.black)
     }
 
     // MARK: - Nutrition Content Section
 
-    private func nutritionContentSection(screenHeight: CGFloat) -> some View {
-        VStack(spacing: 0) {
+    private func nutritionContentSection(screenHeight: CGFloat, imageHeight: CGFloat) -> some View {
+        let minContentHeight = screenHeight - imageHeight + Layout.contentCornerRadius
+        return VStack(spacing: 0) {
             // Decorative drag indicator
             Capsule()
                 .fill(AppTheme.Colors.dragIndicator)
@@ -201,7 +204,7 @@ struct AnalysisView: View {
 
             Spacer(minLength: 0)
         }
-        .frame(minHeight: screenHeight - Layout.collapsedBarHeight, alignment: .top)
+        .frame(minHeight: minContentHeight, alignment: .top)
         .frame(maxWidth: .infinity)
         .background(Color.white)
         .clipShape(
@@ -290,10 +293,11 @@ struct AnalysisView: View {
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, safeTop + 12)
+            .padding(.top, safeTop + 16)
 
             Spacer()
         }
+        .ignoresSafeArea()
     }
 
     // MARK: - Collapsed Photo Bar
@@ -322,9 +326,8 @@ struct AnalysisView: View {
             Spacer()
         }
         .padding(.top, safeTop)
+        .ignoresSafeArea()
     }
-
-    // MARK: - Shareable Image
 
     private var shareableImage: Image {
         if let generated = viewModel.generateShareImage() {

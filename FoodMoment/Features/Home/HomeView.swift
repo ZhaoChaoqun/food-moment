@@ -6,6 +6,7 @@ struct HomeView: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
 
     // MARK: - State
 
@@ -29,15 +30,17 @@ struct HomeView: View {
                     healthMetricsGrid
                     foodMomentSection
                 }
-                .padding(.bottom, 100)
+                .padding(.bottom, AppTheme.Layout.tabBarClearance)
             }
             .premiumBackground()
             .refreshable {
-                viewModel.loadTodayData(modelContext: modelContext)
-                viewModel.refresh()
+                await viewModel.refresh(modelContext: modelContext)
             }
             .onAppear {
-                viewModel.loadMockData()
+                viewModel.loadTodayData(modelContext: modelContext)
+            }
+            .task {
+                await viewModel.refreshFromAPI(modelContext: modelContext)
             }
             .navigationBarHidden(true)
             .accessibilityIdentifier("HomeScrollView")
@@ -215,8 +218,8 @@ struct HomeView: View {
                 dailyGoal: viewModel.dailyWaterGoal,
                 progress: viewModel.waterProgress,
                 onAddWater: {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        viewModel.addWater(modelContext: modelContext)
+                    Task {
+                        await viewModel.addWater(modelContext: modelContext)
                     }
                 }
             )
@@ -236,8 +239,13 @@ struct HomeView: View {
     // MARK: - Food Moment Section
 
     private var foodMomentSection: some View {
-        FoodMomentCarousel(meals: viewModel.todayMeals)
-            .accessibilityIdentifier("FoodMomentCarousel")
+        FoodMomentCarousel(
+            meals: viewModel.todayMeals,
+            onMoreTapped: {
+                appState.selectedTab = .diary
+            }
+        )
+        .accessibilityIdentifier("FoodMomentCarousel")
     }
 
     // MARK: - Helper Methods

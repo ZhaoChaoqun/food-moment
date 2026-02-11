@@ -29,6 +29,18 @@ final class HomeViewModel {
     var dailyWaterGoal: Int = 2500
     var dailyStepGoal: Int = 10000
 
+    // MARK: - Private
+
+    private let mealService: MealServiceProtocol
+    private let waterService: WaterServiceProtocol
+    private let userService: UserServiceProtocol
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
     // MARK: - Computed Properties
 
     var caloriesLeft: Int {
@@ -79,57 +91,25 @@ final class HomeViewModel {
 
     // MARK: - Initialization
 
-    init() {
-        // 轻量级初始化，避免耗时操作
+    init(
+        mealService: MealServiceProtocol = MealService.shared,
+        waterService: WaterServiceProtocol = WaterService.shared,
+        userService: UserServiceProtocol = UserService.shared
+    ) {
+        self.mealService = mealService
+        self.waterService = waterService
+        self.userService = userService
     }
 
     // MARK: - Public Methods
 
+    /// 从 SwiftData 缓存同步加载（立即显示）
     func loadTodayData(modelContext: ModelContext) {
-        isLoading = true
-        defer { isLoading = false }
-
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? Date()
 
-        fetchTodayMeals(modelContext: modelContext, startOfDay: startOfDay, endOfDay: endOfDay)
-        fetchTodayWaterLogs(modelContext: modelContext, startOfDay: startOfDay, endOfDay: endOfDay)
-        loadUserProfile(modelContext: modelContext)
-    }
-
-    func addWater(amount: Int = 250, modelContext: ModelContext) {
-        let waterLog = WaterLog(amountML: amount)
-        modelContext.insert(waterLog)
-        waterAmount += amount
-
-        do {
-            try modelContext.save()
-        } catch {
-            // 保存失败时回滚
-            waterAmount -= amount
-        }
-    }
-
-    func refresh() {
-        // 占位方法，用于下拉刷新逻辑
-        // 实际实现中可同步 HealthKit 或后端数据
-    }
-
-    func loadMockData() {
-        loadMockUserData()
-        loadMockNutritionData()
-        loadMockHealthData()
-        loadMockMeals()
-    }
-
-    // MARK: - Private Methods
-
-    private func fetchTodayMeals(
-        modelContext: ModelContext,
-        startOfDay: Date,
-        endOfDay: Date
-    ) {
+        // 加载餐食缓存
         let mealPredicate = #Predicate<MealRecord> { record in
             record.mealTime >= startOfDay && record.mealTime < endOfDay
         }
@@ -137,79 +117,115 @@ final class HomeViewModel {
             predicate: mealPredicate,
             sortBy: [SortDescriptor(\.mealTime)]
         )
+        todayMeals = (try? modelContext.fetch(mealDescriptor)) ?? []
+        consumedCalories = todayMeals.reduce(0) { $0 + $1.totalCalories }
+        proteinGrams = todayMeals.reduce(0) { $0 + $1.proteinGrams }
+        carbsGrams = todayMeals.reduce(0) { $0 + $1.carbsGrams }
+        fatGrams = todayMeals.reduce(0) { $0 + $1.fatGrams }
 
-        do {
-            todayMeals = try modelContext.fetch(mealDescriptor)
-            consumedCalories = todayMeals.reduce(0) { $0 + $1.totalCalories }
-            proteinGrams = todayMeals.reduce(0) { $0 + $1.proteinGrams }
-            carbsGrams = todayMeals.reduce(0) { $0 + $1.carbsGrams }
-            fatGrams = todayMeals.reduce(0) { $0 + $1.fatGrams }
-        } catch {
-            todayMeals = []
-        }
-    }
-
-    private func fetchTodayWaterLogs(
-        modelContext: ModelContext,
-        startOfDay: Date,
-        endOfDay: Date
-    ) {
+        // 加载水量缓存
         let waterPredicate = #Predicate<WaterLog> { log in
             log.recordedAt >= startOfDay && log.recordedAt < endOfDay
         }
-        let waterDescriptor = FetchDescriptor<WaterLog>(
-            predicate: waterPredicate
-        )
+        let waterDescriptor = FetchDescriptor<WaterLog>(predicate: waterPredicate)
+        let waterLogs = (try? modelContext.fetch(waterDescriptor)) ?? []
+        waterAmount = waterLogs.reduce(0) { $0 + $1.amountML }
 
-        do {
-            let waterLogs = try modelContext.fetch(waterDescriptor)
-            waterAmount = waterLogs.reduce(0) { $0 + $1.amountML }
-        } catch {
-            waterAmount = 0
-        }
-    }
-
-    private func loadUserProfile(modelContext: ModelContext) {
+        // 加载用户配置缓存
         let profileDescriptor = FetchDescriptor<UserProfile>()
-        do {
-            if let profile = try modelContext.fetch(profileDescriptor).first {
-                userName = profile.displayName
-                dailyCalorieGoal = profile.dailyCalorieGoal
-                dailyProteinGoal = profile.dailyProteinGoal
-                dailyCarbsGoal = profile.dailyCarbsGoal
-                dailyFatGoal = profile.dailyFatGoal
-            }
-        } catch {
-            // 使用默认值
+        if let profile = try? modelContext.fetch(profileDescriptor).first {
+            userName = profile.displayName
+            dailyCalorieGoal = profile.dailyCalorieGoal
+            dailyProteinGoal = profile.dailyProteinGoal
+            dailyCarbsGoal = profile.dailyCarbsGoal
+            dailyFatGoal = profile.dailyFatGoal
         }
     }
 
-    private func loadMockUserData() {
-        userName = MockDataProvider.User.displayName
-        userAvatarAssetName = MockDataProvider.User.avatarAssetName
+    /// 从 API 刷新数据并更新 SwiftData 缓存
+    func refreshFromAPI(modelContext: ModelContext) async {
+        isLoading = true
+        defer { isLoading = false }
+
+        let todayString = Self.dateFormatter.string(from: Date())
+
+        // 并发请求
+        async let mealsTask = mealService.getMeals(date: todayString)
+        async let waterTask = waterService.getWater(date: todayString)
+        async let profileTask = userService.getProfile()
+
+        do {
+            let (mealDTOs, waterDTO, profile) = try await (mealsTask, waterTask, profileTask)
+
+            // 更新用户配置
+            userName = profile.displayName
+            dailyCalorieGoal = profile.dailyCalorieGoal
+            dailyProteinGoal = profile.dailyProteinGoal
+            dailyCarbsGoal = profile.dailyCarbsGoal
+            dailyFatGoal = profile.dailyFatGoal
+            dailyWaterGoal = waterDTO.goalMl
+
+            // 更新水量
+            waterAmount = waterDTO.totalMl
+
+            // 更新餐食 - 清除旧缓存并写入新数据
+            let calendar = Calendar.current
+            let startOfDay = calendar.startOfDay(for: Date())
+            let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? Date()
+            let predicate = #Predicate<MealRecord> { record in
+                record.mealTime >= startOfDay && record.mealTime < endOfDay
+            }
+            let existing = (try? modelContext.fetch(FetchDescriptor<MealRecord>(predicate: predicate))) ?? []
+            for record in existing {
+                modelContext.delete(record)
+            }
+
+            for dto in mealDTOs {
+                let record = MealRecord(
+                    mealType: dto.mealType,
+                    mealTime: dto.mealTime,
+                    title: dto.title,
+                    totalCalories: dto.totalCalories,
+                    proteinGrams: dto.proteinGrams,
+                    carbsGrams: dto.carbsGrams,
+                    fatGrams: dto.fatGrams,
+                    fiberGrams: dto.fiberGrams
+                )
+                record.id = dto.id
+                record.imageURL = dto.imageUrl
+                record.descriptionText = dto.descriptionText
+                record.aiAnalysis = dto.aiAnalysis
+                record.tags = dto.tags ?? []
+                record.isSynced = true
+                modelContext.insert(record)
+            }
+            try? modelContext.save()
+
+            // 重新从 SwiftData 加载
+            loadTodayData(modelContext: modelContext)
+        } catch {
+            // API 失败时保持缓存数据
+        }
     }
 
-    private func loadMockNutritionData() {
-        dailyCalorieGoal = MockDataProvider.NutritionGoals.dailyCalorieGoal
-        dailyProteinGoal = MockDataProvider.NutritionGoals.dailyProteinGoal
-        dailyCarbsGoal = MockDataProvider.NutritionGoals.dailyCarbsGoal
-        dailyFatGoal = MockDataProvider.NutritionGoals.dailyFatGoal
+    /// 添加饮水记录 - API 优先
+    func addWater(amount: Int = 250, modelContext: ModelContext) async {
+        // 乐观更新 UI
+        waterAmount += amount
 
-        consumedCalories = MockDataProvider.ConsumedNutrition.totalCalories
-        proteinGrams = MockDataProvider.ConsumedNutrition.proteinGrams
-        carbsGrams = MockDataProvider.ConsumedNutrition.carbsGrams
-        fatGrams = MockDataProvider.ConsumedNutrition.fatGrams
+        do {
+            let _ = try await waterService.logWater(WaterLogCreateDTO(amountMl: amount))
+            // API 成功，写入 SwiftData 缓存
+            let waterLog = WaterLog(amountML: amount)
+            modelContext.insert(waterLog)
+            try? modelContext.save()
+        } catch {
+            // API 失败，回滚
+            waterAmount -= amount
+        }
     }
 
-    private func loadMockHealthData() {
-        waterAmount = MockDataProvider.Health.waterAmount
-        dailyWaterGoal = MockDataProvider.NutritionGoals.dailyWaterGoal
-        stepCount = MockDataProvider.Health.stepCount
-        caloriesBurned = MockDataProvider.Health.caloriesBurned
-        dailyStepGoal = MockDataProvider.NutritionGoals.dailyStepGoal
-    }
-
-    private func loadMockMeals() {
-        todayMeals = MockDataProvider.generateMockMeals()
+    func refresh(modelContext: ModelContext) async {
+        await refreshFromAPI(modelContext: modelContext)
     }
 }

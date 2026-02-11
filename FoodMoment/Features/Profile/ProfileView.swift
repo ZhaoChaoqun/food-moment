@@ -45,6 +45,9 @@ struct ProfileView: View {
             .onAppear {
                 viewModel.loadProfile(modelContext: modelContext)
             }
+            .task {
+                await viewModel.refreshFromAPI()
+            }
             .accessibilityIdentifier("ProfileView")
         }
     }
@@ -289,7 +292,7 @@ struct ProfileView: View {
     // MARK: - Bottom Padding
 
     private var bottomPadding: some View {
-        Color.clear.frame(height: 100)
+        Color.clear.frame(height: AppTheme.Layout.tabBarClearance)
     }
 }
 

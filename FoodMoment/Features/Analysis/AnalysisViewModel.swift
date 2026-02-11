@@ -152,7 +152,7 @@ final class AnalysisViewModel {
     /// Saves the edited food item
     func saveEditedFood() {
         guard let index = selectedFoodIndex,
-              var result = analysisResult,
+              let result = analysisResult,
               index < result.detectedFoods.count else {
             isEditingFood = false
             return
@@ -216,73 +216,122 @@ final class AnalysisViewModel {
 
     // MARK: - Save Meal
 
-    /// Creates a MealRecord and associated DetectedFood entries, saving them to SwiftData.
-    /// Also writes to HealthKit and triggers backend sync.
+    /// Creates a MealRecord via API first, then saves to SwiftData cache.
+    /// Falls back to local-only save if API is unavailable.
     func saveMeal(modelContext: ModelContext, appState: AppState) {
         guard let result = analysisResult else { return }
 
         let imageData = capturedImage.jpegData(compressionQuality: 0.8)
-
         let mealType = Self.inferMealType(from: Date())
 
-        let meal = MealRecord(
+        // Build API DTO
+        let createDTO = MealCreateDTO(
+            imageUrl: result.imageUrl,
             mealType: mealType.rawValue,
             mealTime: Date(),
-            title: Self.generateMealTitle(from: result.detectedFoods),
             totalCalories: result.totalCalories,
             proteinGrams: result.totalNutrition.proteinG,
             carbsGrams: result.totalNutrition.carbsG,
             fatGrams: result.totalNutrition.fatG,
             fiberGrams: result.totalNutrition.fiberG,
+            title: Self.generateMealTitle(from: result.detectedFoods),
+            descriptionText: nil,
             aiAnalysis: result.aiAnalysis,
             tags: result.tags,
-            imageURL: result.imageUrl,
-            localImageData: imageData
+            detectedFoods: result.detectedFoods.map { food in
+                DetectedFoodCreateDTO(
+                    name: food.name,
+                    nameZh: food.nameZh,
+                    emoji: food.emoji,
+                    confidence: food.confidence,
+                    boundingBoxX: food.boundingBox.x,
+                    boundingBoxY: food.boundingBox.y,
+                    boundingBoxW: food.boundingBox.w,
+                    boundingBoxH: food.boundingBox.h,
+                    calories: food.calories,
+                    proteinGrams: food.proteinGrams,
+                    carbsGrams: food.carbsGrams,
+                    fatGrams: food.fatGrams
+                )
+            }
         )
 
-        modelContext.insert(meal)
+        Task {
+            var isSynced = false
+            var mealId: UUID? = nil
 
-        for foodDTO in result.detectedFoods {
-            let detectedFood = DetectedFood(
-                name: foodDTO.name,
-                nameZh: foodDTO.nameZh,
-                emoji: foodDTO.emoji,
-                confidence: foodDTO.confidence,
-                boundingBoxX: foodDTO.boundingBox.x,
-                boundingBoxY: foodDTO.boundingBox.y,
-                boundingBoxW: foodDTO.boundingBox.w,
-                boundingBoxH: foodDTO.boundingBox.h,
-                calories: foodDTO.calories,
-                proteinGrams: foodDTO.proteinGrams,
-                carbsGrams: foodDTO.carbsGrams,
-                fatGrams: foodDTO.fatGrams
-            )
-            detectedFood.mealRecord = meal
-            modelContext.insert(detectedFood)
-        }
-
-        do {
-            try modelContext.save()
-
-            // Check for achievement unlocks
-            AchievementManager.shared.checkAndUnlock(
-                modelContext: modelContext,
-                appState: appState
-            )
-
-            // Write to HealthKit asynchronously
-            Task {
-                await writeToHealthKit(result: result)
+            // 尝试 API 优先
+            do {
+                let response = try await MealService.shared.createMeal(createDTO)
+                isSynced = true
+                mealId = response.id
+            } catch {
+                Self.logger.warning("API save failed, saving locally: \(error.localizedDescription, privacy: .public)")
             }
 
-            // Trigger background sync
-            Task {
-                await SyncManager.shared.syncPendingRecords(modelContext: modelContext)
+            // 写入 SwiftData 缓存
+            let meal = MealRecord(
+                mealType: mealType.rawValue,
+                mealTime: Date(),
+                title: Self.generateMealTitle(from: result.detectedFoods),
+                totalCalories: result.totalCalories,
+                proteinGrams: result.totalNutrition.proteinG,
+                carbsGrams: result.totalNutrition.carbsG,
+                fatGrams: result.totalNutrition.fatG,
+                fiberGrams: result.totalNutrition.fiberG,
+                aiAnalysis: result.aiAnalysis,
+                tags: result.tags,
+                imageURL: result.imageUrl,
+                localImageData: imageData
+            )
+            if let mealId {
+                meal.id = mealId
+            }
+            meal.isSynced = isSynced
+
+            modelContext.insert(meal)
+
+            for foodDTO in result.detectedFoods {
+                let detectedFood = DetectedFood(
+                    name: foodDTO.name,
+                    nameZh: foodDTO.nameZh,
+                    emoji: foodDTO.emoji,
+                    confidence: foodDTO.confidence,
+                    boundingBoxX: foodDTO.boundingBox.x,
+                    boundingBoxY: foodDTO.boundingBox.y,
+                    boundingBoxW: foodDTO.boundingBox.w,
+                    boundingBoxH: foodDTO.boundingBox.h,
+                    calories: foodDTO.calories,
+                    proteinGrams: foodDTO.proteinGrams,
+                    carbsGrams: foodDTO.carbsGrams,
+                    fatGrams: foodDTO.fatGrams
+                )
+                detectedFood.mealRecord = meal
+                modelContext.insert(detectedFood)
             }
 
-            isMealSaved = true
-        } catch {
-            errorMessage = "Failed to save meal: \(error.localizedDescription)"
+            do {
+                try modelContext.save()
+
+                AchievementManager.shared.checkAndUnlock(
+                    modelContext: modelContext,
+                    appState: appState
+                )
+
+                Task {
+                    await writeToHealthKit(result: result)
+                }
+
+                if !isSynced {
+                    Task {
+                        await SyncManager.shared.syncPendingRecords(modelContext: modelContext)
+                    }
+                }
+
+                isMealSaved = true
+            } catch {
+                errorMessage = "Failed to save meal: \(error.localizedDescription)"
+            }
         }
     }
 
@@ -326,11 +375,60 @@ final class AnalysisViewModel {
         return renderer.uiImage
     }
 
-    // MARK: - Mock Data
+    // MARK: - Mock Data (Preview only)
 
     /// Returns a simulated analysis result for UI development.
     static func mockAnalysis() -> AnalysisResponseDTO {
-        MockDataProvider.generateMockAnalysis()
+        AnalysisResponseDTO(
+            imageUrl: "",
+            totalCalories: 485,
+            totalNutrition: NutritionDataDTO(
+                proteinG: 22,
+                carbsG: 45,
+                fatG: 18,
+                fiberG: 6
+            ),
+            detectedFoods: [
+                DetectedFoodDTO(
+                    name: "Poached Egg",
+                    nameZh: "水煮蛋",
+                    emoji: "\u{1F95A}",
+                    confidence: 0.95,
+                    boundingBox: BoundingBoxDTO(x: 0.15, y: 0.25, w: 0.25, h: 0.2),
+                    calories: 140,
+                    proteinGrams: 12,
+                    carbsGrams: 1,
+                    fatGrams: 10,
+                    color: "#4ADE80"
+                ),
+                DetectedFoodDTO(
+                    name: "Avocado",
+                    nameZh: "牛油果",
+                    emoji: "\u{1F951}",
+                    confidence: 0.92,
+                    boundingBox: BoundingBoxDTO(x: 0.55, y: 0.20, w: 0.3, h: 0.25),
+                    calories: 160,
+                    proteinGrams: 2,
+                    carbsGrams: 9,
+                    fatGrams: 15,
+                    color: "#FACC15"
+                ),
+                DetectedFoodDTO(
+                    name: "Toast",
+                    nameZh: "吐司",
+                    emoji: "\u{1F35E}",
+                    confidence: 0.88,
+                    boundingBox: BoundingBoxDTO(x: 0.30, y: 0.55, w: 0.35, h: 0.2),
+                    calories: 185,
+                    proteinGrams: 8,
+                    carbsGrams: 35,
+                    fatGrams: 2,
+                    color: "#FB923C"
+                )
+            ],
+            aiAnalysis: "A well-balanced breakfast with good protein from the poached egg and healthy fats from avocado. The toast provides sustained energy through complex carbohydrates. Consider adding leafy greens for extra vitamins and fiber.",
+            tags: ["High Protein", "Healthy Fats", "Balanced"]
+        )
     }
 
     // MARK: - Meal Time Configuration

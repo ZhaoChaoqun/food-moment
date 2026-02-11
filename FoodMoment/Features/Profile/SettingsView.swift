@@ -15,7 +15,6 @@ struct SettingsView: View {
     @State private var selectedAppearanceMode: AppearanceMode = .system
     @State private var selectedLanguage: AppLanguage = .chinese
     @State private var isShowingDeleteAccountAlert: Bool = false
-    @State private var isShowingSignOutAlert: Bool = false
 
     // MARK: - Properties
 
@@ -34,24 +33,15 @@ struct SettingsView: View {
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
-            .padding(.bottom, 100)
+            .padding(.bottom, AppTheme.Layout.tabBarClearance)
         }
         .premiumBackground()
         .navigationTitle("设置")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("退出登录", isPresented: $isShowingSignOutAlert) {
-            Button("取消", role: .cancel) {}
-            Button("退出登录", role: .destructive) {
-                viewModel.signOut(appState: appState)
-                dismiss()
-            }
-        } message: {
-            Text("确定要退出登录吗？")
-        }
         .alert("删除账户", isPresented: $isShowingDeleteAccountAlert) {
             Button("取消", role: .cancel) {}
             Button("删除", role: .destructive) {
-                viewModel.signOut(appState: appState)
+                viewModel.deleteAccount(appState: appState)
                 dismiss()
             }
         } message: {
@@ -192,21 +182,6 @@ struct SettingsView: View {
             sectionHeader("账户")
 
             VStack(spacing: 0) {
-                Button {
-                    isShowingSignOutAlert = true
-                } label: {
-                    HStack {
-                        Label("退出登录", systemImage: "rectangle.portrait.and.arrow.right")
-                            .foregroundStyle(.red)
-                        Spacer()
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("SignOutButton")
-
-                Divider().padding(.leading, 16)
-
                 Button {
                     isShowingDeleteAccountAlert = true
                 } label: {

@@ -29,7 +29,6 @@ enum TimeRange: String, CaseIterable, Identifiable {
     case day = "日"
     case week = "周"
     case month = "月"
-    case year = "年"
 
     var id: String { rawValue }
 
@@ -38,7 +37,6 @@ enum TimeRange: String, CaseIterable, Identifiable {
         case .day: return 1
         case .week: return 7
         case .month: return 30
-        case .year: return 365
         }
     }
 
@@ -47,7 +45,6 @@ enum TimeRange: String, CaseIterable, Identifiable {
         case .day: return "Daily"
         case .week: return "Weekly"
         case .month: return "Monthly"
-        case .year: return "Yearly"
         }
     }
 }
@@ -62,11 +59,27 @@ final class StatisticsViewModel {
 
     private static let logger = Logger(subsystem: "com.foodmoment", category: "StatisticsViewModel")
 
+    // MARK: - Private
+
+    private let statsService: StatsServiceProtocol
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        return f
+    }()
+
+    private static let monthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM"
+        return f
+    }()
+
     // MARK: - Published Properties
 
     var selectedRange: TimeRange = .week {
         didSet {
-            loadStatistics()
+            Task { await loadStatistics() }
         }
     }
 
@@ -104,20 +117,97 @@ final class StatisticsViewModel {
 
     // MARK: - Initialization
 
-    init() {
-        loadStatistics()
+    init(statsService: StatsServiceProtocol = StatsService.shared) {
+        self.statsService = statsService
+        Task { await loadStatistics() }
     }
 
     // MARK: - Public Methods
 
-    func loadStatistics() {
+    func loadStatistics() async {
         isLoading = true
         defer { isLoading = false }
 
-        loadMockData()
-        loadMockMacros()
-        loadMockCheckins()
-        loadMockAIInsight()
+        let today = selectedDate
+
+        switch selectedRange {
+        case .day:
+            let dateString = Self.dateFormatter.string(from: today)
+            do {
+                let stats = try await statsService.getDailyStats(date: dateString)
+                calorieData = [DailyCalorie(
+                    date: today,
+                    calories: stats.totalCalories,
+                    protein: stats.proteinGrams,
+                    carbs: stats.carbsGrams,
+                    fat: stats.fatGrams
+                )]
+                weeklyAverage = stats.totalCalories
+                proteinTotal = stats.proteinGrams
+                carbsTotal = stats.carbsGrams
+                fatTotal = stats.fatGrams
+                checkinDays = stats.mealCount > 0 ? [today] : []
+                weeklyChange = 0
+            } catch {
+                Self.logger.error("Failed to load daily stats: \(error, privacy: .public)")
+            }
+
+        case .week:
+            let weekStart = today.startOfWeek
+            let weekString = Self.dateFormatter.string(from: weekStart)
+            do {
+                let stats = try await statsService.getWeeklyStats(week: weekString)
+                calorieData = stats.dailyStats.compactMap { daily in
+                    guard let date = Self.dateFormatter.date(from: daily.date) else { return nil }
+                    return DailyCalorie(
+                        date: date,
+                        calories: daily.totalCalories,
+                        protein: daily.proteinGrams,
+                        carbs: daily.carbsGrams,
+                        fat: daily.fatGrams
+                    )
+                }
+                weeklyAverage = Int(stats.avgCalories)
+                proteinTotal = stats.avgProtein * Double(stats.dailyStats.count)
+                carbsTotal = stats.avgCarbs * Double(stats.dailyStats.count)
+                fatTotal = stats.avgFat * Double(stats.dailyStats.count)
+                checkinDays = stats.dailyStats.filter { $0.mealCount > 0 }.compactMap {
+                    Self.dateFormatter.date(from: $0.date)
+                }
+                weeklyChange = 0
+            } catch {
+                Self.logger.error("Failed to load weekly stats: \(error, privacy: .public)")
+            }
+
+        case .month:
+            let monthString = Self.monthFormatter.string(from: today)
+            do {
+                let stats = try await statsService.getMonthlyStats(month: monthString)
+                calorieData = stats.dailyStats.compactMap { daily in
+                    guard let date = Self.dateFormatter.date(from: daily.date) else { return nil }
+                    return DailyCalorie(
+                        date: date,
+                        calories: daily.totalCalories,
+                        protein: daily.proteinGrams,
+                        carbs: daily.carbsGrams,
+                        fat: daily.fatGrams
+                    )
+                }
+                weeklyAverage = Int(stats.avgCalories)
+                proteinTotal = stats.avgProtein * Double(stats.dailyStats.count)
+                carbsTotal = stats.avgCarbs * Double(stats.dailyStats.count)
+                fatTotal = stats.avgFat * Double(stats.dailyStats.count)
+                checkinDays = stats.dailyStats.filter { $0.mealCount > 0 }.compactMap {
+                    Self.dateFormatter.date(from: $0.date)
+                }
+                weeklyChange = 0
+            } catch {
+                Self.logger.error("Failed to load monthly stats: \(error, privacy: .public)")
+            }
+        }
+
+        // Load AI insights
+        await loadInsights()
     }
 
     func isCheckedIn(date: Date) -> Bool {
@@ -194,59 +284,12 @@ final class StatisticsViewModel {
 
     // MARK: - Private Methods
 
-    private func loadMockData() {
-        let calendar = Calendar.current
-        let today = Date()
-        let count = selectedRange.dayCount
-
-        var data: [DailyCalorie] = []
-        for i in (0..<count).reversed() {
-            guard let date = calendar.date(byAdding: .day, value: -i, to: today) else { continue }
-            let base = MockDataProvider.Statistics.baseCalories
-            let variation = Int.random(in: MockDataProvider.Statistics.calorieVariationRange)
-            let calories = max(MockDataProvider.Statistics.calorieMinClamp, min(MockDataProvider.Statistics.calorieMaxClamp, base + variation))
-            let protein = Double.random(in: 15...45)
-            let carbs = Double.random(in: 30...80)
-            let fat = Double.random(in: 10...30)
-            data.append(DailyCalorie(date: date, calories: calories, protein: protein, carbs: carbs, fat: fat))
+    private func loadInsights() async {
+        do {
+            let insight = try await statsService.getInsights()
+            aiInsight = insight.insight
+        } catch {
+            aiInsight = "暂无数据分析，记录更多餐食后将生成个性化建议。"
         }
-        calorieData = data
-
-        let recentDays = Array(data.suffix(7))
-        let totalCalories = recentDays.reduce(0) { $0 + $1.calories }
-        weeklyAverage = recentDays.isEmpty ? 0 : totalCalories / recentDays.count
-        weeklyChange = Double.random(in: -15...20)
-    }
-
-    private func loadMockMacros() {
-        let ranges: (protein: ClosedRange<Double>, carbs: ClosedRange<Double>, fat: ClosedRange<Double>)
-        switch selectedRange {
-        case .day:   ranges = MockDataProvider.Statistics.MacroRanges.day
-        case .week:  ranges = MockDataProvider.Statistics.MacroRanges.week
-        case .month: ranges = MockDataProvider.Statistics.MacroRanges.month
-        case .year:  ranges = MockDataProvider.Statistics.MacroRanges.year
-        }
-        proteinTotal = Double.random(in: ranges.protein)
-        carbsTotal = Double.random(in: ranges.carbs)
-        fatTotal = Double.random(in: ranges.fat)
-    }
-
-    private func loadMockCheckins() {
-        let calendar = Calendar.current
-        let today = Date()
-        var days: [Date] = []
-
-        for i in 0..<MockDataProvider.Statistics.checkinLookbackDays {
-            guard let date = calendar.date(byAdding: .day, value: -i, to: today) else { continue }
-            if Bool.random() || Int.random(in: 0...9) < 7 {
-                days.append(date)
-            }
-        }
-        checkinDays = days
-    }
-
-    private func loadMockAIInsight() {
-        let insights = MockDataProvider.Statistics.aiInsights
-        aiInsight = insights.randomElement() ?? insights[0]
     }
 }
