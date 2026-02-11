@@ -18,7 +18,7 @@ enum APIEndpoint {
 
     #if DEBUG
     // 开发环境：通过 ngrok 代理连接后端服务（真机测试用）
-    private static let baseURL = "https://unqualifiable-jacqulyn-tetartohedral.ngrok-free.dev"
+    private static let baseURL = "https://sparkle-regardant-mirella.ngrok-free.dev"
     #else
     // 生产环境
     private static let baseURL = "https://api.foodmoment.app"
@@ -27,9 +27,14 @@ enum APIEndpoint {
 
     // MARK: - Auth Endpoints
 
+    case deviceAuth
     case appleSignIn
     case refreshToken
     case deleteAccount
+
+    // MARK: - Demo Endpoints
+
+    case seedDemo
 
     // MARK: - Food Recognition Endpoints
 
@@ -71,12 +76,18 @@ enum APIEndpoint {
     var path: String {
         switch self {
         // Auth
+        case .deviceAuth:
+            return "/auth/device"
         case .appleSignIn:
             return "/auth/apple"
         case .refreshToken:
             return "/auth/refresh"
         case .deleteAccount:
             return "/auth/account"
+
+        // Demo
+        case .seedDemo:
+            return "/demo/seed"
 
         // Food
         case .analyzeFood:
@@ -131,7 +142,7 @@ enum APIEndpoint {
     /// HTTP 请求方法
     var method: HTTPMethod {
         switch self {
-        case .appleSignIn, .refreshToken, .analyzeFood, .createMeal, .logWeight, .logWater:
+        case .deviceAuth, .appleSignIn, .refreshToken, .analyzeFood, .createMeal, .logWeight, .logWater, .seedDemo:
             return .post
         case .updateProfile, .updateMeal, .updateGoals:
             return .put
@@ -153,7 +164,7 @@ enum APIEndpoint {
     /// 是否需要认证
     var requiresAuth: Bool {
         switch self {
-        case .appleSignIn, .refreshToken, .analyzeFood:
+        case .deviceAuth, .appleSignIn, .refreshToken, .analyzeFood:
             return false
         default:
             return true

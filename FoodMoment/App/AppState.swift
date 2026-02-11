@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// 全局应用状态管理
 @MainActor
@@ -15,6 +16,29 @@ final class AppState {
 
     /// 当前选中的 Tab
     var selectedTab: TabItem = .home
+
+    // MARK: - Full Screen Presentation
+
+    /// 全屏呈现目标
+    enum FullScreenDestination: Identifiable {
+        case camera
+        case analysis(UIImage)
+
+        var id: String {
+            switch self {
+            case .camera: return "camera"
+            case .analysis: return "analysis"
+            }
+        }
+    }
+
+    /// 当前活跃的全屏覆盖层
+    var activeFullScreen: FullScreenDestination?
+
+    /// 从相机过渡到分析页
+    func showAnalysis(image: UIImage) {
+        activeFullScreen = .analysis(image)
+    }
 
     // MARK: - Deep Link States
 

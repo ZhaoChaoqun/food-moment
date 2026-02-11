@@ -43,6 +43,7 @@ actor TokenManager {
 
     private let accessTokenKey = "com.foodmoment.accessToken"
     private let refreshTokenKey = "com.foodmoment.refreshToken"
+    private let deviceIdKey = "com.foodmoment.deviceId"
     private let jwtPartCount = 3
 
     // MARK: - Initialization
@@ -72,6 +73,18 @@ actor TokenManager {
     /// 是否已登录
     var isAuthenticated: Bool {
         accessToken != nil
+    }
+
+    /// 设备唯一标识符
+    ///
+    /// 首次访问时自动生成 UUID 并存入 Keychain（卸载重装不丢失）。
+    var deviceId: String {
+        if let existing = readKeychain(key: deviceIdKey) {
+            return existing
+        }
+        let newId = UUID().uuidString
+        saveKeychain(key: deviceIdKey, value: newId)
+        return newId
     }
 
     // MARK: - Token Validation

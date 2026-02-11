@@ -60,6 +60,17 @@ actor APIClient {
     ) async throws -> T {
         let request = try await buildRequest(endpoint, body: body)
         let (data, response) = try await performRequest(request)
+
+        // 401 时自动重新认证并重试一次
+        if let http = response as? HTTPURLResponse, http.statusCode == 401, endpoint.requiresAuth {
+            if await reauthenticate() {
+                let retryRequest = try await buildRequest(endpoint, body: body)
+                let (retryData, retryResponse) = try await performRequest(retryRequest)
+                try validateResponse(retryResponse, data: retryData)
+                return try decoder.decode(T.self, from: retryData)
+            }
+        }
+
         try validateResponse(response, data: data)
 
         do {
@@ -83,6 +94,17 @@ actor APIClient {
     ) async throws {
         let request = try await buildRequest(endpoint, body: body)
         let (data, response) = try await performRequest(request)
+
+        // 401 时自动重新认证并重试一次
+        if let http = response as? HTTPURLResponse, http.statusCode == 401, endpoint.requiresAuth {
+            if await reauthenticate() {
+                let retryRequest = try await buildRequest(endpoint, body: body)
+                let (retryData, retryResponse) = try await performRequest(retryRequest)
+                try validateResponse(retryResponse, data: retryData)
+                return
+            }
+        }
+
         try validateResponse(response, data: data)
     }
 
@@ -155,6 +177,35 @@ actor APIClient {
     }
 
     // MARK: - Private Methods
+
+    /// 使用设备 UUID 重新认证获取新 token
+    private func reauthenticate() async -> Bool {
+        let deviceId = await TokenManager.shared.deviceId
+        Self.logger.info("Token expired, re-authenticating with deviceId: \(deviceId.prefix(8), privacy: .public)...")
+
+        do {
+            let request = try await buildRequest(.deviceAuth, body: ["deviceId": deviceId])
+            let (data, response) = try await performRequest(request)
+
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                Self.logger.error("Re-authentication failed with non-200 response")
+                return false
+            }
+
+            struct AuthResponse: Decodable {
+                let accessToken: String
+                let refreshToken: String
+            }
+
+            let authResponse = try decoder.decode(AuthResponse.self, from: data)
+            await TokenManager.shared.setTokens(access: authResponse.accessToken, refresh: authResponse.refreshToken)
+            Self.logger.info("Re-authentication succeeded")
+            return true
+        } catch {
+            Self.logger.error("Re-authentication failed: \(error, privacy: .public)")
+            return false
+        }
+    }
 
     private func buildRequest(
         _ endpoint: APIEndpoint,
