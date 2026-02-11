@@ -18,15 +18,6 @@ struct NutritionDataDTO: Codable, Sendable {
 
     /// 膳食纤维（克）
     let fiberG: Double
-
-    // MARK: - Coding Keys
-
-    enum CodingKeys: String, CodingKey {
-        case proteinG = "protein_g"
-        case carbsG = "carbs_g"
-        case fatG = "fat_g"
-        case fiberG = "fiber_g"
-    }
 }
 
 // MARK: - Computed Properties

@@ -16,7 +16,13 @@ enum APIEndpoint {
 
     // MARK: - Configuration
 
+    #if DEBUG
+    // 开发环境：通过 ngrok 代理连接后端服务（真机测试用）
+    private static let baseURL = "https://unqualifiable-jacqulyn-tetartohedral.ngrok-free.dev"
+    #else
+    // 生产环境
     private static let baseURL = "https://api.foodmoment.app"
+    #endif
     private static let apiVersion = "/api/v1"
 
     // MARK: - Auth Endpoints
@@ -147,7 +153,7 @@ enum APIEndpoint {
     /// 是否需要认证
     var requiresAuth: Bool {
         switch self {
-        case .appleSignIn, .refreshToken:
+        case .appleSignIn, .refreshToken, .analyzeFood:
             return false
         default:
             return true

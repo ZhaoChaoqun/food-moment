@@ -100,6 +100,11 @@ actor APIClient {
         filename: String = "food.jpg",
         mimeType: String = "image/jpeg"
     ) async throws -> T {
+        print("[APIClient] ---- upload 开始 ----")
+        print("[APIClient] endpoint: \(endpoint.url)")
+        print("[APIClient] method: \(endpoint.method.rawValue)")
+        print("[APIClient] imageData: \(imageData.count) bytes, filename: \(filename), mimeType: \(mimeType)")
+
         var request = try await buildRequest(endpoint, body: nil as String?)
 
         let boundary = UUID().uuidString
@@ -115,13 +120,33 @@ actor APIClient {
             boundary: boundary
         )
         request.httpBody = body
+        print("[APIClient] multipart body 大小: \(body.count) bytes")
+        print("[APIClient] 请求 headers: \(request.allHTTPHeaderFields ?? [:])")
 
         let (data, response) = try await performRequest(request)
+
+        if let httpResponse = response as? HTTPURLResponse {
+            print("[APIClient] 响应状态码: \(httpResponse.statusCode)")
+            print("[APIClient] 响应 headers: \(httpResponse.allHeaderFields)")
+        }
+        print("[APIClient] 响应数据大小: \(data.count) bytes")
+
+        // 打印原始响应 JSON 方便调试
+        if let jsonString = String(data: data, encoding: .utf8) {
+            let preview = jsonString.prefix(2000)
+            print("[APIClient] 响应 JSON 原文 (前2000字符): \(preview)")
+        }
+
         try validateResponse(response, data: data)
 
         do {
-            return try decoder.decode(T.self, from: data)
+            let decoded = try decoder.decode(T.self, from: data)
+            print("[APIClient] JSON 解码成功, 类型: \(T.self)")
+            print("[APIClient] ---- upload 完成 ----")
+            return decoded
         } catch {
+            print("[APIClient] JSON 解码失败: \(error)")
+            print("[APIClient] 解码目标类型: \(T.self)")
             throw APIError.decodingError(error)
         }
     }
@@ -136,6 +161,11 @@ actor APIClient {
         request.httpMethod = endpoint.method.rawValue
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
+
+        // 跳过 ngrok 免费版浏览器拦截页
+        #if DEBUG
+        request.setValue("true", forHTTPHeaderField: "ngrok-skip-browser-warning")
+        #endif
 
         // 添加认证令牌
         if endpoint.requiresAuth,

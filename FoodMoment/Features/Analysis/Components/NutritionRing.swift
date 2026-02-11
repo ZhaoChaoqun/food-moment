@@ -35,40 +35,59 @@ struct NutritionRing: View {
         self.showGlow = showGlow
     }
 
+    /// 将数值格式化为紧凑字符串：4 位及以上使用 "k" 后缀（如 1100 → "1.1k"）
+    private var formattedValue: String {
+        let intVal = Int(value)
+        if intVal >= 1000 {
+            let k = Double(intVal) / 1000.0
+            // 整千无小数，否则保留一位
+            if intVal % 1000 == 0 {
+                return "\(intVal / 1000)k"
+            } else {
+                return String(format: "%.1fk", k)
+            }
+        }
+        return "\(intVal)"
+    }
+
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             ZStack {
                 // Track (background circle)
                 Circle()
-                    .stroke(Color.white.opacity(0.15), lineWidth: 3)
+                    .stroke(Color(hex: "#E2E8F0").opacity(0.6), lineWidth: 6)
 
-                // Progress arc with conditional glow effect
+                // Progress arc with gradient and shadow
                 Circle()
                     .trim(from: 0, to: CGFloat(animatedProgress))
                     .stroke(
-                        color,
-                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                        LinearGradient(
+                            colors: [color, color.opacity(0.7)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ),
+                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
-                    .shadow(color: showGlow ? color.opacity(0.6) : .clear, radius: showGlow ? 6 : 0)
+                    .shadow(color: color.opacity(0.3), radius: showGlow ? 6 : 4, y: 0)
 
-                // Center label
-                VStack(spacing: 0) {
-                    Text("\(Int(value))")
-                        .font(.Jakarta.bold(18))
-                        .foregroundColor(.white)
+                // Center label: value + unit on one line
+                HStack(alignment: .lastTextBaseline, spacing: 1) {
+                    Text(formattedValue)
+                        .font(.Jakarta.bold(20))
+                        .foregroundColor(Color(hex: "#0F172A"))
 
                     Text(unit)
-                        .font(.Jakarta.semiBold(14))
-                        .foregroundColor(.white.opacity(0.5))
+                        .font(.Jakarta.semiBold(13))
+                        .foregroundColor(Color(hex: "#64748B"))
                 }
             }
-            .frame(width: 80, height: 80)
+            .frame(width: 90, height: 90)
 
             // Bottom label
             Text(label)
                 .font(.Jakarta.semiBold(14))
-                .foregroundColor(.white.opacity(0.7))
+                .foregroundColor(Color(hex: "#475569"))
         }
         .onAppear {
             withAnimation(.easeOut(duration: 1.0).delay(0.5)) {

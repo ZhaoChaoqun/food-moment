@@ -8,7 +8,7 @@ struct AnalysisResponseDTO: Codable, Sendable {
     // MARK: - Properties
 
     /// 上传图片的 URL
-    let imageURL: String
+    let imageUrl: String
 
     /// 总卡路里
     let totalCalories: Int
@@ -24,17 +24,6 @@ struct AnalysisResponseDTO: Codable, Sendable {
 
     /// 标签列表
     let tags: [String]
-
-    // MARK: - Coding Keys
-
-    enum CodingKeys: String, CodingKey {
-        case imageURL = "image_url"
-        case totalCalories = "total_calories"
-        case totalNutrition = "total_nutrition"
-        case detectedFoods = "detected_foods"
-        case aiAnalysis = "ai_analysis"
-        case tags
-    }
 }
 
 /// 识别食物 DTO
@@ -76,21 +65,6 @@ struct DetectedFoodDTO: Codable, Sendable, Identifiable {
 
     /// 显示颜色（十六进制）
     let color: String
-
-    // MARK: - Coding Keys
-
-    enum CodingKeys: String, CodingKey {
-        case name
-        case nameZh = "name_zh"
-        case emoji
-        case confidence
-        case boundingBox = "bounding_box"
-        case calories
-        case proteinGrams = "protein_grams"
-        case carbsGrams = "carbs_grams"
-        case fatGrams = "fat_grams"
-        case color
-    }
 }
 
 /// 边界框 DTO

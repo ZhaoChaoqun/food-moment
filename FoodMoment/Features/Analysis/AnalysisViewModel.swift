@@ -58,35 +58,77 @@ final class AnalysisViewModel {
     // MARK: - Analyze Food
 
     /// Calls APIClient to upload image for analysis.
-    /// Currently uses mock data because backend is not yet completed.
     func analyzeFood() async {
+        guard !isAnalyzing else { return }  // 防止重复调用
+
         isAnalyzing = true
         errorMessage = nil
 
+        print("[AnalysisVM] ========== 开始食物分析 ==========")
+        print("[AnalysisVM] API URL: \(APIEndpoint.analyzeFood.url)")
+        print("[AnalysisVM] 原始图片尺寸: \(capturedImage.size.width) x \(capturedImage.size.height)")
+        print("[AnalysisVM] 原始图片方向: \(capturedImage.imageOrientation.rawValue)")
+        print("[AnalysisVM] 原始图片 scale: \(capturedImage.scale)")
+
         do {
-            // TODO: Replace with real API call once backend is ready
-            // guard let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
-            //     errorMessage = "Failed to process image"
-            //     isAnalyzing = false
-            //     return
-            // }
-            // let response: AnalysisResponseDTO = try await APIClient.shared.upload(
-            //     .analyzeFood,
-            //     imageData: imageData
-            // )
-            // analysisResult = response
+            guard let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
+                print("[AnalysisVM] ERROR: jpegData 返回 nil，无法转换图片")
+                errorMessage = "无法处理图片"
+                isAnalyzing = false
+                return
+            }
 
-            // Simulate network delay
-            try await Task.sleep(for: .seconds(1.5))
+            let imageSizeKB = Double(imageData.count) / 1024.0
+            print("[AnalysisVM] JPEG 数据大小: \(String(format: "%.1f", imageSizeKB)) KB (\(imageData.count) bytes)")
+            print("[AnalysisVM] 压缩质量: 0.8")
 
-            analysisResult = Self.mockAnalysis()
+            // 验证 JPEG 数据头部（JPEG magic bytes: FF D8 FF）
+            if imageData.count >= 3 {
+                let header = imageData.prefix(3).map { String(format: "%02X", $0) }.joined(separator: " ")
+                print("[AnalysisVM] JPEG 文件头: \(header) (期望: FF D8 FF)")
+            }
+
+            print("[AnalysisVM] 正在调用 API 上传图片...")
+            let startTime = CFAbsoluteTimeGetCurrent()
+
+            let response: AnalysisResponseDTO = try await APIClient.shared.upload(
+                .analyzeFood,
+                imageData: imageData
+            )
+
+            let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+            print("[AnalysisVM] ========== API 响应成功 ==========")
+            print("[AnalysisVM] 耗时: \(String(format: "%.2f", elapsed))s")
+            print("[AnalysisVM] 总热量: \(response.totalCalories) kcal")
+            print("[AnalysisVM] 识别到 \(response.detectedFoods.count) 种食物:")
+            for (i, food) in response.detectedFoods.enumerated() {
+                print("[AnalysisVM]   [\(i)] \(food.emoji) \(food.name) (\(food.nameZh))")
+                print("[AnalysisVM]       置信度: \(String(format: "%.2f", food.confidence))")
+                print("[AnalysisVM]       热量: \(food.calories) kcal")
+                print("[AnalysisVM]       蛋白质: \(String(format: "%.1f", food.proteinGrams))g, 碳水: \(String(format: "%.1f", food.carbsGrams))g, 脂肪: \(String(format: "%.1f", food.fatGrams))g")
+                print("[AnalysisVM]       边界框: x=\(String(format: "%.3f", food.boundingBox.x)) y=\(String(format: "%.3f", food.boundingBox.y)) w=\(String(format: "%.3f", food.boundingBox.w)) h=\(String(format: "%.3f", food.boundingBox.h))")
+                print("[AnalysisVM]       颜色: \(food.color)")
+            }
+            print("[AnalysisVM] 总营养: 蛋白质=\(String(format: "%.1f", response.totalNutrition.proteinG))g 碳水=\(String(format: "%.1f", response.totalNutrition.carbsG))g 脂肪=\(String(format: "%.1f", response.totalNutrition.fatG))g 纤维=\(String(format: "%.1f", response.totalNutrition.fiberG))g")
+            print("[AnalysisVM] AI分析: \(response.aiAnalysis)")
+            print("[AnalysisVM] 标签: \(response.tags)")
+            print("[AnalysisVM] ====================================")
+
+            if !Task.isCancelled {
+                analysisResult = response
+                isAnalyzing = false
+            }
         } catch {
+            print("[AnalysisVM] ========== API 请求失败 ==========")
+            print("[AnalysisVM] 错误类型: \(type(of: error))")
+            print("[AnalysisVM] 错误描述: \(error)")
+            print("[AnalysisVM] 本地化描述: \(error.localizedDescription)")
+            print("[AnalysisVM] ====================================")
             if !Task.isCancelled {
                 errorMessage = error.localizedDescription
+                isAnalyzing = false
             }
         }
-
-        isAnalyzing = false
     }
 
     // MARK: - Edit Food
@@ -141,7 +183,7 @@ final class AnalysisViewModel {
 
         // Create updated result
         analysisResult = AnalysisResponseDTO(
-            imageURL: result.imageURL,
+            imageUrl: result.imageUrl,
             totalCalories: totalCal,
             totalNutrition: NutritionDataDTO(
                 proteinG: totalProtein,
@@ -171,7 +213,7 @@ final class AnalysisViewModel {
 
     /// Creates a MealRecord and associated DetectedFood entries, saving them to SwiftData.
     /// Also writes to HealthKit and triggers backend sync.
-    func saveMeal(modelContext: ModelContext) {
+    func saveMeal(modelContext: ModelContext, appState: AppState) {
         guard let result = analysisResult else { return }
 
         let imageData = capturedImage.jpegData(compressionQuality: 0.8)
@@ -189,7 +231,7 @@ final class AnalysisViewModel {
             fiberGrams: result.totalNutrition.fiberG,
             aiAnalysis: result.aiAnalysis,
             tags: result.tags,
-            imageURL: result.imageURL,
+            imageURL: result.imageUrl,
             localImageData: imageData
         )
 
@@ -216,6 +258,12 @@ final class AnalysisViewModel {
 
         do {
             try modelContext.save()
+
+            // Check for achievement unlocks
+            AchievementManager.shared.checkAndUnlock(
+                modelContext: modelContext,
+                appState: appState
+            )
 
             // Write to HealthKit asynchronously
             Task {
@@ -277,56 +325,7 @@ final class AnalysisViewModel {
 
     /// Returns a simulated analysis result for UI development.
     static func mockAnalysis() -> AnalysisResponseDTO {
-        AnalysisResponseDTO(
-            imageURL: "",
-            totalCalories: 485,
-            totalNutrition: NutritionDataDTO(
-                proteinG: 22,
-                carbsG: 45,
-                fatG: 18,
-                fiberG: 6
-            ),
-            detectedFoods: [
-                DetectedFoodDTO(
-                    name: "Poached Egg",
-                    nameZh: "水煮蛋",
-                    emoji: "\u{1F95A}",
-                    confidence: 0.95,
-                    boundingBox: BoundingBoxDTO(x: 0.15, y: 0.25, w: 0.25, h: 0.2),
-                    calories: 140,
-                    proteinGrams: 12,
-                    carbsGrams: 1,
-                    fatGrams: 10,
-                    color: "#4ADE80"
-                ),
-                DetectedFoodDTO(
-                    name: "Avocado",
-                    nameZh: "牛油果",
-                    emoji: "\u{1F951}",
-                    confidence: 0.92,
-                    boundingBox: BoundingBoxDTO(x: 0.55, y: 0.20, w: 0.3, h: 0.25),
-                    calories: 160,
-                    proteinGrams: 2,
-                    carbsGrams: 9,
-                    fatGrams: 15,
-                    color: "#FACC15"
-                ),
-                DetectedFoodDTO(
-                    name: "Toast",
-                    nameZh: "吐司",
-                    emoji: "\u{1F35E}",
-                    confidence: 0.88,
-                    boundingBox: BoundingBoxDTO(x: 0.30, y: 0.55, w: 0.35, h: 0.2),
-                    calories: 185,
-                    proteinGrams: 8,
-                    carbsGrams: 35,
-                    fatGrams: 2,
-                    color: "#FB923C"
-                )
-            ],
-            aiAnalysis: "A well-balanced breakfast with good protein from the poached egg and healthy fats from avocado. The toast provides sustained energy through complex carbohydrates. Consider adding leafy greens for extra vitamins and fiber.",
-            tags: ["High Protein", "Healthy Fats", "Balanced"]
-        )
+        MockDataProvider.generateMockAnalysis()
     }
 
     // MARK: - Meal Time Configuration
@@ -412,9 +411,9 @@ struct ShareableAnalysisView: View {
 
                 // Macros row
                 HStack(spacing: 32) {
-                    macroItem(value: nutrition.proteinG, label: "Protein", color: Color(hex: "#4ADE80"))
-                    macroItem(value: nutrition.carbsG, label: "Carbs", color: Color(hex: "#FACC15"))
-                    macroItem(value: nutrition.fatG, label: "Fat", color: Color(hex: "#FB923C"))
+                    macroItem(value: nutrition.proteinG, label: "蛋白质", color: Color(hex: "#4ADE80"))
+                    macroItem(value: nutrition.carbsG, label: "碳水", color: Color(hex: "#FACC15"))
+                    macroItem(value: nutrition.fatG, label: "脂肪", color: Color(hex: "#FB923C"))
                 }
 
                 // Foods list
@@ -437,12 +436,15 @@ struct ShareableAnalysisView: View {
 
                 // Branding
                 HStack(spacing: 6) {
-                    Text("Tracked with")
+                    Text("由")
                         .font(.system(size: 12))
                         .foregroundColor(.gray)
-                    Text("FoodMoment")
+                    Text("食刻")
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(AppTheme.Colors.primary)
+                    Text("记录")
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
                 }
                 .padding(.top, 8)
             }

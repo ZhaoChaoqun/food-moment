@@ -15,7 +15,7 @@ struct LogMealButton: View {
                     .font(.system(size: 20, weight: .semibold))
                     .rotationEffect(.degrees(isPressed ? 12 : 0))
 
-                Text("Log Meal")
+                Text("记录餐食")
                     .font(.Jakarta.bold(17))
             }
             .foregroundColor(.black)
@@ -23,7 +23,23 @@ struct LogMealButton: View {
             .frame(height: 56)
             .background(
                 Capsule()
-                    .fill(AppTheme.Colors.primary)
+                    .fill(
+                        LinearGradient(
+                            colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.85)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.2), .clear],
+                                    startPoint: .top,
+                                    endPoint: .center
+                                )
+                            )
+                    )
             )
             .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 10, y: 10)
             .scaleEffect(isPressed ? 0.95 : 1.0)

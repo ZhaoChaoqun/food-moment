@@ -13,7 +13,17 @@ struct AIInsightCard: View {
                 // Icon with gradient background
                 ZStack {
                     Circle()
-                        .fill(AppTheme.Colors.primary.opacity(0.2))
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    AppTheme.Colors.primary.opacity(0.25),
+                                    AppTheme.Colors.primary.opacity(0.08)
+                                ],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 16
+                            )
+                        )
                         .frame(width: 32, height: 32)
 
                     Image(systemName: "sparkles")
@@ -29,7 +39,7 @@ struct AIInsightCard: View {
 
                 Text("AI Analysis")
                     .font(.Jakarta.bold(14))
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(hex: "#0F172A"))
 
                 Spacer()
             }
@@ -37,27 +47,35 @@ struct AIInsightCard: View {
             // Content
             Text(analysisText)
                 .font(.Jakarta.medium(14))
-                .foregroundColor(.white.opacity(0.85))
+                .foregroundColor(Color(hex: "#475569"))
                 .lineSpacing(5)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            AppTheme.Colors.primary.opacity(0.1),
-                            Color.clear
-                        ],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                .fill(.white.opacity(0.5))
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    AppTheme.Colors.primary.opacity(0.08),
+                                    Color.clear
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                )
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(.ultraThinMaterial)
                 )
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.primary.opacity(0.2), lineWidth: 1)
+                .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
         )
     }
 }

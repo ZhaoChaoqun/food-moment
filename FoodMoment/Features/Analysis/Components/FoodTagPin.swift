@@ -51,7 +51,7 @@ struct FoodTagPin: View {
                 .frame(width: 8, height: 8)
 
             // Food name with emoji
-            Text("\(food.name) \(food.emoji)")
+            Text("\(food.nameZh) \(food.emoji)")
                 .font(.Jakarta.semiBold(14))
                 .foregroundColor(.white)
                 .shadow(color: .black.opacity(0.3), radius: 2, y: 1)
