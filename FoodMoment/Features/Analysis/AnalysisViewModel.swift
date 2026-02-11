@@ -71,9 +71,9 @@ final class AnalysisViewModel {
 
         Self.logger.debug("========== 开始食物分析 ==========")
         Self.logger.debug("API URL: \(APIEndpoint.analyzeFood.url, privacy: .public)")
-        Self.logger.debug("原始图片尺寸: \(capturedImage.size.width, privacy: .public) x \(capturedImage.size.height, privacy: .public)")
-        Self.logger.debug("原始图片方向: \(capturedImage.imageOrientation.rawValue, privacy: .public)")
-        Self.logger.debug("原始图片 scale: \(capturedImage.scale, privacy: .public)")
+        Self.logger.debug("原始图片尺寸: \(self.capturedImage.size.width, privacy: .public) x \(self.capturedImage.size.height, privacy: .public)")
+        Self.logger.debug("原始图片方向: \(self.capturedImage.imageOrientation.rawValue, privacy: .public)")
+        Self.logger.debug("原始图片 scale: \(self.capturedImage.scale, privacy: .public)")
 
         do {
             guard let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
