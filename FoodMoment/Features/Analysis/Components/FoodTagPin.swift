@@ -28,6 +28,7 @@ struct FoodTagPin: View {
                 .shadow(color: .white.opacity(0.8), radius: 6)
                 .shadow(color: .white.opacity(0.5), radius: 10)
         }
+        .accessibilityLabel(food.nameZh)
         .onTapGesture {
             withAnimation(.spring(response: 0.2)) {
                 isPressed = true
@@ -68,4 +69,22 @@ struct FoodTagPin: View {
                 .stroke(Color.white.opacity(0.4), lineWidth: 0.5)
         )
     }
+}
+
+#Preview {
+    FoodTagPin(
+        food: DetectedFoodDTO(
+            name: "Rice",
+            nameZh: "米饭",
+            emoji: "🍚",
+            confidence: 0.95,
+            boundingBox: BoundingBoxDTO(x: 0.3, y: 0.3, w: 0.4, h: 0.4),
+            calories: 200,
+            proteinGrams: 4.0,
+            carbsGrams: 45.0,
+            fatGrams: 0.5,
+            color: "#4CAF50"
+        )
+    )
+    .background(Color.black)
 }

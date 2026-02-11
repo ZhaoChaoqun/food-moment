@@ -2,11 +2,14 @@ import Foundation
 import SwiftData
 import Network
 import Observation
+import os
 
 @MainActor
 @Observable
 final class SyncManager {
     static let shared = SyncManager()
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "SyncManager")
 
     var isSyncing = false
     var pendingCount = 0
@@ -85,7 +88,7 @@ final class SyncManager {
                     pendingCount -= 1
                 } catch {
                     // 单条上传失败不中断整体同步流程
-                    print("[SyncManager] Failed to sync record \(record.id): \(error.localizedDescription)")
+                    Self.logger.error("Failed to sync record \(record.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continue
                 }
             }
@@ -93,7 +96,7 @@ final class SyncManager {
             // 保存同步状态变更
             try modelContext.save()
         } catch {
-            print("[SyncManager] Sync failed: \(error.localizedDescription)")
+            Self.logger.error("Sync failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -107,7 +110,7 @@ final class SyncManager {
             let records = try modelContext.fetch(descriptor)
             pendingCount = records.count
         } catch {
-            print("[SyncManager] Failed to count pending records: \(error.localizedDescription)")
+            Self.logger.error("Failed to count pending records: \(error.localizedDescription, privacy: .public)")
         }
     }
 

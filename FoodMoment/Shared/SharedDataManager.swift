@@ -1,9 +1,12 @@
 import Foundation
+import os
 
 /// App Groups 共享数据管理器
 /// 用于主 App 与 Widget 之间共享数据
 final class SharedDataManager: @unchecked Sendable {
     nonisolated(unsafe) static let shared = SharedDataManager()
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "SharedDataManager")
 
     // MARK: - Constants
 
@@ -91,7 +94,7 @@ final class SharedDataManager: @unchecked Sendable {
     /// 保存 Widget 数据（主 App 调用）
     func saveWidgetData(_ data: WidgetData) {
         guard let url = widgetDataURL else {
-            print("[SharedDataManager] Failed to get widget data URL")
+            Self.logger.error("Failed to get widget data URL")
             return
         }
 
@@ -100,16 +103,16 @@ final class SharedDataManager: @unchecked Sendable {
             encoder.dateEncodingStrategy = .iso8601
             let jsonData = try encoder.encode(data)
             try jsonData.write(to: url, options: .atomic)
-            print("[SharedDataManager] Widget data saved successfully")
+            Self.logger.debug("Widget data saved successfully")
         } catch {
-            print("[SharedDataManager] Failed to save widget data: \(error.localizedDescription)")
+            Self.logger.error("Failed to save widget data: \(error.localizedDescription, privacy: .public)")
         }
     }
 
     /// 加载 Widget 数据（Widget 调用）
     func loadWidgetData() -> WidgetData? {
         guard let url = widgetDataURL else {
-            print("[SharedDataManager] Failed to get widget data URL")
+            Self.logger.error("Failed to get widget data URL")
             return nil
         }
 
@@ -123,7 +126,7 @@ final class SharedDataManager: @unchecked Sendable {
             decoder.dateDecodingStrategy = .iso8601
             return try decoder.decode(WidgetData.self, from: jsonData)
         } catch {
-            print("[SharedDataManager] Failed to load widget data: \(error.localizedDescription)")
+            Self.logger.error("Failed to load widget data: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

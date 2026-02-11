@@ -1,5 +1,6 @@
 import Foundation
 import Security
+import os
 
 // MARK: - Token Manager
 
@@ -33,6 +34,8 @@ enum TokenValidationError: Error {
 actor TokenManager {
 
     // MARK: - Singleton
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "TokenManager")
 
     static let shared = TokenManager()
 
@@ -159,7 +162,7 @@ actor TokenManager {
         // 添加新条目
         let status = SecItemAdd(query as CFDictionary, nil)
         if status != errSecSuccess {
-            print("[TokenManager] Failed to save keychain item: \(status)")
+            Self.logger.error("Failed to save keychain item: \(status, privacy: .public)")
         }
     }
 
@@ -191,7 +194,7 @@ actor TokenManager {
 
         let status = SecItemDelete(query as CFDictionary)
         if status != errSecSuccess && status != errSecItemNotFound {
-            print("[TokenManager] Failed to delete keychain item: \(status)")
+            Self.logger.error("Failed to delete keychain item: \(status, privacy: .public)")
         }
     }
 }

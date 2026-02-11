@@ -1,11 +1,16 @@
 import SwiftUI
 import PhotosUI
 import UIKit
+import os
 
 // MARK: - CameraView
 
 /// Full-screen camera view with live preview, controls, and AI-powered food scanning.
 struct CameraView: View {
+
+    // MARK: - Logger
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "CameraView")
 
     // MARK: - Environment
 
@@ -204,7 +209,7 @@ struct CameraView: View {
                 .clipShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Switch Camera")
+        .accessibilityLabel("切换摄像头")
     }
 
     // MARK: - Capture Flash Overlay
@@ -230,7 +235,7 @@ struct CameraView: View {
                 onLookup: {
                     // TODO: Navigate to food lookup with barcode
                     // For now, just dismiss and print the barcode
-                    print("Looking up barcode: \(barcode.payload)")
+                    Self.logger.debug("Looking up barcode: \(barcode.payload, privacy: .public)")
                     viewModel.dismissBarcodeResult()
                 },
                 onDismiss: {

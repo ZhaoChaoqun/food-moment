@@ -34,7 +34,7 @@ struct ShutterButton: View {
         }
         .buttonStyle(.plain)
         .simultaneousGesture(pressGesture)
-        .accessibilityLabel("Capture Photo")
+        .accessibilityLabel("拍照")
     }
 
     // MARK: - Outer Ring

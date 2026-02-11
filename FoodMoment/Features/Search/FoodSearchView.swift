@@ -468,3 +468,7 @@ struct FlowLayout: Layout {
         return (CGSize(width: maxWidth, height: totalHeight), frames)
     }
 }
+
+#Preview {
+    FoodSearchView()
+}

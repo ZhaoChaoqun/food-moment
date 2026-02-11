@@ -132,3 +132,8 @@ struct DailyProgressFloat: View {
         "今日已摄入 \(consumed) 千卡，目标 \(goal) 千卡，完成 \(percentage)%"
     }
 }
+
+#Preview {
+    DailyProgressFloat(consumed: 1350, goal: 2000)
+        .padding()
+}

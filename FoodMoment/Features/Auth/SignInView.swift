@@ -85,3 +85,8 @@ struct SignInView: View {
         }
     }
 }
+
+#Preview {
+    SignInView()
+        .environment(AppState())
+}

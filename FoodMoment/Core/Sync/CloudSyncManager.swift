@@ -3,6 +3,7 @@ import SwiftData
 import CloudKit
 import Network
 import Observation
+import os
 
 /// Sendable data structure for concurrent upload
 struct RecordUploadData: Sendable {
@@ -28,6 +29,8 @@ struct RecordUploadData: Sendable {
 @Observable
 final class CloudSyncManager {
     static let shared = CloudSyncManager()
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "CloudSyncManager")
 
     // MARK: - State
 
@@ -228,11 +231,11 @@ final class CloudSyncManager {
             pendingUploadCount = unsyncedRecords.count
 
             guard !unsyncedRecords.isEmpty else {
-                print("[CloudSyncManager] No pending records to upload")
+                Self.logger.debug("No pending records to upload")
                 return
             }
 
-            print("[CloudSyncManager] Uploading \(unsyncedRecords.count) records...")
+            Self.logger.debug("Uploading \(unsyncedRecords.count, privacy: .public) records...")
 
             // Extract data from records for concurrent upload (MealRecord is not Sendable)
             let uploadDataList = unsyncedRecords.map { record in
@@ -272,7 +275,7 @@ final class CloudSyncManager {
                                 try await self.uploadRecordData(data)
                                 return (data.id, true)
                             } catch {
-                                print("[CloudSyncManager] Failed to upload record \(data.id): \(error)")
+                                CloudSyncManager.logger.error("Failed to upload record \(data.id, privacy: .public): \(String(describing: error), privacy: .public)")
                                 return (data.id, false)
                             }
                         }
@@ -294,10 +297,10 @@ final class CloudSyncManager {
 
             // 保存同步状态
             try modelContext.save()
-            print("[CloudSyncManager] Successfully uploaded \(uploadedCount) records")
+            Self.logger.debug("Successfully uploaded \(uploadedCount, privacy: .public) records")
 
         } catch {
-            print("[CloudSyncManager] Upload failed: \(error.localizedDescription)")
+            Self.logger.error("Upload failed: \(error.localizedDescription, privacy: .public)")
             syncStatus = .error(error.localizedDescription)
         }
     }
@@ -395,7 +398,7 @@ final class CloudSyncManager {
             let records = try modelContext.fetch(descriptor)
             pendingUploadCount = records.count
         } catch {
-            print("[CloudSyncManager] Failed to count pending records: \(error)")
+            Self.logger.error("Failed to count pending records: \(String(describing: error), privacy: .public)")
         }
     }
 

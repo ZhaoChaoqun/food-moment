@@ -321,3 +321,11 @@ extension SettingsView {
         var id: String { rawValue }
     }
 }
+
+#Preview {
+    NavigationStack {
+        SettingsView(viewModel: ProfileViewModel())
+    }
+    .environment(AppState())
+    .modelContainer(for: [MealRecord.self, UserProfile.self], inMemory: true)
+}

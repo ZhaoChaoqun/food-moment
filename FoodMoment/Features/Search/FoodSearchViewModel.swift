@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import os
 
 /// 食物搜索结果 DTO
 struct FoodSearchResultDTO: Codable, Identifiable, Sendable {
@@ -47,6 +48,8 @@ struct FoodSearchResponse: Codable, Sendable {
 @MainActor
 @Observable
 final class FoodSearchViewModel {
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "FoodSearchViewModel")
+
     var searchText = ""
     var searchResults: [FoodSearchResultDTO] = []
     var suggestions: [FoodSearchResultDTO] = []  // 自动补全建议
@@ -229,7 +232,7 @@ final class FoodSearchViewModel {
             return response.results.filter { !excludingIds.contains($0.id) }
         } catch {
             // API 搜索失败，返回空数组
-            print("[FoodSearch] API search failed: \(error.localizedDescription)")
+            Self.logger.error("API search failed: \(error.localizedDescription, privacy: .public)")
             return []
         }
     }

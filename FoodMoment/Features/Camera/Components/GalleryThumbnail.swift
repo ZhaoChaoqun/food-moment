@@ -35,7 +35,7 @@ struct GalleryThumbnail: View {
         .onChange(of: selectedItem) { _, newItem in
             loadImage(from: newItem)
         }
-        .accessibilityLabel("Photo Library")
+        .accessibilityLabel("照片库")
     }
 
     // MARK: - Thumbnail Content

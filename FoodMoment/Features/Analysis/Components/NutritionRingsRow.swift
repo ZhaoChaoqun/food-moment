@@ -36,3 +36,15 @@ struct NutritionRingsRow: View {
         }
     }
 }
+
+#Preview {
+    NutritionRingsRow(
+        nutrition: NutritionDataDTO(
+            proteinG: 35.0,
+            carbsG: 60.0,
+            fatG: 20.0,
+            fiberG: 8.0
+        )
+    )
+    .padding()
+}

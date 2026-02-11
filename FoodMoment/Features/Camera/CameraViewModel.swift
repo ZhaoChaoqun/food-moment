@@ -1,6 +1,7 @@
 import SwiftUI
 import AVFoundation
 import UIKit
+import os
 
 // MARK: - CameraScanMode
 
@@ -17,6 +18,10 @@ enum CameraScanMode: String, CaseIterable, Sendable {
 @MainActor
 @Observable
 final class CameraViewModel {
+
+    // MARK: - Logger
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "CameraViewModel")
 
     // MARK: - Published Properties
 
@@ -228,7 +233,7 @@ extension CameraViewModel: CameraServiceDelegate {
         Task { @MainActor in
             self.isCapturing = false
             // TODO: Show error alert to user
-            print("Camera error: \(error.localizedDescription)")
+            Self.logger.error("Camera error: \(error.localizedDescription, privacy: .public)")
         }
     }
 }
@@ -255,7 +260,7 @@ extension CameraViewModel: BarcodeScannerDelegate {
         Task { @MainActor in
             // Handle barcode scanning errors silently for now
             // Could show an alert for persistent errors
-            print("Barcode scanning error: \(error.localizedDescription)")
+            Self.logger.error("Barcode scanning error: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

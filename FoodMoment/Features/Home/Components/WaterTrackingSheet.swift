@@ -1,7 +1,12 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct WaterTrackingSheet: View {
+
+    // MARK: - Logger
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "WaterTrackingSheet")
 
     // MARK: - Environment
 
@@ -282,7 +287,7 @@ struct WaterTrackingSheet: View {
                 date: Date()
             )
         } catch {
-            print("[WaterTrackingSheet] HealthKit save failed: \(error.localizedDescription)")
+            Self.logger.error("HealthKit save failed: \(error.localizedDescription, privacy: .public)")
         }
 
         isSaving = false
@@ -291,4 +296,9 @@ struct WaterTrackingSheet: View {
         try? await Task.sleep(for: .milliseconds(600))
         dismiss()
     }
+}
+
+#Preview {
+    WaterTrackingSheet()
+        .modelContainer(for: [WaterLog.self], inMemory: true)
 }

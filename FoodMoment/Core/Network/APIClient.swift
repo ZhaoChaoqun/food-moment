@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 // MARK: - API Client
 
@@ -14,6 +15,8 @@ import Foundation
 actor APIClient {
 
     // MARK: - Singleton
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "APIClient")
 
     static let shared = APIClient()
 
@@ -100,10 +103,10 @@ actor APIClient {
         filename: String = "food.jpg",
         mimeType: String = "image/jpeg"
     ) async throws -> T {
-        print("[APIClient] ---- upload 开始 ----")
-        print("[APIClient] endpoint: \(endpoint.url)")
-        print("[APIClient] method: \(endpoint.method.rawValue)")
-        print("[APIClient] imageData: \(imageData.count) bytes, filename: \(filename), mimeType: \(mimeType)")
+        Self.logger.debug("---- upload 开始 ----")
+        Self.logger.debug("endpoint: \(endpoint.url, privacy: .public)")
+        Self.logger.debug("method: \(endpoint.method.rawValue, privacy: .public)")
+        Self.logger.debug("imageData: \(imageData.count, privacy: .public) bytes, filename: \(filename, privacy: .public), mimeType: \(mimeType, privacy: .public)")
 
         var request = try await buildRequest(endpoint, body: nil as String?)
 
@@ -120,33 +123,33 @@ actor APIClient {
             boundary: boundary
         )
         request.httpBody = body
-        print("[APIClient] multipart body 大小: \(body.count) bytes")
-        print("[APIClient] 请求 headers: \(request.allHTTPHeaderFields ?? [:])")
+        Self.logger.debug("multipart body 大小: \(body.count, privacy: .public) bytes")
+        Self.logger.debug("请求 headers: \(String(describing: request.allHTTPHeaderFields), privacy: .public)")
 
         let (data, response) = try await performRequest(request)
 
         if let httpResponse = response as? HTTPURLResponse {
-            print("[APIClient] 响应状态码: \(httpResponse.statusCode)")
-            print("[APIClient] 响应 headers: \(httpResponse.allHeaderFields)")
+            Self.logger.debug("响应状态码: \(httpResponse.statusCode, privacy: .public)")
+            Self.logger.debug("响应 headers: \(String(describing: httpResponse.allHeaderFields), privacy: .public)")
         }
-        print("[APIClient] 响应数据大小: \(data.count) bytes")
+        Self.logger.debug("响应数据大小: \(data.count, privacy: .public) bytes")
 
         // 打印原始响应 JSON 方便调试
         if let jsonString = String(data: data, encoding: .utf8) {
             let preview = jsonString.prefix(2000)
-            print("[APIClient] 响应 JSON 原文 (前2000字符): \(preview)")
+            Self.logger.debug("响应 JSON 原文 (前2000字符): \(preview, privacy: .public)")
         }
 
         try validateResponse(response, data: data)
 
         do {
             let decoded = try decoder.decode(T.self, from: data)
-            print("[APIClient] JSON 解码成功, 类型: \(T.self)")
-            print("[APIClient] ---- upload 完成 ----")
+            Self.logger.debug("JSON 解码成功, 类型: \(String(describing: T.self), privacy: .public)")
+            Self.logger.debug("---- upload 完成 ----")
             return decoded
         } catch {
-            print("[APIClient] JSON 解码失败: \(error)")
-            print("[APIClient] 解码目标类型: \(T.self)")
+            Self.logger.error("JSON 解码失败: \(String(describing: error), privacy: .public)")
+            Self.logger.error("解码目标类型: \(String(describing: T.self), privacy: .public)")
             throw APIError.decodingError(error)
         }
     }

@@ -1,10 +1,15 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import os
 
 @MainActor
 @Observable
 final class AnalysisViewModel {
+
+    // MARK: - Logger
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "AnalysisViewModel")
 
     // MARK: - Input
 
@@ -64,31 +69,31 @@ final class AnalysisViewModel {
         isAnalyzing = true
         errorMessage = nil
 
-        print("[AnalysisVM] ========== 开始食物分析 ==========")
-        print("[AnalysisVM] API URL: \(APIEndpoint.analyzeFood.url)")
-        print("[AnalysisVM] 原始图片尺寸: \(capturedImage.size.width) x \(capturedImage.size.height)")
-        print("[AnalysisVM] 原始图片方向: \(capturedImage.imageOrientation.rawValue)")
-        print("[AnalysisVM] 原始图片 scale: \(capturedImage.scale)")
+        Self.logger.debug("========== 开始食物分析 ==========")
+        Self.logger.debug("API URL: \(APIEndpoint.analyzeFood.url, privacy: .public)")
+        Self.logger.debug("原始图片尺寸: \(capturedImage.size.width, privacy: .public) x \(capturedImage.size.height, privacy: .public)")
+        Self.logger.debug("原始图片方向: \(capturedImage.imageOrientation.rawValue, privacy: .public)")
+        Self.logger.debug("原始图片 scale: \(capturedImage.scale, privacy: .public)")
 
         do {
             guard let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
-                print("[AnalysisVM] ERROR: jpegData 返回 nil，无法转换图片")
+                Self.logger.error("ERROR: jpegData 返回 nil，无法转换图片")
                 errorMessage = "无法处理图片"
                 isAnalyzing = false
                 return
             }
 
             let imageSizeKB = Double(imageData.count) / 1024.0
-            print("[AnalysisVM] JPEG 数据大小: \(String(format: "%.1f", imageSizeKB)) KB (\(imageData.count) bytes)")
-            print("[AnalysisVM] 压缩质量: 0.8")
+            Self.logger.debug("JPEG 数据大小: \(String(format: "%.1f", imageSizeKB), privacy: .public) KB (\(imageData.count, privacy: .public) bytes)")
+            Self.logger.debug("压缩质量: 0.8")
 
             // 验证 JPEG 数据头部（JPEG magic bytes: FF D8 FF）
             if imageData.count >= 3 {
                 let header = imageData.prefix(3).map { String(format: "%02X", $0) }.joined(separator: " ")
-                print("[AnalysisVM] JPEG 文件头: \(header) (期望: FF D8 FF)")
+                Self.logger.debug("JPEG 文件头: \(header, privacy: .public) (期望: FF D8 FF)")
             }
 
-            print("[AnalysisVM] 正在调用 API 上传图片...")
+            Self.logger.debug("正在调用 API 上传图片...")
             let startTime = CFAbsoluteTimeGetCurrent()
 
             let response: AnalysisResponseDTO = try await APIClient.shared.upload(
@@ -97,33 +102,33 @@ final class AnalysisViewModel {
             )
 
             let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-            print("[AnalysisVM] ========== API 响应成功 ==========")
-            print("[AnalysisVM] 耗时: \(String(format: "%.2f", elapsed))s")
-            print("[AnalysisVM] 总热量: \(response.totalCalories) kcal")
-            print("[AnalysisVM] 识别到 \(response.detectedFoods.count) 种食物:")
+            Self.logger.debug("========== API 响应成功 ==========")
+            Self.logger.debug("耗时: \(String(format: "%.2f", elapsed), privacy: .public)s")
+            Self.logger.debug("总热量: \(response.totalCalories, privacy: .public) kcal")
+            Self.logger.debug("识别到 \(response.detectedFoods.count, privacy: .public) 种食物:")
             for (i, food) in response.detectedFoods.enumerated() {
-                print("[AnalysisVM]   [\(i)] \(food.emoji) \(food.name) (\(food.nameZh))")
-                print("[AnalysisVM]       置信度: \(String(format: "%.2f", food.confidence))")
-                print("[AnalysisVM]       热量: \(food.calories) kcal")
-                print("[AnalysisVM]       蛋白质: \(String(format: "%.1f", food.proteinGrams))g, 碳水: \(String(format: "%.1f", food.carbsGrams))g, 脂肪: \(String(format: "%.1f", food.fatGrams))g")
-                print("[AnalysisVM]       边界框: x=\(String(format: "%.3f", food.boundingBox.x)) y=\(String(format: "%.3f", food.boundingBox.y)) w=\(String(format: "%.3f", food.boundingBox.w)) h=\(String(format: "%.3f", food.boundingBox.h))")
-                print("[AnalysisVM]       颜色: \(food.color)")
+                Self.logger.debug("  [\(i, privacy: .public)] \(food.emoji, privacy: .public) \(food.name, privacy: .public) (\(food.nameZh, privacy: .public))")
+                Self.logger.debug("      置信度: \(String(format: "%.2f", food.confidence), privacy: .public)")
+                Self.logger.debug("      热量: \(food.calories, privacy: .public) kcal")
+                Self.logger.debug("      蛋白质: \(String(format: "%.1f", food.proteinGrams), privacy: .public)g, 碳水: \(String(format: "%.1f", food.carbsGrams), privacy: .public)g, 脂肪: \(String(format: "%.1f", food.fatGrams), privacy: .public)g")
+                Self.logger.debug("      边界框: x=\(String(format: "%.3f", food.boundingBox.x), privacy: .public) y=\(String(format: "%.3f", food.boundingBox.y), privacy: .public) w=\(String(format: "%.3f", food.boundingBox.w), privacy: .public) h=\(String(format: "%.3f", food.boundingBox.h), privacy: .public)")
+                Self.logger.debug("      颜色: \(food.color, privacy: .public)")
             }
-            print("[AnalysisVM] 总营养: 蛋白质=\(String(format: "%.1f", response.totalNutrition.proteinG))g 碳水=\(String(format: "%.1f", response.totalNutrition.carbsG))g 脂肪=\(String(format: "%.1f", response.totalNutrition.fatG))g 纤维=\(String(format: "%.1f", response.totalNutrition.fiberG))g")
-            print("[AnalysisVM] AI分析: \(response.aiAnalysis)")
-            print("[AnalysisVM] 标签: \(response.tags)")
-            print("[AnalysisVM] ====================================")
+            Self.logger.debug("总营养: 蛋白质=\(String(format: "%.1f", response.totalNutrition.proteinG), privacy: .public)g 碳水=\(String(format: "%.1f", response.totalNutrition.carbsG), privacy: .public)g 脂肪=\(String(format: "%.1f", response.totalNutrition.fatG), privacy: .public)g 纤维=\(String(format: "%.1f", response.totalNutrition.fiberG), privacy: .public)g")
+            Self.logger.debug("AI分析: \(response.aiAnalysis, privacy: .public)")
+            Self.logger.debug("标签: \(response.tags, privacy: .public)")
+            Self.logger.debug("====================================")
 
             if !Task.isCancelled {
                 analysisResult = response
                 isAnalyzing = false
             }
         } catch {
-            print("[AnalysisVM] ========== API 请求失败 ==========")
-            print("[AnalysisVM] 错误类型: \(type(of: error))")
-            print("[AnalysisVM] 错误描述: \(error)")
-            print("[AnalysisVM] 本地化描述: \(error.localizedDescription)")
-            print("[AnalysisVM] ====================================")
+            Self.logger.error("========== API 请求失败 ==========")
+            Self.logger.error("错误类型: \(String(describing: type(of: error)), privacy: .public)")
+            Self.logger.error("错误描述: \(String(describing: error), privacy: .public)")
+            Self.logger.error("本地化描述: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("====================================")
             if !Task.isCancelled {
                 errorMessage = error.localizedDescription
                 isAnalyzing = false
@@ -298,7 +303,7 @@ final class AnalysisViewModel {
             )
         } catch {
             healthKitSaveError = error.localizedDescription
-            print("[AnalysisViewModel] HealthKit write failed: \(error.localizedDescription)")
+            Self.logger.error("HealthKit write failed: \(error.localizedDescription, privacy: .public)")
         }
     }
 

@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SwiftUI
 import UniformTypeIdentifiers
+import os
 
 // MARK: - Data Models
 
@@ -56,6 +57,10 @@ enum TimeRange: String, CaseIterable, Identifiable {
 @MainActor
 @Observable
 final class StatisticsViewModel {
+
+    // MARK: - Logger
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "StatisticsViewModel")
 
     // MARK: - Published Properties
 
@@ -153,7 +158,7 @@ final class StatisticsViewModel {
             try csvString.write(to: fileURL, atomically: true, encoding: .utf8)
             return fileURL
         } catch {
-            print("Failed to create CSV file: \(error)")
+            Self.logger.error("Failed to create CSV file: \(error.localizedDescription, privacy: .public)")
             return nil
         }
     }

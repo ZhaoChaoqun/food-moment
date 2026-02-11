@@ -1,11 +1,14 @@
 import Vision
 import UIKit
+import os
 
 /// 图像主体检测服务，使用 iOS Vision 框架检测图像中的显著区域
 @MainActor
 final class SaliencyDetectionService {
 
     // MARK: - Singleton
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "SaliencyDetectionService")
 
     static let shared = SaliencyDetectionService()
     private init() {}
@@ -43,7 +46,7 @@ final class SaliencyDetectionService {
             do {
                 try handler.perform([request])
             } catch {
-                print("[SaliencyDetection] Handler error: \(error.localizedDescription)")
+                SaliencyDetectionService.logger.error("Handler error: \(error.localizedDescription, privacy: .public)")
                 return nil
             }
 
@@ -51,7 +54,7 @@ final class SaliencyDetectionService {
             guard let result = request.results?.first as? VNSaliencyImageObservation,
                   let salientObjects = result.salientObjects,
                   !salientObjects.isEmpty else {
-                print("[SaliencyDetection] No salient objects detected")
+                SaliencyDetectionService.logger.debug("No salient objects detected")
                 return nil
             }
 
@@ -62,7 +65,7 @@ final class SaliencyDetectionService {
                 // Vision 坐标系：原点在左下角，Y 轴向上
                 // 转换为 UIKit 坐标系：原点在左上角，Y 轴向下
                 let centerY = 1 - (boundingBox.midY)
-                print("[SaliencyDetection] Detected center Y: \(centerY)")
+                SaliencyDetectionService.logger.debug("Detected center Y: \(centerY, privacy: .public)")
                 return centerY
             }
 
@@ -91,7 +94,7 @@ final class SaliencyDetectionService {
         let factor = (centerY - OffsetConfig.offsetThreshold) / (1 - OffsetConfig.offsetThreshold)
         let offset = -screenHeight * OffsetConfig.maxOffsetRatio * factor
 
-        print("[SaliencyDetection] Calculated offset: \(offset) for centerY: \(centerY)")
+        Self.logger.debug("Calculated offset: \(offset, privacy: .public) for centerY: \(centerY, privacy: .public)")
         return offset
     }
 

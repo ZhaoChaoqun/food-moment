@@ -244,3 +244,19 @@ struct AchievementUnlockView: View {
         }
     }
 }
+
+#Preview {
+    AchievementUnlockView(
+        achievement: AchievementItem(
+            type: "first_meal",
+            title: "第一餐",
+            subtitle: "First Meal",
+            icon: "fork.knife",
+            tier: .gold,
+            isEarned: true,
+            earnedDate: Date(),
+            description: "记录你的第一餐"
+        ),
+        onDismiss: {}
+    )
+}

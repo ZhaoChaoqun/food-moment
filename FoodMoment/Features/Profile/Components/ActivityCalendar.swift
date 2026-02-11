@@ -149,3 +149,8 @@ struct ActivityCalendar: View {
             .accessibilityIdentifier("DayCell_\(day)")
     }
 }
+
+#Preview {
+    ActivityCalendar(activeDays: [1, 3, 5, 7, 10, 12, 15, 18, 20, 22, 25])
+        .padding()
+}

@@ -109,3 +109,24 @@ struct TimelineEntry: View {
             .position(x: 12, y: midY)
     }
 }
+
+#Preview {
+    TimelineEntry(
+        meal: MealRecord(
+            mealType: "lunch",
+            mealTime: Date(),
+            title: "番茄炒蛋盖饭",
+            descriptionText: "美味的午餐",
+            totalCalories: 450,
+            proteinGrams: 20.0,
+            carbsGrams: 55.0,
+            fatGrams: 12.0,
+            fiberGrams: 3.0,
+            tags: ["home-cooked", "balanced"]
+        ),
+        isFirst: true,
+        isLast: false,
+        onDelete: {}
+    )
+    .modelContainer(for: [MealRecord.self], inMemory: true)
+}

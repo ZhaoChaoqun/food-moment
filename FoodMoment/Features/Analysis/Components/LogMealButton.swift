@@ -60,3 +60,8 @@ struct LogMealButton: View {
         )
     }
 }
+
+#Preview {
+    LogMealButton(action: {})
+        .padding()
+}

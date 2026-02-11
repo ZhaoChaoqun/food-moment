@@ -242,3 +242,22 @@ struct FoodPhotoCard: View {
         }
     }
 }
+
+#Preview {
+    FoodPhotoCard(
+        meal: MealRecord(
+            mealType: "lunch",
+            mealTime: Date(),
+            title: "番茄炒蛋盖饭",
+            descriptionText: "鲜嫩多汁的家常菜",
+            totalCalories: 450,
+            proteinGrams: 20.0,
+            carbsGrams: 55.0,
+            fatGrams: 12.0,
+            fiberGrams: 3.0,
+            tags: ["home-cooked", "balanced"]
+        )
+    )
+    .padding()
+    .modelContainer(for: [MealRecord.self], inMemory: true)
+}

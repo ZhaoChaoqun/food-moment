@@ -2,9 +2,14 @@ import SwiftUI
 import SwiftData
 import WidgetKit
 import CoreSpotlight
+import os
 
 @main
 struct FoodMomentApp: App {
+
+    // MARK: - Logger
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "FoodMomentApp")
 
     // MARK: - State
 
@@ -82,7 +87,7 @@ extension FoodMomentApp {
     private func setupApp() async {
         // UI 测试模式下跳过大部分初始化
         if Self.isUITesting {
-            print("[FoodMomentApp] Running in UI testing mode")
+            Self.logger.debug("Running in UI testing mode")
             appState.isAuthenticated = true
             appState.isUITesting = true
             return
@@ -98,14 +103,14 @@ extension FoodMomentApp {
                 await NotificationManager.shared.setupDefaultReminders()
             }
         } catch {
-            print("[FoodMomentApp] Notification authorization failed: \(error)")
+            Self.logger.error("Notification authorization failed: \(error.localizedDescription, privacy: .public)")
         }
 
         // 3. 请求 HealthKit 权限
         do {
             try await HealthKitManager.shared.requestAuthorization()
         } catch {
-            print("[FoodMomentApp] HealthKit authorization failed: \(error)")
+            Self.logger.error("HealthKit authorization failed: \(error.localizedDescription, privacy: .public)")
         }
 
         // 4. 启动网络监控和同步
@@ -160,7 +165,7 @@ extension FoodMomentApp {
         guard url.scheme == SharedDataManager.urlScheme else { return }
 
         let action = url.host ?? ""
-        print("[FoodMomentApp] Handling deep link: \(action)")
+        Self.logger.debug("Handling deep link: \(action, privacy: .public)")
 
         switch action {
         case "camera":
@@ -211,7 +216,7 @@ extension FoodMomentApp {
             return
         }
 
-        print("[FoodMomentApp] Spotlight activity: \(identifier)")
+        Self.logger.debug("Spotlight activity: \(identifier, privacy: .public)")
 
         if let mealID = SpotlightIndexer.parseMealId(from: identifier) {
             appState.selectedTab = .diary

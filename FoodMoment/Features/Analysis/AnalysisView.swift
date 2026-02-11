@@ -250,6 +250,7 @@ struct AnalysisView: View {
                                 .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
                         )
                 }
+                .accessibilityLabel("关闭")
 
                 Spacer()
 
@@ -273,6 +274,7 @@ struct AnalysisView: View {
                                     .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
                             )
                     }
+                    .accessibilityLabel("分享")
                 } else {
                     Button {
                         // Disabled state
@@ -447,4 +449,10 @@ struct AnalysisView: View {
             height: filledHeight
         )
     }
+}
+
+#Preview {
+    AnalysisView(image: UIImage(systemName: "photo")!)
+        .environment(AppState())
+        .modelContainer(for: [MealRecord.self], inMemory: true)
 }

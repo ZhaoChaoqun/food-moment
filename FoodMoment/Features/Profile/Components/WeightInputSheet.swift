@@ -1,7 +1,12 @@
 import SwiftUI
 import SwiftData
+import os
 
 struct WeightInputSheet: View {
+
+    // MARK: - Logger
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "WeightInputSheet")
 
     // MARK: - Environment
 
@@ -345,7 +350,7 @@ struct WeightInputSheet: View {
         do {
             recentWeights = try modelContext.fetch(descriptor)
         } catch {
-            print("[WeightInputSheet] Failed to load weight logs: \(error.localizedDescription)")
+            Self.logger.error("Failed to load weight logs: \(error.localizedDescription, privacy: .public)")
         }
 
         // 从 HealthKit 获取最新体重作为默认值
@@ -380,7 +385,7 @@ struct WeightInputSheet: View {
                 date: now
             )
         } catch {
-            print("[WeightInputSheet] HealthKit save failed: \(error.localizedDescription)")
+            Self.logger.error("HealthKit save failed: \(error.localizedDescription, privacy: .public)")
         }
 
         isSaving = false
@@ -389,4 +394,9 @@ struct WeightInputSheet: View {
         try? await Task.sleep(for: .milliseconds(600))
         dismiss()
     }
+}
+
+#Preview {
+    WeightInputSheet()
+        .modelContainer(for: [WeightLog.self], inMemory: true)
 }

@@ -2,12 +2,15 @@ import Foundation
 import CoreSpotlight
 import CoreServices
 import UniformTypeIdentifiers
+import os
 
 /// Spotlight 索引管理器
 /// 将食物记录编入系统搜索
 @MainActor
 final class SpotlightIndexer {
     static let shared = SpotlightIndexer()
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "SpotlightIndexer")
 
     private let domainIdentifier = "com.zhaochaoqun.FoodMoment.meals"
     private let index = CSSearchableIndex.default()
@@ -36,9 +39,9 @@ final class SpotlightIndexer {
 
         index.indexSearchableItems([searchableItem]) { error in
             if let error {
-                print("[SpotlightIndexer] Failed to index meal: \(error.localizedDescription)")
+                SpotlightIndexer.logger.error("Failed to index meal: \(error.localizedDescription, privacy: .public)")
             } else {
-                print("[SpotlightIndexer] Successfully indexed meal: \(meal.title)")
+                SpotlightIndexer.logger.debug("Successfully indexed meal: \(meal.title, privacy: .public)")
             }
         }
     }
@@ -66,9 +69,9 @@ final class SpotlightIndexer {
 
         index.indexSearchableItems(items) { error in
             if let error {
-                print("[SpotlightIndexer] Failed to batch index meals: \(error.localizedDescription)")
+                SpotlightIndexer.logger.error("Failed to batch index meals: \(error.localizedDescription, privacy: .public)")
             } else {
-                print("[SpotlightIndexer] Successfully indexed \(meals.count) meals")
+                SpotlightIndexer.logger.debug("Successfully indexed \(meals.count, privacy: .public) meals")
             }
         }
     }
@@ -80,7 +83,7 @@ final class SpotlightIndexer {
         let uniqueIdentifier = "meal-\(mealId.uuidString)"
         index.deleteSearchableItems(withIdentifiers: [uniqueIdentifier]) { error in
             if let error {
-                print("[SpotlightIndexer] Failed to remove index: \(error.localizedDescription)")
+                SpotlightIndexer.logger.error("Failed to remove index: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -89,9 +92,9 @@ final class SpotlightIndexer {
     func removeAllMealIndexes() {
         index.deleteSearchableItems(withDomainIdentifiers: [domainIdentifier]) { error in
             if let error {
-                print("[SpotlightIndexer] Failed to remove all indexes: \(error.localizedDescription)")
+                SpotlightIndexer.logger.error("Failed to remove all indexes: \(error.localizedDescription, privacy: .public)")
             } else {
-                print("[SpotlightIndexer] All meal indexes removed")
+                SpotlightIndexer.logger.debug("All meal indexes removed")
             }
         }
     }
@@ -101,7 +104,7 @@ final class SpotlightIndexer {
         // 先删除所有现有索引
         index.deleteSearchableItems(withDomainIdentifiers: [domainIdentifier]) { [weak self] error in
             if let error {
-                print("[SpotlightIndexer] Failed to clear indexes: \(error.localizedDescription)")
+                SpotlightIndexer.logger.error("Failed to clear indexes: \(error.localizedDescription, privacy: .public)")
                 return
             }
 

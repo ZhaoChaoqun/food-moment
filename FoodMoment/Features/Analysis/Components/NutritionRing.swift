@@ -96,3 +96,14 @@ struct NutritionRing: View {
         }
     }
 }
+
+#Preview {
+    NutritionRing(
+        value: 45,
+        label: "蛋白质",
+        color: .green,
+        maxValue: 80,
+        showGlow: true
+    )
+    .padding()
+}

@@ -1,9 +1,12 @@
 import Foundation
 import UserNotifications
+import os
 
 @MainActor
 final class NotificationManager: NSObject {
     static let shared = NotificationManager()
+
+    private static let logger = Logger(subsystem: "com.foodmoment", category: "NotificationManager")
 
     private let center = UNUserNotificationCenter.current()
 
@@ -56,7 +59,7 @@ final class NotificationManager: NSObject {
         let status = await checkAuthorizationStatus()
 
         guard status == .authorized || status == .provisional else {
-            print("[NotificationManager] Not authorized for notifications")
+            Self.logger.warning("Not authorized for notifications")
             return
         }
 
@@ -138,7 +141,7 @@ final class NotificationManager: NSObject {
         )
 
         mealRemindersEnabled = true
-        print("[NotificationManager] Meal reminders scheduled")
+        Self.logger.debug("Meal reminders scheduled")
     }
 
     // MARK: - Checkin Reminder
@@ -159,7 +162,7 @@ final class NotificationManager: NSObject {
         )
 
         checkinReminderEnabled = true
-        print("[NotificationManager] Checkin reminder scheduled at \(hour):00")
+        Self.logger.debug("Checkin reminder scheduled at \(hour, privacy: .public):00")
     }
 
     // MARK: - Water Reminders
@@ -184,7 +187,7 @@ final class NotificationManager: NSObject {
         }
 
         waterReminderEnabled = true
-        print("[NotificationManager] Water reminders scheduled")
+        Self.logger.debug("Water reminders scheduled")
     }
 
     // MARK: - Cancel
@@ -322,7 +325,7 @@ final class NotificationManager: NSObject {
 
         center.add(request) { error in
             if let error {
-                print("[NotificationManager] Failed to schedule \(identifier): \(error.localizedDescription)")
+                NotificationManager.logger.error("Failed to schedule \(identifier, privacy: .public): \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -346,7 +349,7 @@ final class NotificationManager: NSObject {
 
         center.add(request) { error in
             if let error {
-                print("[NotificationManager] Failed to send notification: \(error.localizedDescription)")
+                NotificationManager.logger.error("Failed to send notification: \(error.localizedDescription, privacy: .public)")
             }
         }
     }
@@ -436,7 +439,7 @@ extension NotificationManager: UNUserNotificationCenterDelegate {
                 )
             }
         } catch {
-            print("[NotificationManager] Failed to log water: \(error)")
+            NotificationManager.logger.error("Failed to log water: \(String(describing: error), privacy: .public)")
         }
     }
 }

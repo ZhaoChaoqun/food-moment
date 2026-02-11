@@ -199,3 +199,27 @@ struct FloatingNutritionPanel: View {
         tagTranslations[tag.lowercased()] ?? tag
     }
 }
+
+#Preview {
+    ScrollView {
+        FloatingNutritionPanel(
+            analysisResult: AnalysisResponseDTO(
+                imageUrl: "",
+                totalCalories: 650,
+                totalNutrition: NutritionDataDTO(
+                    proteinG: 35.0,
+                    carbsG: 60.0,
+                    fatG: 20.0,
+                    fiberG: 8.0
+                ),
+                detectedFoods: [],
+                aiAnalysis: "This is a balanced meal with good protein and fiber content.",
+                tags: ["high-protein", "balanced"]
+            ),
+            isAnalyzing: false,
+            errorMessage: nil,
+            onLogMeal: {},
+            onRetry: {}
+        )
+    }
+}

@@ -100,6 +100,7 @@ struct BarcodeResultOverlay: View {
                 .background(Color.white.opacity(0.1))
                 .clipShape(Circle())
         }
+        .accessibilityLabel("关闭")
     }
 
     // MARK: - Barcode Value Section
@@ -133,6 +134,7 @@ struct BarcodeResultOverlay: View {
                 .font(.Jakarta.regular(14))
                 .foregroundColor(.gray)
         }
+        .accessibilityLabel("复制条码")
     }
 
     // MARK: - Action Buttons Section
@@ -161,6 +163,7 @@ struct BarcodeResultOverlay: View {
             .background(Color.white.opacity(0.15))
             .clipShape(RoundedRectangle(cornerRadius: 12))
         }
+        .accessibilityLabel("重新扫描")
     }
 
     // MARK: - Look Up Button

@@ -79,3 +79,8 @@ struct AIInsightCard: View {
         )
     }
 }
+
+#Preview {
+    AIInsightCard(analysisText: "This meal is rich in protein and fiber. Consider adding more vegetables for a balanced diet.")
+        .padding()
+}

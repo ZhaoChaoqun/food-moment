@@ -141,3 +141,37 @@ struct FoodTagOverlay: View {
         }
     }
 }
+
+#Preview {
+    FoodTagOverlay(
+        detectedFoods: [
+            DetectedFoodDTO(
+                name: "Rice",
+                nameZh: "米饭",
+                emoji: "🍚",
+                confidence: 0.95,
+                boundingBox: BoundingBoxDTO(x: 0.2, y: 0.2, w: 0.3, h: 0.3),
+                calories: 200,
+                proteinGrams: 4.0,
+                carbsGrams: 45.0,
+                fatGrams: 0.5,
+                color: "#4CAF50"
+            ),
+            DetectedFoodDTO(
+                name: "Chicken",
+                nameZh: "鸡肉",
+                emoji: "🍗",
+                confidence: 0.90,
+                boundingBox: BoundingBoxDTO(x: 0.5, y: 0.5, w: 0.3, h: 0.3),
+                calories: 300,
+                proteinGrams: 30.0,
+                carbsGrams: 0.0,
+                fatGrams: 8.0,
+                color: "#FF9800"
+            )
+        ],
+        imageDisplayFrame: CGRect(x: 0, y: 0, width: 390, height: 300)
+    )
+    .frame(width: 390, height: 300)
+    .background(Color.gray)
+}
