@@ -246,6 +246,9 @@ async def _analyze_with_anthropic(image_data: bytes) -> dict | None:
             "anthropic-version": "2023-06-01",
         }
 
+        if settings.anthropic_proxy_key:
+            headers["X-Proxy-Key"] = settings.anthropic_proxy_key
+
         async with httpx.AsyncClient(timeout=60.0) as client:
             logger.info(f"发送请求到 Claude: {url}")
             logger.info(f"模型: {settings.anthropic_model}")

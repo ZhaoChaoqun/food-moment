@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     anthropic_base_url: str = "http://localhost:23333/api/anthropic"
     anthropic_model: str = "claude-opus-4.6-fast"
     anthropic_enabled: bool = True
+    anthropic_proxy_key: str = ""
 
     # Storage - MinIO / S3 兼容
     storage_provider: str = "minio"  # minio, s3, azure
