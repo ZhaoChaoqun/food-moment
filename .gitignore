@@ -55,3 +55,13 @@ backend/.env
 .ngrok.log
 .ngrok.pid
 .ngrok.url
+
+# Logs
+*.log
+*-debug.log
+
+# Stitch design node_modules
+stitch/*/node_modules/
+
+# Gemini
+.gemini/
