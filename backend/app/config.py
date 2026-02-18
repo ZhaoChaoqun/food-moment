@@ -24,20 +24,10 @@ class Settings(BaseSettings):
     anthropic_enabled: bool = True
     anthropic_proxy_key: str = ""
 
-    # Storage - MinIO / S3 兼容
-    storage_provider: str = "minio"  # minio, s3, azure
-    minio_endpoint: str = "localhost:9000"
-    minio_access_key: str = "minioadmin"
-    minio_secret_key: str = "minioadmin123"
-    minio_bucket: str = "uploads"
-    minio_secure: bool = False
-    storage_public_url: str = "http://localhost:9000/uploads"
-
-    # Legacy OSS config (阿里云 OSS)
-    oss_endpoint: str = ""
-    oss_bucket: str = ""
-    oss_access_key: str = ""
-    oss_secret_key: str = ""
+    # Storage - Azure Blob Storage（本地 Azurite / 生产 Azure）
+    azure_storage_connection_string: str = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
+    azure_storage_container: str = "uploads"
+    storage_public_url: str = "http://127.0.0.1:10000/devstoreaccount1/uploads"
 
     # Logging
     log_level: str = "INFO"
