@@ -1,23 +1,24 @@
 import SwiftUI
 import SwiftData
-import os
 
 struct WaterTrackingSheet: View {
-
-    // MARK: - Logger
-
-    private static let logger = Logger(subsystem: "com.foodmoment", category: "WaterTrackingSheet")
+    let onConfirm: (Int) -> Void
 
     // MARK: - Environment
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.modelContext) private var modelContext
+
+    // MARK: - Types
+
+    private enum SelectionMode: Equatable {
+        case preset(Int)
+        case custom
+    }
 
     // MARK: - State
 
-    @State private var selectedAmount: Int = 250
+    @State private var selectionMode: SelectionMode = .preset(250)
     @State private var customAmount: String = ""
-    @State private var isCustom = false
     @State private var isSaving = false
     @State private var isShowingSuccess = false
     @State private var dropletScale: CGFloat = 1.0
@@ -31,15 +32,16 @@ struct WaterTrackingSheet: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 32) {
+            VStack(spacing: 20) {
                 waterDropletIcon
                 amountSelector
                 customInputSection
                 currentAmountDisplay
-                Spacer()
                 recordButton
+                    .padding(.top, 8)
             }
-            .padding(24)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
             .navigationTitle("记录饮水")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -67,10 +69,10 @@ struct WaterTrackingSheet: View {
         ZStack {
             Circle()
                 .fill(AppTheme.Colors.primary.opacity(0.1))
-                .frame(width: 140, height: 140)
+                .frame(width: 100, height: 100)
 
             Image(systemName: "drop.fill")
-                .font(.Jakarta.regular(64))
+                .font(.Jakarta.regular(44))
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
@@ -107,10 +109,10 @@ struct WaterTrackingSheet: View {
     }
 
     private func presetButton(amount: Int) -> some View {
-        Button {
+        let isSelected = selectionMode == .preset(amount)
+        return Button {
             withAnimation(AppTheme.Animation.defaultSpring) {
-                selectedAmount = amount
-                isCustom = false
+                selectionMode = .preset(amount)
             }
         } label: {
             VStack(spacing: 4) {
@@ -122,10 +124,10 @@ struct WaterTrackingSheet: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(presetButtonBackground(isSelected: selectedAmount == amount && !isCustom))
-            .overlay(presetButtonBorder(isSelected: selectedAmount == amount && !isCustom))
+            .background(presetButtonBackground(isSelected: isSelected))
+            .overlay(presetButtonBorder(isSelected: isSelected))
         }
-        .foregroundStyle(selectedAmount == amount && !isCustom ? AppTheme.Colors.primary : .primary)
+        .foregroundStyle(isSelected ? AppTheme.Colors.primary : .primary)
     }
 
     private func presetButtonBackground(isSelected: Bool) -> some View {
@@ -139,9 +141,10 @@ struct WaterTrackingSheet: View {
     }
 
     private var customToggleButton: some View {
-        Button {
+        let isSelected = selectionMode == .custom
+        return Button {
             withAnimation(AppTheme.Animation.defaultSpring) {
-                isCustom = true
+                selectionMode = .custom
             }
         } label: {
             VStack(spacing: 4) {
@@ -153,17 +156,17 @@ struct WaterTrackingSheet: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
-            .background(presetButtonBackground(isSelected: isCustom))
-            .overlay(presetButtonBorder(isSelected: isCustom))
+            .background(presetButtonBackground(isSelected: isSelected))
+            .overlay(presetButtonBorder(isSelected: isSelected))
         }
-        .foregroundStyle(isCustom ? AppTheme.Colors.primary : .primary)
+        .foregroundStyle(isSelected ? AppTheme.Colors.primary : .primary)
     }
 
     // MARK: - Custom Input Section
 
     @ViewBuilder
     private var customInputSection: some View {
-        if isCustom {
+        if selectionMode == .custom {
             customInputField
         }
     }
@@ -180,9 +183,6 @@ struct WaterTrackingSheet: View {
                     RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
                         .fill(Color(.secondarySystemBackground))
                 )
-                .onChange(of: customAmount) { _, newValue in
-                    handleCustomAmountChange(newValue)
-                }
 
             Text("mL")
                 .font(.Jakarta.medium(16))
@@ -197,12 +197,12 @@ struct WaterTrackingSheet: View {
     private var currentAmountDisplay: some View {
         VStack(spacing: 4) {
             Text("\(effectiveAmount)")
-                .font(.Jakarta.extraBold(48))
+                .font(.Jakarta.extraBold(40))
                 .foregroundStyle(AppTheme.Colors.primary)
                 .contentTransition(.numericText())
 
             Text("毫升")
-                .font(.Jakarta.medium(16))
+                .font(.Jakarta.medium(14))
                 .foregroundStyle(.secondary)
         }
     }
@@ -226,8 +226,8 @@ struct WaterTrackingSheet: View {
             )
             .foregroundStyle(.white)
         }
-        .disabled(isSaving || effectiveAmount <= 0)
-        .opacity(effectiveAmount > 0 ? 1.0 : 0.5)
+        .disabled(!canRecord)
+        .opacity(canRecord ? 1.0 : 0.5)
     }
 
     @ViewBuilder
@@ -248,10 +248,17 @@ struct WaterTrackingSheet: View {
     // MARK: - Computed Properties
 
     private var effectiveAmount: Int {
-        if isCustom, let custom = Int(customAmount), custom > 0 {
-            return min(custom, 5000)
+        switch selectionMode {
+        case .preset(let amount):
+            return amount
+        case .custom:
+            guard let value = Int(customAmount), value > 0 else { return 0 }
+            return min(value, 5000)
         }
-        return isCustom ? 0 : selectedAmount
+    }
+
+    private var canRecord: Bool {
+        !isSaving && effectiveAmount > 0
     }
 
     // MARK: - Private Methods
@@ -266,29 +273,12 @@ struct WaterTrackingSheet: View {
         }
     }
 
-    private func handleCustomAmountChange(_ newValue: String) {
-        if let amount = Int(newValue), amount > 0 {
-            selectedAmount = min(amount, 5000)
-        }
-    }
-
     private func saveWaterLog() async {
         let amount = effectiveAmount
         guard amount > 0 else { return }
 
         isSaving = true
-
-        let waterLog = WaterLog(amountML: amount)
-        modelContext.insert(waterLog)
-
-        do {
-            try await HealthKitManager.shared.saveWaterIntake(
-                milliliters: Double(amount),
-                date: Date()
-            )
-        } catch {
-            Self.logger.error("HealthKit save failed: \(error.localizedDescription, privacy: .public)")
-        }
+        onConfirm(amount)
 
         isSaving = false
         isShowingSuccess = true
@@ -299,6 +289,5 @@ struct WaterTrackingSheet: View {
 }
 
 #Preview {
-    WaterTrackingSheet()
-        .modelContainer(for: [WaterLog.self], inMemory: true)
+    WaterTrackingSheet { _ in }
 }
