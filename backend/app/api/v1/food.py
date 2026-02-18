@@ -3,6 +3,7 @@ import logging
 
 from app.schemas.food import AnalysisResponse, FoodSearchResponse, BarcodeResponse
 from app.services import ai_service, food_db_service
+from app.services.storage_service import storage_service
 
 logger = logging.getLogger(__name__)
 
@@ -38,9 +39,16 @@ async def analyze_food(
             detail="Image too large. Maximum size is 10MB.",
         )
 
+    # Upload image to Blob Storage
+    image_url = await storage_service.upload_image(image_data, content_type=image.content_type)
+    logger.info(f"图片已上传: {image_url}")
+
     # Call AI analysis service
     logger.info("调用 AI 分析服务...")
     analysis = await ai_service.analyze_food_image(image_data)
+
+    # Set the actual image URL
+    analysis.image_url = image_url
 
     logger.info(f"分析完成，返回 {len(analysis.detected_foods)} 种食物，总热量 {analysis.total_calories} kcal")
     logger.info("========== /food/analyze 请求完成 ==========")
