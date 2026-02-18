@@ -104,7 +104,7 @@ final class HomeViewModel {
     // MARK: - Public Methods
 
     /// 从 SwiftData 缓存同步加载（立即显示）
-    func loadTodayData(modelContext: ModelContext) {
+    func loadTodayData(modelContext: ModelContext, includeWater: Bool = true) {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? Date()
@@ -123,13 +123,15 @@ final class HomeViewModel {
         carbsGrams = todayMeals.reduce(0) { $0 + $1.carbsGrams }
         fatGrams = todayMeals.reduce(0) { $0 + $1.fatGrams }
 
-        // 加载水量缓存
-        let waterPredicate = #Predicate<WaterLog> { log in
-            log.recordedAt >= startOfDay && log.recordedAt < endOfDay
+        if includeWater {
+            // 加载水量缓存
+            let waterPredicate = #Predicate<WaterLog> { log in
+                log.recordedAt >= startOfDay && log.recordedAt < endOfDay
+            }
+            let waterDescriptor = FetchDescriptor<WaterLog>(predicate: waterPredicate)
+            let waterLogs = (try? modelContext.fetch(waterDescriptor)) ?? []
+            waterAmount = waterLogs.reduce(0) { $0 + $1.amountML }
         }
-        let waterDescriptor = FetchDescriptor<WaterLog>(predicate: waterPredicate)
-        let waterLogs = (try? modelContext.fetch(waterDescriptor)) ?? []
-        waterAmount = waterLogs.reduce(0) { $0 + $1.amountML }
 
         // 加载用户配置缓存
         let profileDescriptor = FetchDescriptor<UserProfile>()
@@ -165,8 +167,8 @@ final class HomeViewModel {
             dailyFatGoal = profile.dailyFatGoal
             dailyWaterGoal = waterDTO.goalMl
 
-            // 更新水量
-            waterAmount = waterDTO.totalMl
+            // 更新水量（合并本地未同步记录）
+            waterAmount = waterDTO.totalMl + unsyncedWaterAmount(modelContext: modelContext)
 
             // 更新餐食 - 清除旧缓存并写入新数据
             let calendar = Calendar.current
@@ -201,28 +203,62 @@ final class HomeViewModel {
             }
             try? modelContext.save()
 
-            // 重新从 SwiftData 加载
-            loadTodayData(modelContext: modelContext)
+            // 重新从 SwiftData 加载（不覆盖水量）
+            loadTodayData(modelContext: modelContext, includeWater: false)
         } catch {
             // API 失败时保持缓存数据
         }
     }
 
-    /// 添加饮水记录 - API 优先
-    func addWater(amount: Int = 250, modelContext: ModelContext) async {
-        // 乐观更新 UI
+    /// 添加饮水记录 - 本地优先
+    func addWater(
+        amount: Int = 250,
+        modelContext: ModelContext,
+        writeToHealthKit: Bool = false
+    ) async {
+        guard amount > 0 else { return }
+
+        let waterLog = WaterLog(amountML: amount, isSynced: false)
+        modelContext.insert(waterLog)
+        try? modelContext.save()
+
+        // 立即更新 UI
         waterAmount += amount
+
+        if writeToHealthKit {
+            do {
+                try await HealthKitManager.shared.saveWaterIntake(
+                    milliliters: Double(amount),
+                    date: Date()
+                )
+            } catch {
+                // 忽略 HealthKit 写入失败
+            }
+        }
 
         do {
             let _ = try await waterService.logWater(WaterLogCreateDTO(amountMl: amount))
-            // API 成功，写入 SwiftData 缓存
-            let waterLog = WaterLog(amountML: amount)
-            modelContext.insert(waterLog)
+            // API 成功，标记已同步
+            waterLog.isSynced = true
             try? modelContext.save()
         } catch {
-            // API 失败，回滚
-            waterAmount -= amount
+            // API 失败，保留未同步记录，不回滚 UI
         }
+    }
+
+    // MARK: - Private
+
+    private func unsyncedWaterAmount(modelContext: ModelContext) -> Int {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: Date())
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? Date()
+
+        let predicate = #Predicate<WaterLog> { log in
+            log.recordedAt >= startOfDay && log.recordedAt < endOfDay && log.isSynced == false
+        }
+        let descriptor = FetchDescriptor<WaterLog>(predicate: predicate)
+        let logs = (try? modelContext.fetch(descriptor)) ?? []
+        return logs.reduce(0) { $0 + $1.amountML }
     }
 
     func refresh(modelContext: ModelContext) async {

@@ -11,6 +11,7 @@ struct HomeView: View {
     // MARK: - State
 
     @State private var viewModel = HomeViewModel()
+    @State private var isShowingWaterSheet = false
 
     // MARK: - Properties
 
@@ -219,11 +220,28 @@ struct HomeView: View {
                 progress: viewModel.waterProgress,
                 onAddWater: {
                     Task {
-                        await viewModel.addWater(modelContext: modelContext)
+                        await viewModel.addWater(
+                            modelContext: modelContext,
+                            writeToHealthKit: true
+                        )
                     }
+                },
+                onShowOptions: {
+                    isShowingWaterSheet = true
                 }
             )
             .accessibilityIdentifier("WaterCard")
+            .sheet(isPresented: $isShowingWaterSheet) {
+                WaterTrackingSheet { amount in
+                    Task {
+                        await viewModel.addWater(
+                            amount: amount,
+                            modelContext: modelContext,
+                            writeToHealthKit: true
+                        )
+                    }
+                }
+            }
 
             StepsCard(
                 stepCount: viewModel.stepCount,

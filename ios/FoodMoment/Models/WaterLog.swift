@@ -18,16 +18,21 @@ final class WaterLog {
     /// 记录时间
     var recordedAt: Date = Date()
 
+    /// 是否已同步
+    var isSynced: Bool = true
+
     // MARK: - Initialization
 
     init(
         id: UUID = UUID(),
         amountML: Int,
-        recordedAt: Date = Date()
+        recordedAt: Date = Date(),
+        isSynced: Bool = true
     ) {
         self.id = id
         self.amountML = amountML
         self.recordedAt = recordedAt
+        self.isSynced = isSynced
     }
 }
 

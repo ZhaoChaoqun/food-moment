@@ -8,6 +8,11 @@ struct WaterCard: View {
     let dailyGoal: Int
     let progress: Double
     let onAddWater: () -> Void
+    let onShowOptions: () -> Void
+
+    // MARK: - State
+
+    @State private var isPressed = false
 
     // MARK: - Design Constants
 
@@ -60,19 +65,26 @@ struct WaterCard: View {
     }
 
     private var addButton: some View {
-        Button(action: onAddWater) {
-            ZStack {
-                Circle()
-                    .fill(.white)
-                    .frame(width: buttonSize, height: buttonSize)
-                    .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
+        ZStack {
+            Circle()
+                .fill(.white)
+                .frame(width: buttonSize, height: buttonSize)
+                .shadow(color: .black.opacity(0.06), radius: 2, y: 1)
 
-                Image(systemName: "plus")
-                    .font(.Jakarta.medium(iconFontSize))
-                    .foregroundStyle(Color.gray.opacity(0.6))
-            }
+            Image(systemName: "plus")
+                .font(.Jakarta.medium(iconFontSize))
+                .foregroundStyle(Color.gray.opacity(0.6))
         }
-        .buttonStyle(.plain)
+        .scaleEffect(isPressed ? 0.9 : 1.0)
+        .animation(.easeInOut(duration: 0.15), value: isPressed)
+        .onTapGesture {
+            onAddWater()
+        }
+        .onLongPressGesture(minimumDuration: 0.5, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {
+            onShowOptions()
+        })
     }
 
     // MARK: - Content Section
@@ -152,7 +164,8 @@ struct WaterCard: View {
             waterAmount: 1250,
             dailyGoal: 2500,
             progress: 0.6,
-            onAddWater: {}
+            onAddWater: {},
+            onShowOptions: {}
         )
     }
     .padding()
