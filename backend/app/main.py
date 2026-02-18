@@ -8,6 +8,7 @@ from app.config import settings
 from app.database import engine, Base
 from app.models import User, MealRecord, DetectedFood, WaterLog, WeightLog  # noqa: F401 - register models with Base
 from app.api.v1.router import api_router
+from app.services.storage_service import storage_service
 
 # 配置 logging，确保所有 app 模块的日志都能输出
 logging.basicConfig(
@@ -22,8 +23,10 @@ async def lifespan(app: FastAPI):
     # Startup: create tables (dev only, use Alembic in production)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+    await storage_service.init()
     yield
     # Shutdown
+    await storage_service.close()
     await engine.dispose()
 
 
