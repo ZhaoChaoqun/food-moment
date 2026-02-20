@@ -148,10 +148,7 @@ actor CloudVisionService: CloudVisionProtocol {
     init(config: CloudVisionConfig = .gemini) {
         self.config = config
 
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 30
-        configuration.timeoutIntervalForResource = 60
-        self.session = URLSession(configuration: configuration)
+        self.session = URLSession(configuration: .appStandard)
     }
 
     // MARK: - Public Methods
@@ -163,7 +160,7 @@ actor CloudVisionService: CloudVisionProtocol {
         }
 
         // Resize and encode image
-        let resizedImage = resizeImage(image, maxDimension: config.maxImageDimension)
+        let resizedImage = image.resized(maxDimension: config.maxImageDimension)
         guard let imageData = resizedImage.jpegData(compressionQuality: config.compressionQuality) else {
             throw CloudVisionError.imageEncodingFailed
         }
@@ -176,28 +173,21 @@ actor CloudVisionService: CloudVisionProtocol {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
         // Build request body for Gemini API
-        let requestBody: [String: Any] = [
-            "contents": [
-                [
-                    "parts": [
-                        ["text": systemPrompt],
-                        [
-                            "inline_data": [
-                                "mime_type": "image/jpeg",
-                                "data": base64Image
-                            ]
-                        ]
-                    ]
-                ]
+        let requestBody = GeminiRequestBody(
+            contents: [
+                GeminiContent(parts: [
+                    GeminiPart(text: systemPrompt),
+                    GeminiPart(inlineData: GeminiInlineData(mimeType: "image/jpeg", data: base64Image))
+                ])
             ],
-            "generationConfig": [
-                "temperature": 0.4,
-                "maxOutputTokens": config.maxTokens,
-                "responseMimeType": "application/json"
-            ]
-        ]
+            generationConfig: GeminiGenerationConfig(
+                temperature: 0.4,
+                maxOutputTokens: config.maxTokens,
+                responseMimeType: "application/json"
+            )
+        )
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
+        request.httpBody = try JSONEncoder.appDefault.encode(requestBody)
 
         // Make API request
         let (data, response) = try await performRequest(request)
@@ -257,7 +247,7 @@ actor CloudVisionService: CloudVisionProtocol {
             let code: Int
         }
 
-        let geminiResponse = try JSONDecoder().decode(GeminiResponse.self, from: data)
+        let geminiResponse = try JSONDecoder.appDefault.decode(GeminiResponse.self, from: data)
 
         // Check for API error
         if let error = geminiResponse.error {
@@ -277,28 +267,12 @@ actor CloudVisionService: CloudVisionProtocol {
         }
 
         do {
-            return try JSONDecoder().decode(CloudVisionResponse.self, from: jsonData)
+            return try JSONDecoder.appDefault.decode(CloudVisionResponse.self, from: jsonData)
         } catch {
             throw CloudVisionError.parseError(error.localizedDescription)
         }
     }
 
-    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
-        let size = image.size
-        let ratio = max(size.width, size.height) / maxDimension
-
-        guard ratio > 1 else { return image }
-
-        let newSize = CGSize(
-            width: size.width / ratio,
-            height: size.height / ratio
-        )
-
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-    }
 }
 
 // MARK: - Mock Implementation
@@ -411,21 +385,74 @@ final class HybridFoodClassifierService: FoodClassifierProtocol, @unchecked Send
         }
     }
 
+    private static let foodColorMap: [(keywords: [String], color: String)] = [
+        (["salmon", "fish"], "#F97316"),
+        (["broccoli", "vegetable", "salad"], "#22C55E"),
+        (["rice", "bread", "pasta"], "#FCD34D"),
+        (["chicken", "meat", "beef"], "#DC2626"),
+        (["egg"], "#FACC15"),
+    ]
+
     private func colorForFood(_ name: String) -> String {
         let lowercased = name.lowercased()
-
-        if lowercased.contains("salmon") || lowercased.contains("fish") {
-            return "#F97316"
-        } else if lowercased.contains("broccoli") || lowercased.contains("vegetable") || lowercased.contains("salad") {
-            return "#22C55E"
-        } else if lowercased.contains("rice") || lowercased.contains("bread") || lowercased.contains("pasta") {
-            return "#FCD34D"
-        } else if lowercased.contains("chicken") || lowercased.contains("meat") || lowercased.contains("beef") {
-            return "#DC2626"
-        } else if lowercased.contains("egg") {
-            return "#FACC15"
-        } else {
-            return "#4ADE80"
+        for (keywords, color) in Self.foodColorMap {
+            if keywords.contains(where: { lowercased.contains($0) }) {
+                return color
+            }
         }
+        return "#4ADE80"
     }
+}
+
+// MARK: - Gemini Request Body (Codable)
+
+private struct GeminiRequestBody: Encodable {
+    let contents: [GeminiContent]
+    let generationConfig: GeminiGenerationConfig
+}
+
+private struct GeminiContent: Encodable {
+    let parts: [GeminiPart]
+}
+
+private struct GeminiPart: Encodable {
+    let text: String?
+    let inlineData: GeminiInlineData?
+
+    init(text: String) {
+        self.text = text
+        self.inlineData = nil
+    }
+
+    init(inlineData: GeminiInlineData) {
+        self.text = nil
+        self.inlineData = inlineData
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case text
+        case inlineData = "inline_data"
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(text, forKey: .text)
+        try container.encodeIfPresent(inlineData, forKey: .inlineData)
+    }
+}
+
+private struct GeminiInlineData: Encodable {
+    let mimeType: String
+    let data: String
+
+    enum CodingKeys: String, CodingKey {
+        case mimeType = "mime_type"
+        case data
+    }
+}
+
+private struct GeminiGenerationConfig: Encodable {
+    let temperature: Double
+    let maxOutputTokens: Int
+    let responseMimeType: String
 }

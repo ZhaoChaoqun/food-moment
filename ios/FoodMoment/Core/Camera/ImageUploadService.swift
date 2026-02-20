@@ -71,11 +71,7 @@ actor ImageUploadService: ImageUploadProtocol {
 
     init(baseURL: String = "") {
         self.baseURL = baseURL
-
-        let configuration = URLSessionConfiguration.default
-        configuration.timeoutIntervalForRequest = 60
-        configuration.timeoutIntervalForResource = 120
-        self.session = URLSession(configuration: configuration)
+        self.session = URLSession(configuration: .appUpload)
     }
 
     // MARK: - Public Methods
@@ -87,7 +83,7 @@ actor ImageUploadService: ImageUploadProtocol {
     /// - Returns: ImageUploadResponse with the URL and metadata
     func upload(image: UIImage, config: ImageUploadConfig = .default) async throws -> ImageUploadResponse {
         // Resize image if needed
-        let resizedImage = resizeImage(image, maxDimension: config.maxDimension)
+        let resizedImage = image.resized(maxDimension: config.maxDimension)
 
         // Compress to JPEG
         guard let imageData = resizedImage.jpegData(compressionQuality: config.compressionQuality) else {
@@ -95,20 +91,18 @@ actor ImageUploadService: ImageUploadProtocol {
         }
 
         // Create multipart form data request
-        let boundary = UUID().uuidString
+        var multipart = MultipartFormData()
+        multipart.addFilePart(
+            name: "file",
+            filename: "food_image.jpg",
+            mimeType: "image/jpeg",
+            data: imageData
+        )
+
         var request = URLRequest(url: URL(string: baseURL + config.uploadEndpoint)!)
         request.httpMethod = "POST"
-        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
-
-        // Build multipart body
-        var body = Data()
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"food_image.jpg\"\r\n".data(using: .utf8)!)
-        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-
-        request.httpBody = body
+        request.setValue(multipart.contentType, forHTTPHeaderField: "Content-Type")
+        request.httpBody = multipart.finalize()
 
         do {
             let (data, response) = try await session.data(for: request)
@@ -122,7 +116,7 @@ actor ImageUploadService: ImageUploadProtocol {
                 throw ImageUploadError.serverError(httpResponse.statusCode, message)
             }
 
-            let decoder = JSONDecoder()
+            let decoder = JSONDecoder.appDefault
             return try decoder.decode(ImageUploadResponse.self, from: data)
 
         } catch let error as ImageUploadError {
@@ -135,7 +129,7 @@ actor ImageUploadService: ImageUploadProtocol {
     /// Prepare image data for upload without actually uploading.
     /// Useful for offline scenarios or when upload URL is obtained separately.
     func prepareImageData(image: UIImage, config: ImageUploadConfig = .default) throws -> Data {
-        let resizedImage = resizeImage(image, maxDimension: config.maxDimension)
+        let resizedImage = image.resized(maxDimension: config.maxDimension)
 
         guard let imageData = resizedImage.jpegData(compressionQuality: config.compressionQuality) else {
             throw ImageUploadError.compressionFailed
@@ -144,24 +138,6 @@ actor ImageUploadService: ImageUploadProtocol {
         return imageData
     }
 
-    // MARK: - Private Methods
-
-    private func resizeImage(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
-        let size = image.size
-        let ratio = max(size.width, size.height) / maxDimension
-
-        guard ratio > 1 else { return image }
-
-        let newSize = CGSize(
-            width: size.width / ratio,
-            height: size.height / ratio
-        )
-
-        let renderer = UIGraphicsImageRenderer(size: newSize)
-        return renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: newSize))
-        }
-    }
 }
 
 // MARK: - Mock Implementation for Development

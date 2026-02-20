@@ -1,64 +1,73 @@
 import SwiftUI
 
+// MARK: - Glass Material Style
+
+/// 毛玻璃样式等级
+enum GlassStyle {
+    case ultraThin
+    case regular
+    case thick
+
+    /// 对应的 Material
+    var material: Material {
+        switch self {
+        case .ultraThin: return .ultraThinMaterial
+        case .regular: return .regularMaterial
+        case .thick: return .thickMaterial
+        }
+    }
+
+    /// 对应的白底透明度
+    var whiteOpacity: Double {
+        switch self {
+        case .ultraThin: return 0.6
+        case .regular: return 0.5
+        case .thick: return 0.4
+        }
+    }
+
+    /// 对应的边框透明度
+    var strokeOpacity: Double {
+        whiteOpacity
+    }
+}
+
 // MARK: - Glass Card View Modifiers
 
 extension View {
 
-    /// 应用超薄毛玻璃卡片效果
+    /// 通用毛玻璃卡片效果
     ///
-    /// 使用 `.ultraThinMaterial` 背景，适合叠加在图片或渐变上。
-    ///
-    /// - Parameter cornerRadius: 圆角半径，默认为 `AppTheme.CornerRadius.medium`
+    /// - Parameters:
+    ///   - style: 毛玻璃样式（ultraThin / regular / thick）
+    ///   - cornerRadius: 圆角半径
     /// - Returns: 应用了毛玻璃效果的视图
-    func glassCard(cornerRadius: CGFloat = AppTheme.CornerRadius.medium) -> some View {
+    func glassCard(
+        style: GlassStyle = .ultraThin,
+        cornerRadius: CGFloat = AppTheme.CornerRadius.medium
+    ) -> some View {
         self
-            .background(.white.opacity(0.6))
-            .background(.ultraThinMaterial)
+            .background(.white.opacity(style.whiteOpacity))
+            .background(style.material)
             .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.white.opacity(0.6), lineWidth: 0.5)
+                    .stroke(Color.white.opacity(style.strokeOpacity), lineWidth: 0.5)
             )
             .modifier(GlassShadow())
     }
 
-    /// 应用常规毛玻璃卡片效果
-    ///
-    /// 使用 `.regularMaterial` 背景，提供适中的模糊度。
-    ///
-    /// - Parameter cornerRadius: 圆角半径，默认为 `AppTheme.CornerRadius.medium`
-    /// - Returns: 应用了毛玻璃效果的视图
+    /// 常规毛玻璃卡片效果（便利方法）
     func regularGlassCard(cornerRadius: CGFloat = AppTheme.CornerRadius.medium) -> some View {
-        self
-            .background(.white.opacity(0.5))
-            .background(.regularMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
-            )
-            .modifier(GlassShadow())
+        glassCard(style: .regular, cornerRadius: cornerRadius)
     }
 
-    /// 应用厚毛玻璃卡片效果
-    ///
-    /// 使用 `.thickMaterial` 背景，提供更强的模糊效果。
-    ///
-    /// - Parameter cornerRadius: 圆角半径，默认为 `AppTheme.CornerRadius.large`
-    /// - Returns: 应用了毛玻璃效果的视图
+    /// 厚毛玻璃卡片效果（便利方法）
     func thickGlassCard(cornerRadius: CGFloat = AppTheme.CornerRadius.large) -> some View {
-        self
-            .background(.white.opacity(0.4))
-            .background(.thickMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .stroke(Color.white.opacity(0.4), lineWidth: 0.5)
-            )
-            .modifier(GlassShadow())
+        glassCard(style: .thick, cornerRadius: cornerRadius)
     }
 
-    /// 高级渐变页面背景，替代扁平的 AppTheme.Colors.background
+    /// 高级渐变页面背景
     func premiumBackground() -> some View {
         self.background(
             ZStack {
@@ -94,7 +103,7 @@ extension View {
         )
     }
 
-    /// 玻璃态分组容器，用于替代原生 Form Section
+    /// 玻璃态分组容器
     func glassSection(cornerRadius: CGFloat = AppTheme.CornerRadius.small) -> some View {
         self
             .background(.white.opacity(0.7))

@@ -34,17 +34,7 @@ actor HealthKitManager {
             HKQuantityType(.bodyMass),
         ]
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { success, error in
-                if let error {
-                    continuation.resume(throwing: HealthKitError.authorizationFailed(error))
-                } else if !success {
-                    continuation.resume(throwing: HealthKitError.authorizationDenied)
-                } else {
-                    continuation.resume()
-                }
-            }
-        }
+        try await healthStore.requestAuthorization(toShare: writeTypes, read: readTypes)
     }
 
     // MARK: - Read: Steps
@@ -180,15 +170,7 @@ actor HealthKitManager {
                 end: date
             )
 
-            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-                healthStore.save(sample) { success, error in
-                    if let error {
-                        continuation.resume(throwing: HealthKitError.saveFailed(error))
-                    } else {
-                        continuation.resume()
-                    }
-                }
-            }
+            try await healthStore.save(sample)
         }
     }
 
@@ -209,15 +191,7 @@ actor HealthKitManager {
             end: date
         )
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            healthStore.save(sample) { success, error in
-                if let error {
-                    continuation.resume(throwing: HealthKitError.saveFailed(error))
-                } else {
-                    continuation.resume()
-                }
-            }
-        }
+        try await healthStore.save(sample)
     }
 
     // MARK: - Write: Weight
@@ -237,15 +211,7 @@ actor HealthKitManager {
             end: date
         )
 
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            healthStore.save(sample) { success, error in
-                if let error {
-                    continuation.resume(throwing: HealthKitError.saveFailed(error))
-                } else {
-                    continuation.resume()
-                }
-            }
-        }
+        try await healthStore.save(sample)
     }
 }
 

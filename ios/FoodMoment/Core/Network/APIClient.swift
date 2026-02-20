@@ -29,20 +29,9 @@ actor APIClient {
     // MARK: - Initialization
 
     private init() {
-        let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = 30
-        config.timeoutIntervalForResource = 60
-        config.waitsForConnectivity = true
-
-        self.session = URLSession(configuration: config)
-
-        self.decoder = JSONDecoder()
-        self.decoder.dateDecodingStrategy = .iso8601
-        self.decoder.keyDecodingStrategy = .convertFromSnakeCase
-
-        self.encoder = JSONEncoder()
-        self.encoder.dateEncodingStrategy = .iso8601
-        self.encoder.keyEncodingStrategy = .convertToSnakeCase
+        self.session = URLSession(configuration: .appStandard)
+        self.decoder = .appSnakeCase
+        self.encoder = .appSnakeCase
     }
 
     // MARK: - Public Methods
@@ -58,20 +47,38 @@ actor APIClient {
         _ endpoint: APIEndpoint,
         body: (any Encodable)? = nil
     ) async throws -> T {
+        let cacheKey = endpoint.path
+
+        // GET 请求先查缓存
+        if endpoint.method == .get, body == nil, let ttl = cacheTTL(for: endpoint) {
+            if let cachedData = await APICache.shared.get(for: cacheKey) {
+                return try decoder.decode(T.self, from: cachedData)
+            }
+        }
+
         let request = try await buildRequest(endpoint, body: body)
         let (data, response) = try await performRequest(request, endpoint: endpoint)
 
         // 401 时自动重新认证并重试一次
-        if let http = response as? HTTPURLResponse, http.statusCode == 401, endpoint.requiresAuth {
-            if await reauthenticate() {
-                let retryRequest = try await buildRequest(endpoint, body: body)
-                let (retryData, retryResponse) = try await performRequest(retryRequest, endpoint: endpoint)
-                try validateResponse(retryResponse, data: retryData)
-                return try decoder.decode(T.self, from: retryData)
+        if let (retryData, retryResponse) = try await retryIfUnauthorized(response: response, endpoint: endpoint, body: body) {
+            try validateResponse(retryResponse, data: retryData)
+            if endpoint.method == .get, let ttl = cacheTTL(for: endpoint) {
+                await APICache.shared.set(retryData, for: cacheKey, ttl: ttl)
             }
+            return try decoder.decode(T.self, from: retryData)
         }
 
         try validateResponse(response, data: data)
+
+        // 缓存成功的 GET 响应
+        if endpoint.method == .get, let ttl = cacheTTL(for: endpoint) {
+            await APICache.shared.set(data, for: cacheKey, ttl: ttl)
+        }
+
+        // 写操作成功后失效相关缓存
+        if endpoint.method != .get {
+            await invalidateCacheForMutation(endpoint)
+        }
 
         do {
             return try decoder.decode(T.self, from: data)
@@ -96,16 +103,14 @@ actor APIClient {
         let (data, response) = try await performRequest(request, endpoint: endpoint)
 
         // 401 时自动重新认证并重试一次
-        if let http = response as? HTTPURLResponse, http.statusCode == 401, endpoint.requiresAuth {
-            if await reauthenticate() {
-                let retryRequest = try await buildRequest(endpoint, body: body)
-                let (retryData, retryResponse) = try await performRequest(retryRequest, endpoint: endpoint)
-                try validateResponse(retryResponse, data: retryData)
-                return
-            }
+        if let (retryData, retryResponse) = try await retryIfUnauthorized(response: response, endpoint: endpoint, body: body) {
+            try validateResponse(retryResponse, data: retryData)
+            await invalidateCacheForMutation(endpoint)
+            return
         }
 
         try validateResponse(response, data: data)
+        await invalidateCacheForMutation(endpoint)
     }
 
     /// 上传图片文件
@@ -127,18 +132,16 @@ actor APIClient {
     ) async throws -> T {
         var request = try await buildRequest(endpoint, body: nil as String?)
 
-        let boundary = UUID().uuidString
-        request.setValue(
-            "multipart/form-data; boundary=\(boundary)",
-            forHTTPHeaderField: "Content-Type"
-        )
-
-        let body = createMultipartBody(
-            imageData: imageData,
+        var multipart = MultipartFormData()
+        multipart.addFilePart(
+            name: "image",
             filename: filename,
             mimeType: mimeType,
-            boundary: boundary
+            data: imageData
         )
+        let body = multipart.finalize()
+
+        request.setValue(multipart.contentType, forHTTPHeaderField: "Content-Type")
         request.httpBody = body
         Self.logger.debug("[API] 📎 \(endpoint.method.rawValue, privacy: .public) [\(endpoint.label, privacy: .public)] multipart \(body.count, privacy: .public) bytes")
 
@@ -154,6 +157,57 @@ actor APIClient {
     }
 
     // MARK: - Private Methods
+
+    /// 获取端点的缓存 TTL，返回 nil 表示不缓存
+    private func cacheTTL(for endpoint: APIEndpoint) -> TimeInterval? {
+        switch endpoint {
+        case .getProfile:
+            return APICache.CacheTTL.profile
+        case .getMeals:
+            return APICache.CacheTTL.meals
+        case .getWeekDates:
+            return APICache.CacheTTL.weekDates
+        case .dailyStats, .weeklyStats, .monthlyStats:
+            return APICache.CacheTTL.stats
+        case .getWater:
+            return APICache.CacheTTL.default
+        default:
+            return nil
+        }
+    }
+
+    /// 写操作成功后失效相关缓存
+    private func invalidateCacheForMutation(_ endpoint: APIEndpoint) async {
+        switch endpoint {
+        case .createMeal, .updateMeal, .deleteMeal:
+            await APICache.shared.invalidate(matching: "/meals")
+            await APICache.shared.invalidate(matching: "/stats")
+        case .updateProfile, .updateGoals:
+            await APICache.shared.invalidate(matching: "/user/profile")
+        case .logWater:
+            await APICache.shared.invalidate(matching: "/water")
+            await APICache.shared.invalidate(matching: "/stats")
+        default:
+            break
+        }
+    }
+
+    /// 检查响应是否 401，若是则重新认证并重试请求
+    /// - Returns: 重试后的 (Data, URLResponse)，如果不需要重试则返回 nil
+    private func retryIfUnauthorized(
+        response: URLResponse,
+        endpoint: APIEndpoint,
+        body: (any Encodable)?
+    ) async throws -> (Data, URLResponse)? {
+        guard let http = response as? HTTPURLResponse,
+              http.statusCode == 401,
+              endpoint.requiresAuth,
+              await reauthenticate() else {
+            return nil
+        }
+        let retryRequest = try await buildRequest(endpoint, body: body)
+        return try await performRequest(retryRequest, endpoint: endpoint)
+    }
 
     /// 使用设备 UUID 重新认证获取新 token
     private func reauthenticate() async -> Bool {
@@ -281,26 +335,6 @@ actor APIClient {
         }
     }
 
-    private func createMultipartBody(
-        imageData: Data,
-        filename: String,
-        mimeType: String,
-        boundary: String
-    ) -> Data {
-        var body = Data()
-
-        // 添加图片数据
-        body.append("--\(boundary)\r\n".data(using: .utf8)!)
-        body.append(
-            "Content-Disposition: form-data; name=\"image\"; filename=\"\(filename)\"\r\n"
-                .data(using: .utf8)!
-        )
-        body.append("Content-Type: \(mimeType)\r\n\r\n".data(using: .utf8)!)
-        body.append(imageData)
-        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
-
-        return body
-    }
 }
 
 // MARK: - Error Response
