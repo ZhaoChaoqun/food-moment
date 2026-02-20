@@ -55,51 +55,50 @@ extension Date {
 
     // MARK: - Formatting
 
-    /// DateFormatter 缓存，避免高频调用时重复创建
-    private nonisolated(unsafe) static let formatterCache: NSCache<NSString, DateFormatter> = {
-        let cache = NSCache<NSString, DateFormatter>()
-        cache.countLimit = 10
-        return cache
-    }()
-
-    private static func cachedFormatter(for format: String) -> DateFormatter {
-        let key = format as NSString
-        if let cached = formatterCache.object(forKey: key) {
-            return cached
-        }
+    /// API 请求用日期字符串（yyyy-MM-dd）
+    var apiDateString: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = format
-        formatter.locale = Locale(identifier: "zh_CN")
-        formatterCache.setObject(formatter, forKey: key)
-        return formatter
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = .current
+        return formatter.string(from: self)
     }
 
-    /// 使用指定格式格式化日期
-    ///
-    /// - Parameter format: 日期格式字符串
-    /// - Returns: 格式化后的日期字符串
-    func formatted(as format: String) -> String {
-        Self.cachedFormatter(for: format).string(from: self)
+    /// API 请求用月份字符串（yyyy-MM）
+    var apiMonthString: String {
+        formatted(Date.FormatStyle().year(.defaultDigits).month(.twoDigits))
+            .replacingOccurrences(of: "/", with: "-")
     }
 
     /// 餐食时间字符串（HH:mm）
     var mealTimeString: String {
-        formatted(as: "HH:mm")
+        formatted(date: .omitted, time: .shortened)
     }
 
     /// 日期字符串（M月d日）
     var dayString: String {
-        formatted(as: "M月d日")
+        formatted(Date.FormatStyle().month(.defaultDigits).day(.defaultDigits).locale(Locale(identifier: "zh_CN")))
     }
 
     /// 完整日期字符串（yyyy年M月d日）
     var fullDateString: String {
-        formatted(as: "yyyy年M月d日")
+        formatted(Date.FormatStyle().year(.defaultDigits).month(.defaultDigits).day(.defaultDigits).locale(Locale(identifier: "zh_CN")))
     }
 
-    /// ISO 8601 日期字符串（用于 API 请求）
-    var iso8601String: String {
-        formatted(as: "yyyy-MM-dd")
+    /// 使用指定格式格式化日期（兼容旧调用点）
+    func formatted(as format: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = format
+        formatter.locale = Locale(identifier: "zh_CN")
+        return formatter.string(from: self)
+    }
+
+    /// 从 API 日期字符串（yyyy-MM-dd）解析日期
+    static func fromAPIDateString(_ string: String) -> Date? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter.date(from: string)
     }
 
     // MARK: - Greeting

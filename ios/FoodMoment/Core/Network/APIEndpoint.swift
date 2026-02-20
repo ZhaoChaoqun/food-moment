@@ -25,6 +25,11 @@ enum APIEndpoint {
     #endif
     private static let apiVersion = "/api/v1"
 
+    /// 当前设备时区偏移（秒），如 UTC+8 = 28800
+    private static var tzOffset: Int {
+        TimeZone.current.secondsFromGMT()
+    }
+
     // MARK: - Auth Endpoints
 
     case deviceAuth
@@ -39,13 +44,13 @@ enum APIEndpoint {
     // MARK: - Food Recognition Endpoints
 
     case analyzeFood
-    case barcodeLookup(code: String)
     case foodSearch(query: String)
 
     // MARK: - Meal Endpoints
 
     case createMeal
     case getMeals(date: String)
+    case getWeekDates(week: String)
     case updateMeal(id: String)
     case deleteMeal(id: String)
 
@@ -92,8 +97,6 @@ enum APIEndpoint {
         // Food
         case .analyzeFood:
             return "/food/analyze"
-        case .barcodeLookup(let code):
-            return "/food/barcode/\(code)"
         case .foodSearch(let query):
             return "/food/search?q=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query)"
 
@@ -101,7 +104,9 @@ enum APIEndpoint {
         case .createMeal:
             return "/meals"
         case .getMeals(let date):
-            return "/meals?date=\(date)"
+            return "/meals?date=\(date)&tz_offset=\(Self.tzOffset)"
+        case .getWeekDates(let week):
+            return "/meals/week-dates?week=\(week)&tz_offset=\(Self.tzOffset)"
         case .updateMeal(let id):
             return "/meals/\(id)"
         case .deleteMeal(let id):
@@ -180,10 +185,10 @@ enum APIEndpoint {
         case .deleteAccount:    return "注销账户"
         case .seedDemo:         return "播种演示"
         case .analyzeFood:      return "食物识别"
-        case .barcodeLookup:    return "条码查询"
         case .foodSearch:       return "食物搜索"
         case .createMeal:       return "创建记录"
         case .getMeals:         return "查询记录"
+        case .getWeekDates:     return "周日期表"
         case .updateMeal:       return "更新记录"
         case .deleteMeal:       return "删除记录"
         case .dailyStats:       return "日统计量"

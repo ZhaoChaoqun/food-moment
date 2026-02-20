@@ -35,12 +35,6 @@ final class HomeViewModel {
     private let waterService: WaterServiceProtocol
     private let userService: UserServiceProtocol
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
     // MARK: - Computed Properties
 
     var caloriesLeft: Int {
@@ -48,15 +42,7 @@ final class HomeViewModel {
     }
 
     var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 5..<12:
-            return "早安"
-        case 12..<18:
-            return "午好"
-        default:
-            return "晚好"
-        }
+        Date().greetingTime
     }
 
     var calorieProgress: Double {
@@ -149,7 +135,7 @@ final class HomeViewModel {
         isLoading = true
         defer { isLoading = false }
 
-        let todayString = Self.dateFormatter.string(from: Date())
+        let todayString = Date().apiDateString
 
         // 并发请求
         async let mealsTask = mealService.getMeals(date: todayString)
@@ -183,22 +169,7 @@ final class HomeViewModel {
             }
 
             for dto in mealDTOs {
-                let record = MealRecord(
-                    mealType: dto.mealType,
-                    mealTime: dto.mealTime,
-                    title: dto.title,
-                    totalCalories: dto.totalCalories,
-                    proteinGrams: dto.proteinGrams,
-                    carbsGrams: dto.carbsGrams,
-                    fatGrams: dto.fatGrams,
-                    fiberGrams: dto.fiberGrams
-                )
-                record.id = dto.id
-                record.imageURL = dto.imageUrl
-                record.descriptionText = dto.descriptionText
-                record.aiAnalysis = dto.aiAnalysis
-                record.tags = dto.tags ?? []
-                record.isSynced = true
+                let record = MealRecord.from(dto)
                 modelContext.insert(record)
             }
             try? modelContext.save()

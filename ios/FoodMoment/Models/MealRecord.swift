@@ -152,13 +152,31 @@ extension MealRecord {
 
     /// 格式化的用餐时间
     var formattedTime: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: mealTime)
+        mealTime.mealTimeString
     }
 
     /// 宏量营养素总计（克）
     var totalMacros: Double {
         proteinGrams + carbsGrams + fatGrams
+    }
+
+    /// 从 API 响应 DTO 创建 MealRecord（已标记为已同步）
+    static func from(_ dto: MealResponseDTO) -> MealRecord {
+        MealRecord(
+            id: dto.id,
+            mealType: dto.mealType,
+            mealTime: dto.mealTime,
+            title: dto.title,
+            descriptionText: dto.descriptionText,
+            totalCalories: dto.totalCalories,
+            proteinGrams: dto.proteinGrams,
+            carbsGrams: dto.carbsGrams,
+            fatGrams: dto.fatGrams,
+            fiberGrams: dto.fiberGrams,
+            aiAnalysis: dto.aiAnalysis,
+            tags: dto.tags ?? [],
+            imageURL: dto.imageUrl,
+            isSynced: true
+        )
     }
 }

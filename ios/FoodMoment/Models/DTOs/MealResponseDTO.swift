@@ -67,3 +67,9 @@ struct MealUpdateDTO: Encodable, Sendable {
     let descriptionText: String?
     let tags: [String]?
 }
+
+// MARK: - Week Dates DTO
+
+struct WeekDatesDTO: Decodable, Sendable {
+    let datesWithMeals: [String]
+}

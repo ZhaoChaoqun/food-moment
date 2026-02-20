@@ -68,3 +68,7 @@ class MealUpdate(BaseModel):
     title: str | None = None
     description_text: str | None = None
     tags: list[str] | None = None
+
+
+class WeekDatesResponse(BaseModel):
+    dates_with_meals: list[str]
