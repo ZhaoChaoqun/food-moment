@@ -57,8 +57,8 @@ struct SmallCalorieRingView: View {
     let data: SharedDataManager.WidgetData
 
     private let primaryColor = Color(hex: "#13EC5B")
-    private let proteinColor = Color(hex: "#4ADE80")
-    private let carbsColor = Color(hex: "#FACC15")
+    private let proteinColor = Color(hex: "#FF6B6B")
+    private let carbsColor = Color(hex: "#4DA8FF")
 
     var body: some View {
         ZStack {
@@ -141,9 +141,9 @@ struct MediumCalorieRingView: View {
     let data: SharedDataManager.WidgetData
 
     private let primaryColor = Color(hex: "#13EC5B")
-    private let proteinColor = Color(hex: "#4ADE80")
-    private let carbsColor = Color(hex: "#FACC15")
-    private let fatColor = Color(hex: "#FB923C")
+    private let proteinColor = Color(hex: "#FF6B6B")
+    private let carbsColor = Color(hex: "#4DA8FF")
+    private let fatColor = Color(hex: "#FFD43B")
 
     var body: some View {
         ZStack {
