@@ -86,6 +86,12 @@ struct DiaryView: View {
         .onChange(of: viewModel.selectedMeal) { _, newValue in
             appState.isTabBarHidden = (newValue != nil)
         }
+        .onChange(of: appState.diaryRefreshTrigger) { _, _ in
+            viewModel.loadMeals(modelContext: modelContext)
+            Task {
+                await viewModel.refreshFromAPI(modelContext: modelContext)
+            }
+        }
         .onAppear {
             viewModel.loadMeals(modelContext: modelContext)
         }

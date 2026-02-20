@@ -80,6 +80,16 @@ final class AppState {
         }
     }
 
+    // MARK: - Data Refresh
+
+    /// 自增计数器，触发 DiaryView 等页面刷新数据
+    var diaryRefreshTrigger: Int = 0
+
+    /// 通知记录页刷新（保存/同步成功后调用）
+    func triggerDiaryRefresh() {
+        diaryRefreshTrigger += 1
+    }
+
     // MARK: - Sync States
 
     /// 是否正在同步

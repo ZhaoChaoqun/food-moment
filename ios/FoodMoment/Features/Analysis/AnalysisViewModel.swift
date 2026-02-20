@@ -319,6 +319,7 @@ final class AnalysisViewModel {
                     }
                 }
 
+                appState.triggerDiaryRefresh()
                 isMealSaved = true
             } catch {
                 errorMessage = "Failed to save meal: \(error.localizedDescription)"
