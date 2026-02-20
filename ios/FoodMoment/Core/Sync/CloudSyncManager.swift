@@ -324,64 +324,21 @@ final class CloudSyncManager {
         ckRecord["createdAt"] = data.createdAt
 
         // 如果有图片数据，作为 Asset 上传
+        var tempURL: URL?
         if let imageData = data.localImageData {
-            let tempURL = FileManager.default.temporaryDirectory
+            let url = FileManager.default.temporaryDirectory
                 .appendingPathComponent(UUID().uuidString)
                 .appendingPathExtension("jpg")
-
-            try imageData.write(to: tempURL)
-            ckRecord["image"] = CKAsset(fileURL: tempURL)
-
-            // 保存到 CloudKit
-            _ = try await database.save(ckRecord)
-
-            // 上传后清理临时文件
-            try? FileManager.default.removeItem(at: tempURL)
-        } else {
-            // 保存到 CloudKit
-            _ = try await database.save(ckRecord)
+            try imageData.write(to: url)
+            ckRecord["image"] = CKAsset(fileURL: url)
+            tempURL = url
         }
-    }
 
-    /// 上传单条记录到 CloudKit
-    private func uploadRecord(_ record: MealRecord) async throws {
-        let container = CKContainer(identifier: Self.containerIdentifier)
-        let database = container.privateCloudDatabase
+        _ = try await database.save(ckRecord)
 
-        let recordID = CKRecord.ID(recordName: record.id.uuidString)
-        let ckRecord = CKRecord(recordType: "MealRecord", recordID: recordID)
-
-        // 设置字段
-        ckRecord["mealType"] = record.mealType
-        ckRecord["mealTime"] = record.mealTime
-        ckRecord["totalCalories"] = record.totalCalories
-        ckRecord["proteinGrams"] = record.proteinGrams
-        ckRecord["carbsGrams"] = record.carbsGrams
-        ckRecord["fatGrams"] = record.fatGrams
-        ckRecord["fiberGrams"] = record.fiberGrams
-        ckRecord["title"] = record.title
-        ckRecord["descriptionText"] = record.descriptionText
-        ckRecord["aiAnalysis"] = record.aiAnalysis
-        ckRecord["tags"] = record.tags
-        ckRecord["createdAt"] = record.createdAt
-
-        // 如果有图片数据，作为 Asset 上传
-        if let imageData = record.localImageData {
-            let tempURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent(UUID().uuidString)
-                .appendingPathExtension("jpg")
-
-            try imageData.write(to: tempURL)
-            ckRecord["image"] = CKAsset(fileURL: tempURL)
-
-            // 保存到 CloudKit
-            _ = try await database.save(ckRecord)
-
-            // 上传后清理临时文件
+        // 上传后清理临时文件
+        if let tempURL {
             try? FileManager.default.removeItem(at: tempURL)
-        } else {
-            // 保存到 CloudKit
-            _ = try await database.save(ckRecord)
         }
     }
 

@@ -15,12 +15,15 @@ struct WaterTrackingSheet: View {
         case custom
     }
 
+    private enum SaveState {
+        case idle, saving, success
+    }
+
     // MARK: - State
 
     @State private var selectionMode: SelectionMode = .preset(250)
     @State private var customAmount: String = ""
-    @State private var isSaving = false
-    @State private var isShowingSuccess = false
+    @State private var saveState: SaveState = .idle
     @State private var dropletScale: CGFloat = 1.0
     @State private var dropletOffset: CGFloat = 0
 
@@ -232,13 +235,14 @@ struct WaterTrackingSheet: View {
 
     @ViewBuilder
     private var recordButtonContent: some View {
-        if isSaving {
+        switch saveState {
+        case .saving:
             ProgressView()
                 .tint(.white)
-        } else if isShowingSuccess {
+        case .success:
             Image(systemName: "checkmark")
                 .font(.Jakarta.bold(18))
-        } else {
+        case .idle:
             Image(systemName: "drop.fill")
             Text("记录")
                 .font(.Jakarta.bold(18))
@@ -258,7 +262,7 @@ struct WaterTrackingSheet: View {
     }
 
     private var canRecord: Bool {
-        !isSaving && effectiveAmount > 0
+        saveState == .idle && effectiveAmount > 0
     }
 
     // MARK: - Private Methods
@@ -277,11 +281,9 @@ struct WaterTrackingSheet: View {
         let amount = effectiveAmount
         guard amount > 0 else { return }
 
-        isSaving = true
+        saveState = .saving
         onConfirm(amount)
-
-        isSaving = false
-        isShowingSuccess = true
+        saveState = .success
 
         try? await Task.sleep(for: .milliseconds(600))
         dismiss()

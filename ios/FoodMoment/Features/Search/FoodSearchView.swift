@@ -12,15 +12,16 @@ struct FoodSearchView: View {
             ZStack {
                 // 主内容
                 Group {
-                    if viewModel.isSearching {
+                    switch viewModel.viewState {
+                    case .loading:
                         loadingView
-                    } else if let errorMessage = viewModel.errorMessage {
-                        errorView(message: errorMessage)
-                    } else if viewModel.searchResults.isEmpty && !viewModel.searchText.isEmpty && viewModel.suggestions.isEmpty {
+                    case .error(let message):
+                        errorView(message: message)
+                    case .emptyResult:
                         emptyResultView
-                    } else if viewModel.searchResults.isEmpty && viewModel.searchText.isEmpty {
+                    case .initial:
                         initialStateView
-                    } else {
+                    case .results:
                         resultsList
                     }
                 }

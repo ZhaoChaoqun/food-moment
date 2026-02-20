@@ -63,18 +63,6 @@ final class StatisticsViewModel {
 
     private let statsService: StatsServiceProtocol
 
-    private static let dateFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
-    private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM"
-        return f
-    }()
-
     // MARK: - Published Properties
 
     var selectedRange: TimeRange = .week {
@@ -115,6 +103,14 @@ final class StatisticsViewModel {
         selectedRange.englishTitle + " Average"
     }
 
+    var averageLabelCN: String {
+        switch selectedRange {
+        case .day: return "今日摄入"
+        case .week: return "每周平均"
+        case .month: return "每月平均"
+        }
+    }
+
     // MARK: - Initialization
 
     init(statsService: StatsServiceProtocol = StatsService.shared) {
@@ -132,7 +128,7 @@ final class StatisticsViewModel {
 
         switch selectedRange {
         case .day:
-            let dateString = Self.dateFormatter.string(from: today)
+            let dateString = today.apiDateString
             do {
                 let stats = try await statsService.getDailyStats(date: dateString)
                 calorieData = [DailyCalorie(
@@ -154,53 +150,31 @@ final class StatisticsViewModel {
 
         case .week:
             let weekStart = today.startOfWeek
-            let weekString = Self.dateFormatter.string(from: weekStart)
+            let weekString = weekStart.apiDateString
             do {
                 let stats = try await statsService.getWeeklyStats(week: weekString)
-                calorieData = stats.dailyStats.compactMap { daily in
-                    guard let date = Self.dateFormatter.date(from: daily.date) else { return nil }
-                    return DailyCalorie(
-                        date: date,
-                        calories: daily.totalCalories,
-                        protein: daily.proteinGrams,
-                        carbs: daily.carbsGrams,
-                        fat: daily.fatGrams
-                    )
-                }
-                weeklyAverage = Int(stats.avgCalories)
-                proteinTotal = stats.avgProtein * Double(stats.dailyStats.count)
-                carbsTotal = stats.avgCarbs * Double(stats.dailyStats.count)
-                fatTotal = stats.avgFat * Double(stats.dailyStats.count)
-                checkinDays = stats.dailyStats.filter { $0.mealCount > 0 }.compactMap {
-                    Self.dateFormatter.date(from: $0.date)
-                }
-                weeklyChange = 0
+                applyMultiDayStats(
+                    dailyStats: stats.dailyStats,
+                    avgCalories: stats.avgCalories,
+                    avgProtein: stats.avgProtein,
+                    avgCarbs: stats.avgCarbs,
+                    avgFat: stats.avgFat
+                )
             } catch {
                 Self.logger.error("[Stats] Failed to load weekly stats: \(error, privacy: .public)")
             }
 
         case .month:
-            let monthString = Self.monthFormatter.string(from: today)
+            let monthString = today.apiMonthString
             do {
                 let stats = try await statsService.getMonthlyStats(month: monthString)
-                calorieData = stats.dailyStats.compactMap { daily in
-                    guard let date = Self.dateFormatter.date(from: daily.date) else { return nil }
-                    return DailyCalorie(
-                        date: date,
-                        calories: daily.totalCalories,
-                        protein: daily.proteinGrams,
-                        carbs: daily.carbsGrams,
-                        fat: daily.fatGrams
-                    )
-                }
-                weeklyAverage = Int(stats.avgCalories)
-                proteinTotal = stats.avgProtein * Double(stats.dailyStats.count)
-                carbsTotal = stats.avgCarbs * Double(stats.dailyStats.count)
-                fatTotal = stats.avgFat * Double(stats.dailyStats.count)
-                checkinDays = stats.dailyStats.filter { $0.mealCount > 0 }.compactMap {
-                    Self.dateFormatter.date(from: $0.date)
-                }
-                weeklyChange = 0
+                applyMultiDayStats(
+                    dailyStats: stats.dailyStats,
+                    avgCalories: stats.avgCalories,
+                    avgProtein: stats.avgProtein,
+                    avgCarbs: stats.avgCarbs,
+                    avgFat: stats.avgFat
+                )
             } catch {
                 Self.logger.error("[Stats] Failed to load monthly stats: \(error, privacy: .public)")
             }
@@ -218,27 +192,24 @@ final class StatisticsViewModel {
     // MARK: - CSV Export
 
     func generateCSVData() -> String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
-
-        var csvString = "Date,Calories,Protein(g),Carbs(g),Fat(g)\n"
+        var csv = CSVBuilder(headers: ["Date", "Calories", "Protein(g)", "Carbs(g)", "Fat(g)"])
 
         for item in calorieData {
-            let dateString = dateFormatter.string(from: item.date)
-            let proteinString = String(format: "%.1f", item.protein)
-            let carbsString = String(format: "%.1f", item.carbs)
-            let fatString = String(format: "%.1f", item.fat)
-            csvString += "\(dateString),\(item.calories),\(proteinString),\(carbsString),\(fatString)\n"
+            csv.addRow([
+                item.date.formatted(.iso8601.year().month().day().dateSeparator(.dash)),
+                "\(item.calories)",
+                String(format: "%.1f", item.protein),
+                String(format: "%.1f", item.carbs),
+                String(format: "%.1f", item.fat)
+            ])
         }
 
-        return csvString
+        return csv.build()
     }
 
     func createCSVFile() -> URL? {
         let csvString = generateCSVData()
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
-        let timestamp = dateFormatter.string(from: Date())
+        let timestamp = Date().formatted(.iso8601.year().month().day().time(includingFractionalSeconds: false).timeSeparator(.omitted))
         let filename = "FoodMoment_Statistics_\(timestamp).csv"
 
         let tempDirectory = FileManager.default.temporaryDirectory
@@ -283,6 +254,33 @@ final class StatisticsViewModel {
     }
 
     // MARK: - Private Methods
+
+    private func applyMultiDayStats(
+        dailyStats: [DailyStatsDTO],
+        avgCalories: Double,
+        avgProtein: Double,
+        avgCarbs: Double,
+        avgFat: Double
+    ) {
+        calorieData = dailyStats.compactMap { daily in
+            guard let date = Date.fromAPIDateString(daily.date) else { return nil }
+            return DailyCalorie(
+                date: date,
+                calories: daily.totalCalories,
+                protein: daily.proteinGrams,
+                carbs: daily.carbsGrams,
+                fat: daily.fatGrams
+            )
+        }
+        weeklyAverage = Int(avgCalories)
+        proteinTotal = avgProtein * Double(dailyStats.count)
+        carbsTotal = avgCarbs * Double(dailyStats.count)
+        fatTotal = avgFat * Double(dailyStats.count)
+        checkinDays = dailyStats.filter { $0.mealCount > 0 }.compactMap {
+            Date.fromAPIDateString($0.date)
+        }
+        weeklyChange = 0
+    }
 
     private func loadInsights() async {
         do {

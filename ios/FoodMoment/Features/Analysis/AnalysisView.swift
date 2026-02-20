@@ -112,7 +112,10 @@ struct AnalysisView: View {
         }
         .accessibilityIdentifier("AnalysisView")
         // MARK: - Food edit sheet
-        .sheet(isPresented: $viewModel.isEditingFood) {
+        .sheet(isPresented: Binding(
+            get: { viewModel.editingFoodIndex != nil },
+            set: { if !$0 { viewModel.editingFoodIndex = nil } }
+        )) {
             foodEditSheet
                 .presentationDetents([.height(320)])
                 .presentationDragIndicator(.visible)
@@ -340,7 +343,7 @@ struct AnalysisView: View {
     // MARK: - Food Edit Sheet
 
     private var foodEditSheet: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 20) {
                 // Food name
                 VStack(alignment: .leading, spacing: 8) {

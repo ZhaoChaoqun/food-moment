@@ -14,6 +14,9 @@ final class SyncManager {
     var isSyncing = false
     var pendingCount = 0
 
+    /// 网络恢复且有待同步数据时递增，订阅方可通过 onChange 监听此值变化
+    var networkRestoredTrigger = 0
+
     private var isConnected = false
     private var monitor: NWPathMonitor?
     private var monitorQueue = DispatchQueue(label: "com.foodmoment.sync.monitor")
@@ -37,12 +40,7 @@ final class SyncManager {
 
                 // 网络恢复时自动同步
                 if !wasConnected && self.isConnected && self.pendingCount > 0 {
-                    // 需要外部传入 modelContext，此处仅标记需要同步
-                    // 由调用方监听 isConnected 变化并调用 syncPendingRecords
-                    NotificationCenter.default.post(
-                        name: .syncManagerNetworkRestored,
-                        object: nil
-                    )
+                    self.networkRestoredTrigger += 1
                 }
             }
         }
@@ -151,10 +149,4 @@ final class SyncManager {
 
         let _: MealResponseDTO = try await APIClient.shared.request(.createMeal, body: createDTO)
     }
-}
-
-// MARK: - Notification Name
-
-extension Notification.Name {
-    static let syncManagerNetworkRestored = Notification.Name("syncManagerNetworkRestored")
 }

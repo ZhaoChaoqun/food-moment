@@ -2,6 +2,15 @@ import SwiftUI
 import SwiftData
 import os
 
+// MARK: - Scroll Offset Tracking
+
+private struct DiaryScrollOffsetKey: PreferenceKey {
+    nonisolated(unsafe) static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct DiaryView: View {
 
     // MARK: - Logger
@@ -11,13 +20,13 @@ struct DiaryView: View {
     // MARK: - Environment
 
     @Environment(\.modelContext) private var modelContext
+    @Environment(AppState.self) private var appState
 
     // MARK: - State
 
     @State private var viewModel = DiaryViewModel()
     @State private var isShowingSearchBar = false
     @State private var scrollOffset: CGFloat = 0
-    @State private var initialContentY: CGFloat?
 
     // MARK: - Constants
 
@@ -57,6 +66,9 @@ struct DiaryView: View {
             mainContent
                 .premiumBackground()
                 .navigationBarHidden(true)
+                .navigationDestination(item: $viewModel.selectedMeal) { meal in
+                    MealDetailView(meal: meal)
+                }
         }
         .searchable(
             text: $viewModel.searchText,
@@ -65,10 +77,14 @@ struct DiaryView: View {
             prompt: "搜索食物、标签..."
         )
         .onChange(of: viewModel.selectedDate) { _, _ in
+            scrollOffset = 0
             viewModel.loadMeals(modelContext: modelContext)
             Task {
                 await viewModel.refreshFromAPI(modelContext: modelContext)
             }
+        }
+        .onChange(of: viewModel.selectedMeal) { _, newValue in
+            appState.isTabBarHidden = (newValue != nil)
         }
         .onAppear {
             viewModel.loadMeals(modelContext: modelContext)
@@ -87,27 +103,23 @@ struct DiaryView: View {
 
             ScrollView {
                 VStack(spacing: 0) {
-                    contentSection
-                }
-                .overlay(alignment: .top) {
+                    // Scroll offset tracking anchor
                     GeometryReader { proxy in
-                        let y = proxy.frame(in: .global).origin.y
-                        Color.clear
-                            .onChange(of: y) { _, newValue in
-                                // headerSection 底部在屏幕上的位置即为初始锚点
-                                // 首次拿到值作为基准，后续相对偏移
-                                if initialContentY == nil {
-                                    initialContentY = newValue
-                                }
-                                let offset = newValue - (initialContentY ?? newValue)
-                                scrollOffset = offset
-                                Self.logger.debug("[Diary] y: \(newValue, privacy: .public), offset: \(offset, privacy: .public), progress: \(self.calendarProgress, privacy: .public)")
-                            }
+                        Color.clear.preference(
+                            key: DiaryScrollOffsetKey.self,
+                            value: proxy.frame(in: .named("diaryScroll")).minY
+                        )
                     }
                     .frame(height: 0)
+
+                    contentSection
                 }
             }
+            .coordinateSpace(name: "diaryScroll")
             .scrollIndicators(.hidden)
+            .onPreferenceChange(DiaryScrollOffsetKey.self) { value in
+                scrollOffset = value
+            }
         }
     }
 
@@ -140,6 +152,7 @@ struct DiaryView: View {
             .frame(height: calendarHeight)
             .clipped()
             .opacity(calendarProgress)
+            .animation(AppTheme.Animation.fastSpring, value: calendarProgress)
 
             // 底部渐变分隔线
             LinearGradient(
@@ -311,6 +324,9 @@ struct DiaryView: View {
                         }
                     }
                 )
+                .onTapGesture {
+                    viewModel.selectedMeal = meal
+                }
                 .padding(.bottom, index == count - 1 ? AppTheme.Layout.tabBarClearance + 32 : 8)
             }
         }

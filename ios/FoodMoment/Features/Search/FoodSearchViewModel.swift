@@ -67,6 +67,24 @@ final class FoodSearchViewModel {
         case usda = "USDA"
     }
 
+    // MARK: - View State
+
+    enum ViewState {
+        case loading
+        case error(String)
+        case emptyResult
+        case initial
+        case results
+    }
+
+    var viewState: ViewState {
+        if isSearching { return .loading }
+        if let error = errorMessage { return .error(error) }
+        if searchResults.isEmpty && !searchText.isEmpty && suggestions.isEmpty { return .emptyResult }
+        if searchResults.isEmpty && searchText.isEmpty { return .initial }
+        return .results
+    }
+
     // MARK: - Computed Properties
 
     /// 是否需要搜索本地数据库

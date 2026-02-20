@@ -77,19 +77,13 @@ struct CalorieRingChart: View {
             animateProgressOnAppear()
         }
         .onChange(of: calorieProgress) { _, newValue in
-            withAnimation(.easeOut(duration: 0.6)) {
-                animatedCalorieProgress = newValue
-            }
+            withAnimation(.easeOut(duration: 0.6)) { animatedCalorieProgress = newValue }
         }
         .onChange(of: proteinProgress) { _, newValue in
-            withAnimation(.easeOut(duration: 0.6)) {
-                animatedProteinProgress = newValue
-            }
+            withAnimation(.easeOut(duration: 0.6)) { animatedProteinProgress = newValue }
         }
         .onChange(of: carbsProgress) { _, newValue in
-            withAnimation(.easeOut(duration: 0.6)) {
-                animatedCarbsProgress = newValue
-            }
+            withAnimation(.easeOut(duration: 0.6)) { animatedCarbsProgress = newValue }
         }
     }
 

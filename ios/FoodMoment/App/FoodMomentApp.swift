@@ -172,26 +172,23 @@ extension FoodMomentApp {
         switch action {
         case "camera":
             appState.selectedTab = .camera
-            appState.shouldOpenCamera = true
+            appState.pendingDeepLink = .openCamera()
 
         case "log-breakfast":
             appState.selectedTab = .camera
-            appState.pendingMealType = .breakfast
-            appState.shouldOpenCamera = true
+            appState.pendingDeepLink = .openCamera(mealType: .breakfast)
 
         case "log-lunch":
             appState.selectedTab = .camera
-            appState.pendingMealType = .lunch
-            appState.shouldOpenCamera = true
+            appState.pendingDeepLink = .openCamera(mealType: .lunch)
 
         case "log-dinner":
             appState.selectedTab = .camera
-            appState.pendingMealType = .dinner
-            appState.shouldOpenCamera = true
+            appState.pendingDeepLink = .openCamera(mealType: .dinner)
 
         case "log-water":
             appState.selectedTab = .home
-            appState.shouldShowWaterSheet = true
+            appState.pendingDeepLink = .showWaterSheet
 
         case "stats":
             appState.selectedTab = .statistics
@@ -222,7 +219,7 @@ extension FoodMomentApp {
 
         if let mealID = SpotlightIndexer.parseMealId(from: identifier) {
             appState.selectedTab = .diary
-            appState.highlightedMealID = mealID
+            appState.pendingDeepLink = .highlightMeal(mealID)
         }
     }
 }

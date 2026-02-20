@@ -39,6 +39,9 @@ struct ProfileView: View {
             .navigationDestination(isPresented: $viewModel.isShowingSettings) {
                 SettingsView(viewModel: viewModel)
             }
+            .onChange(of: viewModel.isShowingSettings) { _, newValue in
+                appState.isTabBarHidden = newValue
+            }
             .sheet(isPresented: $viewModel.isShowingWeightInput) {
                 WeightInputSheet()
             }

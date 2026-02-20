@@ -485,22 +485,21 @@ final class ProfileViewModel {
                 return DailyActivityData(day: day, date: now, proteinProgress: 0, carbsProgress: 0, fatProgress: 0, hasActivity: false)
             }
             let dayRecords = recordsByDay[day] ?? []
-            let hasActivity = !dayRecords.isEmpty
 
-            if !dayRecords.isEmpty {
-                let totalProtein = dayRecords.reduce(0.0) { $0 + $1.proteinGrams }
-                let totalCarbs = dayRecords.reduce(0.0) { $0 + $1.carbsGrams }
-                let totalFat = dayRecords.reduce(0.0) { $0 + $1.fatGrams }
-                return DailyActivityData(
-                    day: day, date: date,
-                    proteinProgress: min(totalProtein / NutritionGoals.dailyProteinGrams, 1.0),
-                    carbsProgress: min(totalCarbs / NutritionGoals.dailyCarbsGrams, 1.0),
-                    fatProgress: min(totalFat / NutritionGoals.dailyFatGrams, 1.0),
-                    hasActivity: hasActivity
-                )
-            } else {
+            guard !dayRecords.isEmpty else {
                 return DailyActivityData(day: day, date: date, proteinProgress: 0, carbsProgress: 0, fatProgress: 0, hasActivity: false)
             }
+
+            let totalProtein = dayRecords.reduce(0.0) { $0 + $1.proteinGrams }
+            let totalCarbs = dayRecords.reduce(0.0) { $0 + $1.carbsGrams }
+            let totalFat = dayRecords.reduce(0.0) { $0 + $1.fatGrams }
+            return DailyActivityData(
+                day: day, date: date,
+                proteinProgress: min(totalProtein / NutritionGoals.dailyProteinGrams, 1.0),
+                carbsProgress: min(totalCarbs / NutritionGoals.dailyCarbsGrams, 1.0),
+                fatProgress: min(totalFat / NutritionGoals.dailyFatGrams, 1.0),
+                hasActivity: true
+            )
         }
     }
 }

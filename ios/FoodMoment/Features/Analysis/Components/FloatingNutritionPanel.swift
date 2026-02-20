@@ -76,7 +76,7 @@ struct FloatingNutritionPanel: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 ForEach(tags, id: \.self) { tag in
-                    Text(Self.localizedTag(tag))
+                    Text(tag)
                         .font(.Jakarta.medium(12))
                         .foregroundColor(AppTheme.Colors.primary)
                         .padding(.horizontal, 12)
@@ -137,67 +137,6 @@ struct FloatingNutritionPanel: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
     }
-
-    // MARK: - Tag Localization
-
-    private static let tagTranslations: [String: String] = [
-        "high-protein": "高蛋白",
-        "high protein": "高蛋白",
-        "low-protein": "低蛋白",
-        "low protein": "低蛋白",
-        "high-carb": "高碳水",
-        "high carb": "高碳水",
-        "low-carb": "低碳水",
-        "low carb": "低碳水",
-        "high-fat": "高脂肪",
-        "high fat": "高脂肪",
-        "low-fat": "低脂",
-        "low fat": "低脂",
-        "high-sugar": "高糖",
-        "high sugar": "高糖",
-        "low-sugar": "低糖",
-        "low sugar": "低糖",
-        "high-fiber": "高纤维",
-        "high fiber": "高纤维",
-        "low-calorie": "低卡",
-        "low calorie": "低卡",
-        "high-calorie": "高热量",
-        "high calorie": "高热量",
-        "balanced": "均衡",
-        "vegetarian": "素食",
-        "vegan": "纯素",
-        "gluten-free": "无麸质",
-        "gluten free": "无麸质",
-        "organic": "有机",
-        "healthy": "健康",
-        "omega-3": "Omega-3",
-        "chinese-cuisine": "中式",
-        "chinese cuisine": "中式",
-        "home-cooked": "家常",
-        "home cooked": "家常",
-        "alcoholic": "含酒精",
-        "non-alcoholic": "无酒精",
-        "beverage": "饮品",
-        "dessert": "甜品",
-        "snack": "零食",
-        "breakfast": "早餐",
-        "lunch": "午餐",
-        "dinner": "晚餐",
-        "spicy": "辛辣",
-        "fried": "油炸",
-        "steamed": "蒸制",
-        "grilled": "烧烤",
-        "raw": "生食",
-        "fermented": "发酵",
-        "antioxidant": "抗氧化",
-        "low-gi": "低GI",
-        "high-sodium": "高钠",
-        "low-sodium": "低钠",
-    ]
-
-    private static func localizedTag(_ tag: String) -> String {
-        tagTranslations[tag.lowercased()] ?? tag
-    }
 }
 
 #Preview {
@@ -214,7 +153,7 @@ struct FloatingNutritionPanel: View {
                 ),
                 detectedFoods: [],
                 aiAnalysis: "This is a balanced meal with good protein and fiber content.",
-                tags: ["high-protein", "balanced"]
+                tags: ["高蛋白", "营养均衡"]
             ),
             isAnalyzing: false,
             errorMessage: nil,

@@ -17,6 +17,9 @@ final class AppState {
     /// 当前选中的 Tab
     var selectedTab: TabItem = .home
 
+    /// 是否隐藏底部 TabBar（详情页 push 时隐藏）
+    var isTabBarHidden: Bool = false
+
     // MARK: - Full Screen Presentation
 
     /// 全屏呈现目标
@@ -42,17 +45,14 @@ final class AppState {
 
     // MARK: - Deep Link States
 
-    /// 是否需要打开相机
-    var shouldOpenCamera: Bool = false
+    enum DeepLinkAction {
+        case openCamera(mealType: MealRecord.MealType? = nil)
+        case showWaterSheet
+        case highlightMeal(UUID)
+    }
 
-    /// 是否需要显示喝水记录 Sheet
-    var shouldShowWaterSheet: Bool = false
-
-    /// 待处理的餐次类型
-    var pendingMealType: MealRecord.MealType?
-
-    /// 高亮显示的餐食 ID
-    var highlightedMealID: UUID?
+    /// 待处理的深链接动作
+    var pendingDeepLink: DeepLinkAction?
 
     // MARK: - Achievement Unlock States
 
@@ -112,10 +112,7 @@ final class AppState {
 
     /// 重置所有深链接相关状态
     func resetDeepLinkStates() {
-        shouldOpenCamera = false
-        shouldShowWaterSheet = false
-        pendingMealType = nil
-        highlightedMealID = nil
+        pendingDeepLink = nil
     }
 }
 

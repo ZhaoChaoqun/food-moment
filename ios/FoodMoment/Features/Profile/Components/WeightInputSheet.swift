@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Charts
 import os
 
 struct WeightInputSheet: View {
@@ -13,11 +14,16 @@ struct WeightInputSheet: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
+    // MARK: - Types
+
+    private enum SaveState {
+        case idle, saving, success
+    }
+
     // MARK: - State
 
     @State private var weightValue: Double = 65.0
-    @State private var isSaving = false
-    @State private var isShowingSuccess = false
+    @State private var saveState: SaveState = .idle
     @State private var recentWeights: [WeightLog] = []
 
     // MARK: - Body
@@ -176,22 +182,45 @@ struct WeightInputSheet: View {
     }
 
     private var trendChartContent: some View {
-        GeometryReader { geometry in
+        Group {
             let data = chartData
-            let width = geometry.size.width
-            let height = geometry.size.height
+            if data.count >= 2 {
+                Chart(data, id: \.date) { entry in
+                    LineMark(
+                        x: .value("日期", entry.date),
+                        y: .value("体重", entry.weight)
+                    )
+                    .foregroundStyle(AppTheme.Colors.primary)
+                    .interpolationMethod(.catmullRom)
 
-            if data.count >= 2,
-               let minW = data.map(\.weight).min(),
-               let maxW = data.map(\.weight).max() {
-                let range = max(maxW - minW, 0.5)
-                let padding: CGFloat = 16
-
-                ZStack {
-                    gridLines(width: width, height: height, padding: padding)
-                    trendLine(data: data, width: width, height: height, padding: padding, minW: minW, range: range)
-                    dataPoints(data: data, width: width, height: height, padding: padding, minW: minW, range: range)
-                    dateLabels(data: data, width: width, height: height)
+                    PointMark(
+                        x: .value("日期", entry.date),
+                        y: .value("体重", entry.weight)
+                    )
+                    .foregroundStyle(AppTheme.Colors.primary)
+                    .symbolSize(30)
+                }
+                .chartXAxis {
+                    AxisMarks(values: .automatic) { value in
+                        AxisValueLabel {
+                            if let date = value.as(Date.self) {
+                                Text(date.formatted(as: "M/d"))
+                                    .font(.Jakarta.regular(10))
+                            }
+                        }
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading) { value in
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
+                            .foregroundStyle(Color(.separator).opacity(0.3))
+                        AxisValueLabel {
+                            if let weight = value.as(Double.self) {
+                                Text(String(format: "%.1f", weight))
+                                    .font(.Jakarta.regular(10))
+                            }
+                        }
+                    }
                 }
             } else {
                 noDataPlaceholder
@@ -199,75 +228,6 @@ struct WeightInputSheet: View {
         }
         .frame(height: 140)
         .padding(.horizontal, 4)
-    }
-
-    private func gridLines(width: CGFloat, height: CGFloat, padding: CGFloat) -> some View {
-        Path { path in
-            for i in 0...3 {
-                let y = padding + (height - 2 * padding) * CGFloat(i) / 3.0
-                path.move(to: CGPoint(x: 0, y: y))
-                path.addLine(to: CGPoint(x: width, y: y))
-            }
-        }
-        .stroke(Color(.separator).opacity(0.3), lineWidth: 0.5)
-    }
-
-    private func trendLine(
-        data: [ChartEntry],
-        width: CGFloat,
-        height: CGFloat,
-        padding: CGFloat,
-        minW: Double,
-        range: Double
-    ) -> some View {
-        Path { path in
-            for (index, entry) in data.enumerated() {
-                let x = width * CGFloat(index) / CGFloat(data.count - 1)
-                let normalizedY = (entry.weight - minW) / range
-                let y = (height - 2 * padding) * (1 - CGFloat(normalizedY)) + padding
-
-                if index == 0 {
-                    path.move(to: CGPoint(x: x, y: y))
-                } else {
-                    path.addLine(to: CGPoint(x: x, y: y))
-                }
-            }
-        }
-        .stroke(
-            AppTheme.Colors.primary,
-            style: StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round)
-        )
-    }
-
-    private func dataPoints(
-        data: [ChartEntry],
-        width: CGFloat,
-        height: CGFloat,
-        padding: CGFloat,
-        minW: Double,
-        range: Double
-    ) -> some View {
-        ForEach(Array(data.enumerated()), id: \.offset) { index, entry in
-            let x = width * CGFloat(index) / CGFloat(data.count - 1)
-            let normalizedY = (entry.weight - minW) / range
-            let y = (height - 2 * padding) * (1 - CGFloat(normalizedY)) + padding
-
-            Circle()
-                .fill(AppTheme.Colors.primary)
-                .frame(width: 8, height: 8)
-                .position(x: x, y: y)
-        }
-    }
-
-    private func dateLabels(data: [ChartEntry], width: CGFloat, height: CGFloat) -> some View {
-        ForEach(Array(data.enumerated()), id: \.offset) { index, entry in
-            let x = width * CGFloat(index) / CGFloat(data.count - 1)
-
-            Text(entry.dateLabel)
-                .font(.Jakarta.regular(10))
-                .foregroundStyle(.secondary)
-                .position(x: x, y: height - 2)
-        }
     }
 
     private var noDataPlaceholder: some View {
@@ -286,13 +246,14 @@ struct WeightInputSheet: View {
             }
         } label: {
             HStack(spacing: 8) {
-                if isSaving {
+                switch saveState {
+                case .saving:
                     ProgressView()
                         .tint(.white)
-                } else if isShowingSuccess {
+                case .success:
                     Image(systemName: "checkmark")
                         .font(.Jakarta.bold(18))
-                } else {
+                case .idle:
                     Image(systemName: "scalemass.fill")
                     Text("记录")
                         .font(.Jakarta.bold(18))
@@ -306,7 +267,7 @@ struct WeightInputSheet: View {
             )
             .foregroundStyle(.white)
         }
-        .disabled(isSaving)
+        .disabled(saveState != .idle)
         .accessibilityIdentifier("RecordWeightButton")
     }
 
@@ -319,15 +280,11 @@ struct WeightInputSheet: View {
     }
 
     private var chartData: [ChartEntry] {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M/d"
-        formatter.locale = Locale(identifier: "zh_CN")
-
-        return recentWeights.reversed().map { log in
+        recentWeights.reversed().map { log in
             ChartEntry(
                 date: log.recordedAt,
                 weight: log.weightKg,
-                dateLabel: formatter.string(from: log.recordedAt)
+                dateLabel: log.recordedAt.formatted(as: "M/d")
             )
         }
     }
@@ -370,7 +327,7 @@ struct WeightInputSheet: View {
     // MARK: - Save Weight
 
     private func saveWeight() async {
-        isSaving = true
+        saveState = .saving
 
         let now = Date()
 
@@ -388,8 +345,7 @@ struct WeightInputSheet: View {
             Self.logger.error("[Weight] HealthKit save failed: \(error.localizedDescription, privacy: .public)")
         }
 
-        isSaving = false
-        isShowingSuccess = true
+        saveState = .success
 
         try? await Task.sleep(for: .milliseconds(600))
         dismiss()

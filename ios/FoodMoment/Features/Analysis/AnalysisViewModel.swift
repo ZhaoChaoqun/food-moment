@@ -28,8 +28,8 @@ final class AnalysisViewModel {
 
     // MARK: - Edit State
 
-    var selectedFoodIndex: Int?
-    var isEditingFood: Bool = false
+    var editingFoodIndex: Int?
+    var isEditingFood: Bool { editingFoodIndex != nil }
     var editedFoodName: String = ""
     var editedFoodCalories: String = ""
     var editedFoodPortion: String = "1"
@@ -76,7 +76,9 @@ final class AnalysisViewModel {
         Self.logger.debug("[Analysis] 原始图片 scale: \(self.capturedImage.scale, privacy: .public)")
 
         do {
-            guard let imageData = capturedImage.jpegData(compressionQuality: 0.8) else {
+            // 先缩小图片再压缩，目标 ~100KB
+            let resizedImage = Self.resizeForUpload(capturedImage, maxDimension: 800)
+            guard let imageData = resizedImage.jpegData(compressionQuality: 0.6) else {
                 Self.logger.error("[Analysis] jpegData 返回 nil，无法转换图片")
                 errorMessage = "无法处理图片"
                 isAnalyzing = false
@@ -85,7 +87,7 @@ final class AnalysisViewModel {
 
             let imageSizeKB = Double(imageData.count) / 1024.0
             Self.logger.debug("[Analysis] JPEG 数据大小: \(String(format: "%.1f", imageSizeKB), privacy: .public) KB (\(imageData.count, privacy: .public) bytes)")
-            Self.logger.debug("[Analysis] 压缩质量: 0.8")
+            Self.logger.debug("[Analysis] 压缩质量: 0.6")
 
             // 验证 JPEG 数据头部（JPEG magic bytes: FF D8 FF）
             if imageData.count >= 3 {
@@ -140,19 +142,18 @@ final class AnalysisViewModel {
     func startEditingFood(at index: Int) {
         guard let result = analysisResult, index < result.detectedFoods.count else { return }
         let food = result.detectedFoods[index]
-        selectedFoodIndex = index
+        editingFoodIndex = index
         editedFoodName = food.name
         editedFoodCalories = "\(food.calories)"
         editedFoodPortion = "1"
-        isEditingFood = true
     }
 
     /// Saves the edited food item
     func saveEditedFood() {
-        guard let index = selectedFoodIndex,
+        guard let index = editingFoodIndex,
               let result = analysisResult,
               index < result.detectedFoods.count else {
-            isEditingFood = false
+            editingFoodIndex = nil
             return
         }
 
@@ -199,14 +200,12 @@ final class AnalysisViewModel {
             tags: result.tags
         )
 
-        isEditingFood = false
-        selectedFoodIndex = nil
+        editingFoodIndex = nil
     }
 
     /// Cancels the edit operation
     func cancelEditingFood() {
-        isEditingFood = false
-        selectedFoodIndex = nil
+        editingFoodIndex = nil
         editedFoodName = ""
         editedFoodCalories = ""
         editedFoodPortion = "1"
@@ -255,16 +254,10 @@ final class AnalysisViewModel {
         )
 
         Task {
-            var isSynced = false
-            var mealId: UUID? = nil
-
             // 尝试 API 优先
-            do {
-                let response = try await MealService.shared.createMeal(createDTO)
-                isSynced = true
-                mealId = response.id
-            } catch {
-                Self.logger.warning("[Analysis] API save failed, saving locally: \(error.localizedDescription, privacy: .public)")
+            let apiResponse = try? await MealService.shared.createMeal(createDTO)
+            if apiResponse == nil {
+                Self.logger.warning("[Analysis] API save failed, saving locally")
             }
 
             // 写入 SwiftData 缓存
@@ -282,10 +275,10 @@ final class AnalysisViewModel {
                 imageURL: result.imageUrl,
                 localImageData: imageData
             )
-            if let mealId {
-                meal.id = mealId
+            if let id = apiResponse?.id {
+                meal.id = id
             }
-            meal.isSynced = isSynced
+            meal.isSynced = apiResponse != nil
 
             modelContext.insert(meal)
 
@@ -320,7 +313,7 @@ final class AnalysisViewModel {
                     await writeToHealthKit(result: result)
                 }
 
-                if !isSynced {
+                if apiResponse == nil {
                     Task {
                         await SyncManager.shared.syncPendingRecords(modelContext: modelContext)
                     }
@@ -458,16 +451,28 @@ final class AnalysisViewModel {
 
     /// Generates a readable title from the list of detected foods.
     private static func generateMealTitle(from foods: [DetectedFoodDTO]) -> String {
-        let names = foods.map { $0.name }
+        let names = foods.map { $0.nameZh.isEmpty ? $0.name : $0.nameZh }
         switch names.count {
         case 0:
-            return "Meal"
+            return "一餐"
         case 1:
             return names[0]
         case 2:
-            return "\(names[0]) & \(names[1])"
+            return "\(names[0])、\(names[1])"
         default:
-            return "\(names[0]), \(names[1]) & more"
+            return "\(names[0])、\(names[1])等"
+        }
+    }
+
+    /// Resize image so the longest edge ≤ maxDimension, preserving aspect ratio.
+    private static func resizeForUpload(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
+        let size = image.size
+        guard max(size.width, size.height) > maxDimension else { return image }
+        let scale = maxDimension / max(size.width, size.height)
+        let newSize = CGSize(width: size.width * scale, height: size.height * scale)
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
         }
     }
 }
