@@ -9,10 +9,7 @@ final class DiaryViewModel {
     // MARK: - Properties
 
     var selectedDate: Date = Date()
-    var meals: [MealRecord] = []
     var searchText: String = ""
-    var isLoading = false
-    var dailyCalorieGoal: Int = 2000
     var selectedMeal: MealRecord?
     var mealToEdit: MealRecord?
 
@@ -22,7 +19,6 @@ final class DiaryViewModel {
     // MARK: - Private
 
     private let mealService: MealServiceProtocol
-    private let userService: UserServiceProtocol
 
     // MARK: - Computed Properties
 
@@ -35,43 +31,6 @@ final class DiaryViewModel {
         }
     }
 
-    /// 选中日期的总摄入卡路里
-    var dailyCalories: Int {
-        meals.reduce(0) { $0 + $1.totalCalories }
-    }
-
-    /// 每日进度比例（0.0 - 1.0+）
-    var dailyProgress: Double {
-        guard dailyCalorieGoal > 0 else { return 0 }
-        return Double(dailyCalories) / Double(dailyCalorieGoal)
-    }
-
-    /// 每日蛋白质总量
-    var dailyProtein: Double {
-        meals.reduce(0) { $0 + $1.proteinGrams }
-    }
-
-    /// 每日碳水总量
-    var dailyCarbs: Double {
-        meals.reduce(0) { $0 + $1.carbsGrams }
-    }
-
-    /// 每日脂肪总量
-    var dailyFat: Double {
-        meals.reduce(0) { $0 + $1.fatGrams }
-    }
-
-    /// 按搜索文本过滤并按用餐时间升序排列的餐食列表
-    var filteredMeals: [MealRecord] {
-        let sorted = meals.sorted { $0.mealTime < $1.mealTime }
-        guard !searchText.isEmpty else { return sorted }
-        return sorted.filter { meal in
-            meal.title.localizedCaseInsensitiveContains(searchText)
-                || (meal.descriptionText?.localizedCaseInsensitiveContains(searchText) ?? false)
-                || meal.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
-        }
-    }
-
     /// 用于头部显示的月份/年份标题
     var monthTitle: String {
         selectedDate.formatted(as: "yyyy年M月")
@@ -80,55 +39,26 @@ final class DiaryViewModel {
     // MARK: - Initialization
 
     init(
-        mealService: MealServiceProtocol = MealService.shared,
-        userService: UserServiceProtocol = UserService.shared
+        mealService: MealServiceProtocol = MealService.shared
     ) {
         self.mealService = mealService
-        self.userService = userService
     }
 
     // MARK: - Public Methods
 
-    /// 从 SwiftData 缓存加载（同步，立即显示）
-    func loadMeals(modelContext: ModelContext) {
-        let startOfDay = selectedDate.startOfDay
-        let endOfDay = selectedDate.endOfDay
-
-        let predicate = #Predicate<MealRecord> { meal in
-            meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
-        }
-        let descriptor = FetchDescriptor<MealRecord>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.mealTime, order: .forward)]
-        )
-
-        meals = (try? modelContext.fetch(descriptor)) ?? []
-
-        // 同时从用户配置加载卡路里目标
-        let profileDescriptor = FetchDescriptor<UserProfile>()
-        if let profile = try? modelContext.fetch(profileDescriptor).first {
-            dailyCalorieGoal = profile.dailyCalorieGoal
-        }
-    }
-
     /// 从 API 刷新数据并更新 SwiftData 缓存
     func refreshFromAPI(modelContext: ModelContext) async {
-        isLoading = true
-        defer { isLoading = false }
-
         let dateString = selectedDate.apiDateString
 
         // 并发启动所有请求（绿点数据独立获取，不阻塞其他逻辑）
         async let mealsTask = mealService.getMeals(date: dateString)
-        async let profileTask = userService.getProfile()
         async let weekDatesTask: Void = precomputeWeekDatesFromAPI()
 
         // 等待绿点数据（独立，不影响其他逻辑）
         await weekDatesTask
 
         do {
-            let (mealDTOs, profile) = try await (mealsTask, profileTask)
-            dailyCalorieGoal = profile.dailyCalorieGoal
+            let mealDTOs = try await mealsTask
 
             // 清除当天旧缓存
             let startOfDay = selectedDate.startOfDay
@@ -147,9 +77,6 @@ final class DiaryViewModel {
                 modelContext.insert(record)
             }
             try? modelContext.save()
-
-            // 重新从 SwiftData 加载以保持一致性
-            loadMeals(modelContext: modelContext)
         } catch {
             // API 失败时保持 SwiftData 缓存数据
         }
@@ -168,7 +95,6 @@ final class DiaryViewModel {
         // 成功后从本地删除
         modelContext.delete(meal)
         try? modelContext.save()
-        loadMeals(modelContext: modelContext)
         await precomputeWeekDatesFromAPI()
     }
 

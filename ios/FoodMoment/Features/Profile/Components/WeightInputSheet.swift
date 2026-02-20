@@ -24,7 +24,13 @@ struct WeightInputSheet: View {
 
     @State private var weightValue: Double = 65.0
     @State private var saveState: SaveState = .idle
-    @State private var recentWeights: [WeightLog] = []
+    @Query(sort: \WeightLog.recordedAt, order: .reverse) private var allWeights: [WeightLog]
+
+    private var recentWeights: [WeightLog] {
+        let calendar = Calendar.current
+        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date())!
+        return allWeights.filter { $0.recordedAt >= sevenDaysAgo }
+    }
 
     // MARK: - Body
 
@@ -292,24 +298,6 @@ struct WeightInputSheet: View {
     // MARK: - Data Loading
 
     private func loadInitialData() async {
-        // 加载最近 7 天体重记录
-        let calendar = Calendar.current
-        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date())!
-
-        let predicate = #Predicate<WeightLog> { log in
-            log.recordedAt >= sevenDaysAgo
-        }
-        let descriptor = FetchDescriptor<WeightLog>(
-            predicate: predicate,
-            sortBy: [SortDescriptor(\.recordedAt, order: .reverse)]
-        )
-
-        do {
-            recentWeights = try modelContext.fetch(descriptor)
-        } catch {
-            Self.logger.error("[Weight] Failed to load weight logs: \(error.localizedDescription, privacy: .public)")
-        }
-
         // 从 HealthKit 获取最新体重作为默认值
         do {
             if let latestWeight = try await HealthKitManager.shared.fetchLatestWeight() {

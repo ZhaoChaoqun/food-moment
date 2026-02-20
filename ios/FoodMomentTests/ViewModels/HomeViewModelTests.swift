@@ -18,128 +18,16 @@ final class HomeViewModelTests: XCTestCase {
 
     // MARK: - Initial State Tests
 
-    func test_initialState_consumedCaloriesIsZero() {
-        XCTAssertEqual(sut.consumedCalories, 0)
+    func test_initialState_userNameIsDefault() {
+        XCTAssertEqual(sut.userName, "User")
     }
 
-    func test_initialState_waterAmountIsZero() {
-        XCTAssertEqual(sut.waterAmount, 0)
+    func test_initialState_stepCountIsZero() {
+        XCTAssertEqual(sut.stepCount, 0)
     }
 
-    func test_initialState_isLoadingIsFalse() {
-        XCTAssertFalse(sut.isLoading)
-    }
-
-    // MARK: - Calories Calculation Tests
-
-    func test_caloriesLeft_whenUnderGoal_returnsPositive() {
-        // Given
-        sut.dailyCalorieGoal = 2000
-        sut.consumedCalories = 1200
-
-        // When
-        let remaining = sut.caloriesLeft
-
-        // Then
-        XCTAssertEqual(remaining, 800)
-    }
-
-    func test_caloriesLeft_whenOverGoal_returnsZero() {
-        // Given (caloriesLeft uses max(..., 0) so it won't return negative)
-        sut.dailyCalorieGoal = 2000
-        sut.consumedCalories = 2500
-
-        // When
-        let remaining = sut.caloriesLeft
-
-        // Then
-        XCTAssertEqual(remaining, 0)
-    }
-
-    func test_caloriesLeft_whenAtGoal_returnsZero() {
-        // Given
-        sut.dailyCalorieGoal = 2000
-        sut.consumedCalories = 2000
-
-        // When
-        let remaining = sut.caloriesLeft
-
-        // Then
-        XCTAssertEqual(remaining, 0)
-    }
-
-    // MARK: - Progress Calculation Tests
-
-    func test_calorieProgress_whenHalfway_returns50Percent() {
-        // Given
-        sut.dailyCalorieGoal = 2000
-        sut.consumedCalories = 1000
-
-        // When
-        let progress = sut.calorieProgress
-
-        // Then
-        XCTAssertEqual(progress, 0.5, accuracy: 0.001)
-    }
-
-    func test_calorieProgress_whenOverGoal_capsAt100Percent() {
-        // Given
-        sut.dailyCalorieGoal = 2000
-        sut.consumedCalories = 3000
-
-        // When
-        let progress = sut.calorieProgress
-
-        // Then
-        XCTAssertEqual(progress, 1.0, accuracy: 0.001)
-    }
-
-    func test_proteinProgress_calculatesCorrectly() {
-        // Given
-        sut.dailyProteinGoal = 100
-        sut.proteinGrams = 75
-
-        // When
-        let progress = sut.proteinProgress
-
-        // Then
-        XCTAssertEqual(progress, 0.75, accuracy: 0.001)
-    }
-
-    func test_carbsProgress_calculatesCorrectly() {
-        // Given
-        sut.dailyCarbsGoal = 250
-        sut.carbsGrams = 125
-
-        // When
-        let progress = sut.carbsProgress
-
-        // Then
-        XCTAssertEqual(progress, 0.5, accuracy: 0.001)
-    }
-
-    func test_fatProgress_calculatesCorrectly() {
-        // Given
-        sut.dailyFatGoal = 65
-        sut.fatGrams = 32.5
-
-        // When
-        let progress = sut.fatProgress
-
-        // Then
-        XCTAssertEqual(progress, 0.5, accuracy: 0.001)
-    }
-
-    func test_waterProgress_calculatesCorrectly() {
-        // Given
-        sut.dailyWaterGoal = 2500
-        sut.waterAmount = 1250
-
-        // When
-        let progress = sut.waterProgress
-
-        // Then
-        XCTAssertEqual(progress, 0.5, accuracy: 0.001)
+    func test_initialState_caloriesBurnedIsZero() {
+        XCTAssertEqual(sut.caloriesBurned, 0)
     }
 
     // MARK: - Greeting Tests
@@ -153,37 +41,5 @@ final class HomeViewModelTests: XCTestCase {
         let greeting = sut.greeting
         let validGreetings = ["早安", "午好", "晚好"]
         XCTAssertTrue(validGreetings.contains(greeting))
-    }
-
-    // MARK: - Today's Meals Tests
-
-    func test_todayMeals_initiallyEmpty() {
-        XCTAssertTrue(sut.todayMeals.isEmpty)
-    }
-
-    // MARK: - Edge Cases
-
-    func test_calorieProgress_whenGoalIsZero_returnsZero() {
-        // Given
-        sut.dailyCalorieGoal = 0
-        sut.consumedCalories = 1000
-
-        // When
-        let progress = sut.calorieProgress
-
-        // Then
-        XCTAssertEqual(progress, 0)
-    }
-
-    func test_proteinProgress_whenGoalIsZero_returnsZero() {
-        // Given
-        sut.dailyProteinGoal = 0
-        sut.proteinGrams = 50
-
-        // When
-        let progress = sut.proteinProgress
-
-        // Then
-        XCTAssertEqual(progress, 0)
     }
 }

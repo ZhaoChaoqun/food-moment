@@ -54,11 +54,6 @@ struct DiaryView: View {
         calendarExpandedHeight * calendarProgress
     }
 
-    private var progressValue: CGFloat {
-        guard viewModel.dailyCalorieGoal > 0 else { return 0 }
-        return min(CGFloat(viewModel.dailyCalories) / CGFloat(viewModel.dailyCalorieGoal), 1)
-    }
-
     // MARK: - Body
 
     var body: some View {
@@ -78,22 +73,12 @@ struct DiaryView: View {
         )
         .onChange(of: viewModel.selectedDate) { _, _ in
             scrollOffset = 0
-            viewModel.loadMeals(modelContext: modelContext)
             Task {
                 await viewModel.refreshFromAPI(modelContext: modelContext)
             }
         }
         .onChange(of: viewModel.selectedMeal) { _, newValue in
             appState.isTabBarHidden = (newValue != nil)
-        }
-        .onChange(of: appState.diaryRefreshTrigger) { _, _ in
-            viewModel.loadMeals(modelContext: modelContext)
-            Task {
-                await viewModel.refreshFromAPI(modelContext: modelContext)
-            }
-        }
-        .onAppear {
-            viewModel.loadMeals(modelContext: modelContext)
         }
         .task {
             await viewModel.refreshFromAPI(modelContext: modelContext)
@@ -118,7 +103,20 @@ struct DiaryView: View {
                     }
                     .frame(height: 0)
 
-                    contentSection
+                    DiaryContentView(
+                        startOfDay: viewModel.selectedDate.startOfDay,
+                        endOfDay: viewModel.selectedDate.endOfDay,
+                        selectedDate: viewModel.selectedDate,
+                        searchText: viewModel.searchText,
+                        onSelectMeal: { meal in
+                            viewModel.selectedMeal = meal
+                        },
+                        onDeleteMeal: { meal in
+                            Task {
+                                await viewModel.deleteMeal(meal, modelContext: modelContext)
+                            }
+                        }
+                    )
                 }
             }
             .coordinateSpace(name: "diaryScroll")
@@ -136,9 +134,13 @@ struct DiaryView: View {
             headerBar
                 .padding(.top, 6)
 
-            summaryBar
-                .padding(.top, 2)
-                .padding(.bottom, 8)
+            DiarySummaryBar(
+                startOfDay: viewModel.selectedDate.startOfDay,
+                endOfDay: viewModel.selectedDate.endOfDay,
+                selectedDate: viewModel.selectedDate
+            )
+            .padding(.top, 2)
+            .padding(.bottom, 8)
 
             WeekDatePicker(
                 selectedDate: $viewModel.selectedDate,
@@ -176,32 +178,6 @@ struct DiaryView: View {
         .accessibilityIdentifier("DiaryView.Header")
     }
 
-    // MARK: - Content Section
-
-    @ViewBuilder
-    private var contentSection: some View {
-        if viewModel.isLoading {
-            loadingView
-        } else if viewModel.filteredMeals.isEmpty {
-            emptyView
-        } else {
-            mealListContent
-        }
-    }
-
-    // MARK: - Formatters
-
-    private static let calorieFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.groupingSeparator = ","
-        return formatter
-    }()
-
-    private func formattedCalories(_ value: Int) -> String {
-        Self.calorieFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
-    }
-
     // MARK: - Header Bar
 
     private var headerBar: some View {
@@ -229,63 +205,6 @@ struct DiaryView: View {
         .padding(.vertical, 10)
     }
 
-    private var summaryBar: some View {
-        VStack(spacing: 8) {
-            summaryInfoRow
-            summaryProgressBar
-        }
-        .padding(.horizontal, 20)
-        .accessibilityIdentifier("DiaryView.SummaryBar")
-    }
-
-    private var summaryInfoRow: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(viewModel.selectedDate.formatted(as: "M月d日"))
-                .font(.Jakarta.medium(13))
-                .foregroundColor(.secondary)
-
-            Spacer()
-
-            Text("今日已摄入")
-                .font(.Jakarta.regular(12))
-                .foregroundColor(.secondary)
-
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(formattedCalories(viewModel.dailyCalories))
-                    .font(.Jakarta.bold(16))
-                    .foregroundColor(.primary)
-
-                Text("/ \(formattedCalories(viewModel.dailyCalorieGoal)) kcal")
-                    .font(.Jakarta.medium(12))
-                    .foregroundColor(.secondary)
-            }
-        }
-    }
-
-    private var summaryProgressBar: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.gray.opacity(0.12))
-                    .frame(height: 6)
-
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: geometry.size.width * progressValue, height: 6)
-                    .shadow(color: AppTheme.Colors.primary.opacity(0.35), radius: 6, y: 0)
-                    .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progressValue)
-            }
-        }
-        .frame(height: 6)
-        .accessibilityIdentifier("DiaryView.SummaryProgressBar")
-    }
-
     private var searchButton: some View {
         Button {
             isShowingSearchBar.toggle()
@@ -308,11 +227,154 @@ struct DiaryView: View {
         .accessibilityIdentifier("DiaryView.SearchButton")
         .accessibilityLabel("搜索")
     }
+}
+
+// MARK: - Summary Bar (uses @Query)
+
+/// 独立子视图：使用 @Query 自动驱动摘要栏数据
+private struct DiarySummaryBar: View {
+    @Query private var meals: [MealRecord]
+    @Query private var profiles: [UserProfile]
+
+    let selectedDate: Date
+
+    init(startOfDay: Date, endOfDay: Date, selectedDate: Date) {
+        self.selectedDate = selectedDate
+        _meals = Query(
+            filter: #Predicate<MealRecord> { meal in
+                meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
+            },
+            sort: \.mealTime
+        )
+        _profiles = Query()
+    }
+
+    private var dailyCalories: Int {
+        meals.reduce(0) { $0 + $1.totalCalories }
+    }
+
+    private var dailyCalorieGoal: Int {
+        profiles.first?.dailyCalorieGoal ?? 2000
+    }
+
+    private var progressValue: CGFloat {
+        guard dailyCalorieGoal > 0 else { return 0 }
+        return min(CGFloat(dailyCalories) / CGFloat(dailyCalorieGoal), 1)
+    }
+
+    private static let calorieFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.groupingSeparator = ","
+        return formatter
+    }()
+
+    private func formattedCalories(_ value: Int) -> String {
+        Self.calorieFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            // Info row
+            HStack(alignment: .firstTextBaseline, spacing: 12) {
+                Text(selectedDate.formatted(as: "M月d日"))
+                    .font(.Jakarta.medium(13))
+                    .foregroundColor(.secondary)
+
+                Spacer()
+
+                Text("今日已摄入")
+                    .font(.Jakarta.regular(12))
+                    .foregroundColor(.secondary)
+
+                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    Text(formattedCalories(dailyCalories))
+                        .font(.Jakarta.bold(16))
+                        .foregroundColor(.primary)
+
+                    Text("/ \(formattedCalories(dailyCalorieGoal)) kcal")
+                        .font(.Jakarta.medium(12))
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            // Progress bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.12))
+                        .frame(height: 6)
+
+                    Capsule()
+                        .fill(
+                            LinearGradient(
+                                colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width * progressValue, height: 6)
+                        .shadow(color: AppTheme.Colors.primary.opacity(0.35), radius: 6, y: 0)
+                        .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progressValue)
+                }
+            }
+            .frame(height: 6)
+        }
+        .padding(.horizontal, 20)
+        .accessibilityIdentifier("DiaryView.SummaryBar")
+    }
+}
+
+// MARK: - Content View (uses @Query)
+
+/// 独立子视图：使用 @Query 自动驱动餐食列表数据
+private struct DiaryContentView: View {
+    @Query private var meals: [MealRecord]
+
+    let searchText: String
+    let onSelectMeal: (MealRecord) -> Void
+    let onDeleteMeal: (MealRecord) -> Void
+
+    init(
+        startOfDay: Date,
+        endOfDay: Date,
+        selectedDate: Date,
+        searchText: String,
+        onSelectMeal: @escaping (MealRecord) -> Void,
+        onDeleteMeal: @escaping (MealRecord) -> Void
+    ) {
+        self.searchText = searchText
+        self.onSelectMeal = onSelectMeal
+        self.onDeleteMeal = onDeleteMeal
+        _meals = Query(
+            filter: #Predicate<MealRecord> { meal in
+                meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
+            },
+            sort: \.mealTime
+        )
+    }
+
+    private var filteredMeals: [MealRecord] {
+        guard !searchText.isEmpty else { return meals }
+        return meals.filter { meal in
+            meal.title.localizedCaseInsensitiveContains(searchText)
+                || (meal.descriptionText?.localizedCaseInsensitiveContains(searchText) ?? false)
+                || meal.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
+        }
+    }
+
+    var body: some View {
+        if filteredMeals.isEmpty {
+            emptyView
+        } else {
+            mealListContent
+        }
+    }
 
     // MARK: - Meal List Content
 
     private var mealListContent: some View {
-        let meals = viewModel.filteredMeals
+        let meals = filteredMeals
         let count = meals.count
 
         return VStack(spacing: 0) {
@@ -322,16 +384,11 @@ struct DiaryView: View {
                     isFirst: index == 0,
                     isLast: index == count - 1,
                     onDelete: {
-                        Task {
-                            withAnimation {
-                                // 先做乐观 UI 更新
-                            }
-                            await viewModel.deleteMeal(meal, modelContext: modelContext)
-                        }
+                        onDeleteMeal(meal)
                     }
                 )
                 .onTapGesture {
-                    viewModel.selectedMeal = meal
+                    onSelectMeal(meal)
                 }
                 .padding(.bottom, index == count - 1 ? AppTheme.Layout.tabBarClearance + 32 : 8)
             }
@@ -348,12 +405,12 @@ struct DiaryView: View {
 
             EmptyStateView(
                 icon: "camera.fill",
-                title: viewModel.searchText.isEmpty ? "还没有记录" : "未找到结果",
-                subtitle: viewModel.searchText.isEmpty
+                title: searchText.isEmpty ? "还没有记录" : "未找到结果",
+                subtitle: searchText.isEmpty
                     ? "拍张食物照片，AI 会自动识别营养成分"
                     : "换个关键词试试吧",
-                buttonTitle: viewModel.searchText.isEmpty ? "拍照记录" : nil,
-                action: viewModel.searchText.isEmpty ? {
+                buttonTitle: searchText.isEmpty ? "拍照记录" : nil,
+                action: searchText.isEmpty ? {
                     // 导航到相机 - 由父级 Tab 处理
                 } : nil
             )
@@ -361,22 +418,6 @@ struct DiaryView: View {
             Spacer()
         }
         .accessibilityIdentifier("DiaryView.EmptyState")
-    }
-
-    // MARK: - Loading View
-
-    private var loadingView: some View {
-        VStack {
-            Spacer()
-                .frame(height: 200)
-
-            ProgressView()
-                .tint(AppTheme.Colors.primary)
-
-            Spacer()
-                .frame(height: 200)
-        }
-        .accessibilityIdentifier("DiaryView.LoadingView")
     }
 }
 

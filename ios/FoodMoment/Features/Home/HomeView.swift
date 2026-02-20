@@ -13,13 +13,6 @@ struct HomeView: View {
     @State private var viewModel = HomeViewModel()
     @State private var isShowingWaterSheet = false
 
-    // MARK: - Properties
-
-    private let gridColumns = [
-        GridItem(.flexible(), spacing: 12),
-        GridItem(.flexible(), spacing: 12)
-    ]
-
     // MARK: - Body
 
     var body: some View {
@@ -27,9 +20,28 @@ struct HomeView: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: 20) {
                     headerSection
-                    calorieRingCard
-                    healthMetricsGrid
-                    foodMomentSection
+
+                    HomeDataContent(
+                        startOfDay: Date().startOfDay,
+                        endOfDay: Date().endOfDay,
+                        stepCount: viewModel.stepCount,
+                        caloriesBurned: viewModel.caloriesBurned,
+                        dailyStepGoal: 10000,
+                        onAddWater: {
+                            Task {
+                                await viewModel.addWater(
+                                    modelContext: modelContext,
+                                    writeToHealthKit: true
+                                )
+                            }
+                        },
+                        onShowWaterOptions: {
+                            isShowingWaterSheet = true
+                        },
+                        onMoreMealsTapped: {
+                            appState.selectedTab = .diary
+                        }
+                    )
                 }
                 .padding(.bottom, AppTheme.Layout.tabBarClearance)
             }
@@ -37,14 +49,22 @@ struct HomeView: View {
             .refreshable {
                 await viewModel.refresh(modelContext: modelContext)
             }
-            .onAppear {
-                viewModel.loadTodayData(modelContext: modelContext)
-            }
             .task {
                 await viewModel.refreshFromAPI(modelContext: modelContext)
             }
             .navigationBarHidden(true)
             .accessibilityIdentifier("HomeScrollView")
+        }
+        .sheet(isPresented: $isShowingWaterSheet) {
+            WaterTrackingSheet { amount in
+                Task {
+                    await viewModel.addWater(
+                        amount: amount,
+                        modelContext: modelContext,
+                        writeToHealthKit: true
+                    )
+                }
+            }
         }
         .accessibilityIdentifier("HomeView")
     }
@@ -148,15 +168,159 @@ struct HomeView: View {
             .offset(x: 2, y: 2)
     }
 
+    // MARK: - Helper Methods
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMM d"
+        formatter.locale = Locale(identifier: "en_US")
+        return formatter.string(from: Date())
+    }
+
+    private func formattedNumber(_ value: Int) -> String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+}
+
+// MARK: - Home Data Content (uses @Query)
+
+/// 独立子视图：使用 @Query 自动驱动首页数据
+private struct HomeDataContent: View {
+    @Query private var todayMeals: [MealRecord]
+    @Query private var todayWaterLogs: [WaterLog]
+    @Query private var profiles: [UserProfile]
+
+    let stepCount: Int
+    let caloriesBurned: Int
+    let dailyStepGoal: Int
+    let onAddWater: () -> Void
+    let onShowWaterOptions: () -> Void
+    let onMoreMealsTapped: () -> Void
+
+    init(
+        startOfDay: Date,
+        endOfDay: Date,
+        stepCount: Int,
+        caloriesBurned: Int,
+        dailyStepGoal: Int,
+        onAddWater: @escaping () -> Void,
+        onShowWaterOptions: @escaping () -> Void,
+        onMoreMealsTapped: @escaping () -> Void
+    ) {
+        self.stepCount = stepCount
+        self.caloriesBurned = caloriesBurned
+        self.dailyStepGoal = dailyStepGoal
+        self.onAddWater = onAddWater
+        self.onShowWaterOptions = onShowWaterOptions
+        self.onMoreMealsTapped = onMoreMealsTapped
+
+        _todayMeals = Query(
+            filter: #Predicate<MealRecord> { record in
+                record.mealTime >= startOfDay && record.mealTime < endOfDay
+            },
+            sort: \.mealTime
+        )
+        _todayWaterLogs = Query(
+            filter: #Predicate<WaterLog> { log in
+                log.recordedAt >= startOfDay && log.recordedAt < endOfDay
+            }
+        )
+        _profiles = Query()
+    }
+
+    // MARK: - Computed from @Query
+
+    private var consumedCalories: Int {
+        todayMeals.reduce(0) { $0 + $1.totalCalories }
+    }
+
+    private var proteinGrams: Double {
+        todayMeals.reduce(0) { $0 + $1.proteinGrams }
+    }
+
+    private var carbsGrams: Double {
+        todayMeals.reduce(0) { $0 + $1.carbsGrams }
+    }
+
+    private var fatGrams: Double {
+        todayMeals.reduce(0) { $0 + $1.fatGrams }
+    }
+
+    private var waterAmount: Int {
+        todayWaterLogs.reduce(0) { $0 + $1.amountML }
+    }
+
+    private var dailyCalorieGoal: Int {
+        profiles.first?.dailyCalorieGoal ?? 2500
+    }
+
+    private var dailyProteinGoal: Int {
+        profiles.first?.dailyProteinGoal ?? 50
+    }
+
+    private var dailyCarbsGoal: Int {
+        profiles.first?.dailyCarbsGoal ?? 250
+    }
+
+    private var dailyFatGoal: Int {
+        profiles.first?.dailyFatGoal ?? 65
+    }
+
+    private var dailyWaterGoal: Int { 2500 }
+
+    private var caloriesLeft: Int {
+        max(dailyCalorieGoal - consumedCalories, 0)
+    }
+
+    private var calorieProgress: Double {
+        guard dailyCalorieGoal > 0 else { return 0 }
+        return min(Double(consumedCalories) / Double(dailyCalorieGoal), 1.0)
+    }
+
+    private var proteinProgress: Double {
+        guard dailyProteinGoal > 0 else { return 0 }
+        return min(proteinGrams / Double(dailyProteinGoal), 1.0)
+    }
+
+    private var carbsProgress: Double {
+        guard dailyCarbsGoal > 0 else { return 0 }
+        return min(carbsGrams / Double(dailyCarbsGoal), 1.0)
+    }
+
+    private var waterProgress: Double {
+        guard dailyWaterGoal > 0 else { return 0 }
+        return min(Double(waterAmount) / Double(dailyWaterGoal), 1.0)
+    }
+
+    private var stepProgress: Double {
+        guard dailyStepGoal > 0 else { return 0 }
+        return min(Double(stepCount) / Double(dailyStepGoal), 1.0)
+    }
+
+    private let gridColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
+    // MARK: - Body
+
+    var body: some View {
+        calorieRingCard
+        healthMetricsGrid
+        foodMomentSection
+    }
+
     // MARK: - Calorie Ring Card
 
     private var calorieRingCard: some View {
         VStack(spacing: 16) {
             ZStack {
                 CalorieRingChart(
-                    calorieProgress: viewModel.calorieProgress,
-                    proteinProgress: viewModel.proteinProgress,
-                    carbsProgress: viewModel.carbsProgress
+                    calorieProgress: calorieProgress,
+                    proteinProgress: proteinProgress,
+                    carbsProgress: carbsProgress
                 )
                 .frame(width: 200, height: 200)
                 .accessibilityIdentifier("CalorieRingChart")
@@ -164,14 +328,14 @@ struct HomeView: View {
                 caloriesCenterContent
             }
 
-            Text("每日目标: \(formattedNumber(viewModel.dailyCalorieGoal))")
+            Text("每日目标: \(formattedNumber(dailyCalorieGoal))")
                 .font(.Jakarta.medium(12))
                 .foregroundStyle(.tertiary)
 
             MacroIndicatorRow(
-                calories: viewModel.consumedCalories,
-                proteinGrams: viewModel.proteinGrams,
-                carbsGrams: viewModel.carbsGrams
+                calories: consumedCalories,
+                proteinGrams: proteinGrams,
+                carbsGrams: carbsGrams
             )
             .accessibilityIdentifier("MacroIndicators")
         }
@@ -179,7 +343,6 @@ struct HomeView: View {
         .frame(maxWidth: .infinity)
         .background(
             ZStack {
-                // 品牌色径向光晕
                 RadialGradient(
                     colors: [
                         AppTheme.Colors.primary.opacity(0.06),
@@ -197,7 +360,7 @@ struct HomeView: View {
 
     private var caloriesCenterContent: some View {
         VStack(spacing: 4) {
-            Text(formattedNumber(viewModel.caloriesLeft))
+            Text(formattedNumber(caloriesLeft))
                 .font(.Jakarta.extraBold(48))
                 .foregroundStyle(.primary)
                 .contentTransition(.numericText())
@@ -215,39 +378,19 @@ struct HomeView: View {
     private var healthMetricsGrid: some View {
         LazyVGrid(columns: gridColumns, spacing: 12) {
             WaterCard(
-                waterAmount: viewModel.waterAmount,
-                dailyGoal: viewModel.dailyWaterGoal,
-                progress: viewModel.waterProgress,
-                onAddWater: {
-                    Task {
-                        await viewModel.addWater(
-                            modelContext: modelContext,
-                            writeToHealthKit: true
-                        )
-                    }
-                },
-                onShowOptions: {
-                    isShowingWaterSheet = true
-                }
+                waterAmount: waterAmount,
+                dailyGoal: dailyWaterGoal,
+                progress: waterProgress,
+                onAddWater: onAddWater,
+                onShowOptions: onShowWaterOptions
             )
             .accessibilityIdentifier("WaterCard")
-            .sheet(isPresented: $isShowingWaterSheet) {
-                WaterTrackingSheet { amount in
-                    Task {
-                        await viewModel.addWater(
-                            amount: amount,
-                            modelContext: modelContext,
-                            writeToHealthKit: true
-                        )
-                    }
-                }
-            }
 
             StepsCard(
-                stepCount: viewModel.stepCount,
-                dailyGoal: viewModel.dailyStepGoal,
-                progress: viewModel.stepProgress,
-                caloriesBurned: viewModel.caloriesBurned
+                stepCount: stepCount,
+                dailyGoal: dailyStepGoal,
+                progress: stepProgress,
+                caloriesBurned: caloriesBurned
             )
             .accessibilityIdentifier("StepsCard")
         }
@@ -258,22 +401,13 @@ struct HomeView: View {
 
     private var foodMomentSection: some View {
         FoodMomentCarousel(
-            meals: viewModel.todayMeals,
-            onMoreTapped: {
-                appState.selectedTab = .diary
-            }
+            meals: Array(todayMeals),
+            onMoreTapped: onMoreMealsTapped
         )
         .accessibilityIdentifier("FoodMomentCarousel")
     }
 
-    // MARK: - Helper Methods
-
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMM d"
-        formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: Date())
-    }
+    // MARK: - Helpers
 
     private func formattedNumber(_ value: Int) -> String {
         let formatter = NumberFormatter()
