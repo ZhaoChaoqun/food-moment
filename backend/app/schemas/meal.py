@@ -22,6 +22,7 @@ class DetectedFoodCreate(BaseModel):
 
 
 class MealCreate(BaseModel):
+    id: uuid.UUID | None = None
     image_url: str | None = None
     meal_type: str
     meal_time: datetime
@@ -53,6 +54,7 @@ class MealResponse(BaseModel):
     tags: list[str] | None
     detected_foods: list[DetectedFoodResponse]
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 

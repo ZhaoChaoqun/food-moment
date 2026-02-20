@@ -16,6 +16,17 @@ final class DiaryViewModel {
     /// 当前周中有餐食记录的日期集合（以 "yyyy-MM-dd" 字符串标识）
     var datesWithMeals: Set<String> = []
 
+    // MARK: - Undo State
+
+    /// 撤销 Toast 显示的消息（nil 时隐藏 Toast）
+    var undoToastMessage: String?
+
+    /// 待最终删除的餐食（撤销窗口期内保留引用）
+    private var pendingDeleteMeal: MealRecord?
+
+    /// 撤销倒计时任务
+    private var undoTimerTask: Task<Void, Never>?
+
     // MARK: - Private
 
     private let mealService: MealServiceProtocol
@@ -46,7 +57,7 @@ final class DiaryViewModel {
 
     // MARK: - Public Methods
 
-    /// 从 API 刷新数据并更新 SwiftData 缓存
+    /// 从 API 刷新数据并更新 SwiftData 缓存（Smart Merge：保护未同步的本地记录）
     func refreshFromAPI(modelContext: ModelContext) async {
         let dateString = selectedDate.apiDateString
 
@@ -59,42 +70,131 @@ final class DiaryViewModel {
 
         do {
             let mealDTOs = try await mealsTask
+            let remoteIDs = Set(mealDTOs.map { $0.id })
 
-            // 清除当天旧缓存
             let startOfDay = selectedDate.startOfDay
             let endOfDay = selectedDate.endOfDay
             let predicate = #Predicate<MealRecord> { meal in
                 meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
             }
             let existing = (try? modelContext.fetch(FetchDescriptor<MealRecord>(predicate: predicate))) ?? []
-            for record in existing {
-                modelContext.delete(record)
+            let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+
+            // Upsert：插入新记录或更新已同步记录
+            for dto in mealDTOs {
+                if let local = existingByID[dto.id] {
+                    // 仅更新已同步且非待删除的记录；未同步记录保留本地版本
+                    if local.isSynced && !local.pendingDeletion {
+                        local.update(from: dto)
+                    }
+                } else {
+                    modelContext.insert(MealRecord.from(dto))
+                }
             }
 
-            // 将 API 数据写入 SwiftData 缓存
-            for dto in mealDTOs {
-                let record = MealRecord.from(dto)
-                modelContext.insert(record)
+            // 清理：只删除"已同步 + 非待删除 + 服务端已不存在"的记录
+            for record in existing {
+                if record.isSynced && !record.pendingDeletion && !remoteIDs.contains(record.id) {
+                    modelContext.delete(record)
+                }
             }
+
             try? modelContext.save()
         } catch {
             // API 失败时保持 SwiftData 缓存数据
         }
     }
 
-    /// 删除餐食记录（先 API 后本地）
+    /// 删除餐食记录（先 API 后本地，支持离线队列）
     func deleteMeal(_ meal: MealRecord, modelContext: ModelContext) async {
-        // 先从 API 删除
+        let mealTime = meal.mealTime
+
         do {
             try await mealService.deleteMeal(id: meal.id.uuidString)
+        } catch let error as APIError where error.isNetworkError {
+            // 网络错误：标记为待删除，UI 隐藏该记录
+            meal.pendingDeletion = true
+            try? modelContext.save()
+            HapticManager.success()
+            await precomputeWeekDatesFromAPI()
+            return
         } catch {
-            // API 删除失败，不从本地删除
+            HapticManager.error()
             return
         }
 
-        // 成功后从本地删除
+        // API 成功，物理删除本地记录
         modelContext.delete(meal)
         try? modelContext.save()
+        HapticManager.success()
+
+        // 异步清理 HealthKit
+        Task {
+            try? await HealthKitManager.shared.deleteNutrition(at: mealTime)
+        }
+
+        await precomputeWeekDatesFromAPI()
+    }
+
+    /// 软删除餐食（乐观 UI + 3 秒撤销窗口期，用于列表滑动删除）
+    func softDeleteMeal(_ meal: MealRecord, modelContext: ModelContext) {
+        // 取消之前的 undo 操作（如果有）
+        undoTimerTask?.cancel()
+
+        // 保存引用用于撤销或最终删除
+        pendingDeleteMeal = meal
+        undoToastMessage = "\"\(meal.title)\" 已删除"
+
+        // 乐观删除本地数据
+        modelContext.delete(meal)
+        try? modelContext.save()
+        HapticManager.success()
+
+        // 启动 3 秒倒计时，到期执行最终删除
+        undoTimerTask = Task {
+            try? await Task.sleep(for: .seconds(3))
+            guard !Task.isCancelled else { return }
+            await finalizeDelete()
+        }
+    }
+
+    /// 撤销删除，重新插入餐食记录
+    func undoDelete(modelContext: ModelContext) {
+        undoTimerTask?.cancel()
+        undoTimerTask = nil
+
+        if let meal = pendingDeleteMeal {
+            modelContext.insert(meal)
+            try? modelContext.save()
+            HapticManager.success()
+        }
+
+        pendingDeleteMeal = nil
+        withAnimation(AppTheme.Animation.fastSpring) {
+            undoToastMessage = nil
+        }
+    }
+
+    /// 最终执行 API 删除并清理 undo 状态
+    private func finalizeDelete() async {
+        guard let meal = pendingDeleteMeal else { return }
+        let mealTime = meal.mealTime
+
+        do {
+            try await mealService.deleteMeal(id: meal.id.uuidString)
+        } catch {
+            // API 失败，餐食已从本地删除；记录错误但不阻塞
+        }
+
+        // 异步清理 HealthKit
+        Task {
+            try? await HealthKitManager.shared.deleteNutrition(at: mealTime)
+        }
+
+        pendingDeleteMeal = nil
+        withAnimation(AppTheme.Animation.fastSpring) {
+            undoToastMessage = nil
+        }
         await precomputeWeekDatesFromAPI()
     }
 

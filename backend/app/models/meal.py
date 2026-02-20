@@ -27,6 +27,7 @@ class MealRecord(Base):
     tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     is_synced: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     detected_foods: Mapped[list["DetectedFood"]] = relationship(
         back_populates="meal_record", cascade="all, delete-orphan"

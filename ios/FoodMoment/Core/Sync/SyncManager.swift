@@ -56,16 +56,56 @@ final class SyncManager {
 
     // MARK: - Sync
 
-    /// 同步未上传的 MealRecord 到后端
-    func syncPendingRecords(modelContext: ModelContext) async {
+    /// 同步所有模型的未上传记录到后端
+    func syncAll(modelContext: ModelContext) async {
         guard isConnected else { return }
         guard !isSyncing else { return }
 
         isSyncing = true
         defer { isSyncing = false }
 
+        // Push: 上传未同步记录
+        await syncPendingMeals(modelContext: modelContext)
+        await syncPendingWaterLogs(modelContext: modelContext)
+        await syncPendingWeightLogs(modelContext: modelContext)
+
+        // Push: 同步待删除记录
+        await syncPendingDeletions(modelContext: modelContext)
+
+        updatePendingCount(modelContext: modelContext)
+    }
+
+    /// 兼容旧调用：同步未上传的 MealRecord 到后端
+    func syncPendingRecords(modelContext: ModelContext) async {
+        await syncAll(modelContext: modelContext)
+    }
+
+    /// 更新待同步计数（包含所有模型的未上传和待删除记录）
+    func updatePendingCount(modelContext: ModelContext) {
         do {
-            // 查询所有未同步的 MealRecord
+            let unsyncedMeals = try modelContext.fetchCount(
+                FetchDescriptor<MealRecord>(predicate: #Predicate { $0.isSynced == false })
+            )
+            let deletionMeals = try modelContext.fetchCount(
+                FetchDescriptor<MealRecord>(predicate: #Predicate { $0.pendingDeletion == true })
+            )
+            let unsyncedWater = try modelContext.fetchCount(
+                FetchDescriptor<WaterLog>(predicate: #Predicate { $0.isSynced == false })
+            )
+            let unsyncedWeight = try modelContext.fetchCount(
+                FetchDescriptor<WeightLog>(predicate: #Predicate { $0.isSynced == false })
+            )
+            pendingCount = unsyncedMeals + deletionMeals + unsyncedWater + unsyncedWeight
+        } catch {
+            Self.logger.error("[Sync] Failed to count pending records: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    // MARK: - Private: Meal Sync
+
+    /// 同步未上传的 MealRecord
+    private func syncPendingMeals(modelContext: ModelContext) async {
+        do {
             let predicate = #Predicate<MealRecord> { record in
                 record.isSynced == false
             }
@@ -75,48 +115,28 @@ final class SyncManager {
             )
 
             let unsyncedRecords = try modelContext.fetch(descriptor)
-            pendingCount = unsyncedRecords.count
-
             guard !unsyncedRecords.isEmpty else { return }
 
             for record in unsyncedRecords {
                 do {
                     try await uploadMealRecord(record)
                     record.isSynced = true
-                    pendingCount -= 1
                 } catch {
-                    // 单条上传失败不中断整体同步流程
-                    Self.logger.error("[Sync] Failed to sync record \(record.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    Self.logger.error("[Sync] Failed to sync meal \(record.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
                     continue
                 }
             }
 
-            // 保存同步状态变更
             try modelContext.save()
         } catch {
-            Self.logger.error("[Sync] Sync failed: \(error.localizedDescription, privacy: .public)")
+            Self.logger.error("[Sync] Meal sync failed: \(error.localizedDescription, privacy: .public)")
         }
     }
-
-    /// 更新待同步计数（可在首页加载时调用）
-    func updatePendingCount(modelContext: ModelContext) {
-        do {
-            let predicate = #Predicate<MealRecord> { record in
-                record.isSynced == false
-            }
-            let descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
-            let records = try modelContext.fetch(descriptor)
-            pendingCount = records.count
-        } catch {
-            Self.logger.error("[Sync] Failed to count pending records: \(error.localizedDescription, privacy: .public)")
-        }
-    }
-
-    // MARK: - Private
 
     /// 将单条 MealRecord 上传至后端
     private func uploadMealRecord(_ record: MealRecord) async throws {
         let createDTO = MealCreateDTO(
+            id: record.id,
             imageUrl: record.imageURL,
             mealType: record.mealType,
             mealTime: record.mealTime,
@@ -148,5 +168,98 @@ final class SyncManager {
         )
 
         let _: MealResponseDTO = try await APIClient.shared.request(.createMeal, body: createDTO)
+    }
+
+    /// 同步待删除的 MealRecord 到后端
+    private func syncPendingDeletions(modelContext: ModelContext) async {
+        do {
+            let predicate = #Predicate<MealRecord> { record in
+                record.pendingDeletion == true
+            }
+            let descriptor = FetchDescriptor<MealRecord>(predicate: predicate)
+            let pendingDeletions = try modelContext.fetch(descriptor)
+
+            guard !pendingDeletions.isEmpty else { return }
+
+            for record in pendingDeletions {
+                do {
+                    try await MealService.shared.deleteMeal(id: record.id.uuidString)
+                    modelContext.delete(record)
+                } catch {
+                    Self.logger.error("[Sync] Failed to sync deletion for \(record.id, privacy: .public): \(error.localizedDescription, privacy: .public)")
+                    continue
+                }
+            }
+
+            try modelContext.save()
+        } catch {
+            Self.logger.error("[Sync] Delete sync failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    // MARK: - Private: Water Sync
+
+    /// 同步未上传的 WaterLog
+    private func syncPendingWaterLogs(modelContext: ModelContext) async {
+        do {
+            let predicate = #Predicate<WaterLog> { log in
+                log.isSynced == false
+            }
+            let descriptor = FetchDescriptor<WaterLog>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.recordedAt, order: .forward)]
+            )
+
+            let unsynced = try modelContext.fetch(descriptor)
+            guard !unsynced.isEmpty else { return }
+
+            for log in unsynced {
+                do {
+                    let dto = WaterLogCreateDTO(amountMl: log.amountML)
+                    let _: WaterLogResponseDTO = try await APIClient.shared.request(.logWater, body: dto)
+                    log.isSynced = true
+                } catch {
+                    Self.logger.error("[Sync] Failed to sync water log: \(error.localizedDescription, privacy: .public)")
+                    continue
+                }
+            }
+
+            try modelContext.save()
+        } catch {
+            Self.logger.error("[Sync] Water sync failed: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
+    // MARK: - Private: Weight Sync
+
+    /// 同步未上传的 WeightLog
+    private func syncPendingWeightLogs(modelContext: ModelContext) async {
+        do {
+            let predicate = #Predicate<WeightLog> { log in
+                log.isSynced == false
+            }
+            let descriptor = FetchDescriptor<WeightLog>(
+                predicate: predicate,
+                sortBy: [SortDescriptor(\.recordedAt, order: .forward)]
+            )
+
+            let unsynced = try modelContext.fetch(descriptor)
+            guard !unsynced.isEmpty else { return }
+
+            for log in unsynced {
+                do {
+                    let dto = WeightLogCreateDTO(weightKg: log.weightKg, recordedAt: log.recordedAt)
+                    let _: WeightLogResponseDTO = try await APIClient.shared.request(.logWeight, body: dto)
+                    log.isSynced = true
+                } catch {
+                    Self.logger.error("[Sync] Failed to sync weight log: \(error.localizedDescription, privacy: .public)")
+                    continue
+                }
+            }
+
+            try modelContext.save()
+        } catch {
+            Self.logger.error("[Sync] Weight sync failed: \(error.localizedDescription, privacy: .public)")
+        }
     }
 }

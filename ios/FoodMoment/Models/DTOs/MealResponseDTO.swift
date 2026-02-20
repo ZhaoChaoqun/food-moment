@@ -18,11 +18,13 @@ struct MealResponseDTO: Decodable, Sendable {
     let tags: [String]?
     let detectedFoods: [DetectedFoodDTO]
     let createdAt: Date
+    let updatedAt: Date
 }
 
 // MARK: - Meal Create DTO
 
 struct MealCreateDTO: Encodable, Sendable {
+    let id: UUID?
     let imageUrl: String?
     let mealType: String
     let mealTime: Date

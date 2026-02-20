@@ -61,6 +61,7 @@ def _meal_to_response(meal: MealRecord) -> MealResponse:
         tags=meal.tags,
         detected_foods=detected_foods,
         created_at=_ensure_utc(meal.created_at),
+        updated_at=_ensure_utc(meal.updated_at),
     )
 
 
@@ -74,8 +75,9 @@ async def create_meal(
     # Ensure meal_time is naive (UTC) for the database
     meal_time = meal.meal_time.replace(tzinfo=None) if meal.meal_time.tzinfo else meal.meal_time
 
-    # Create MealRecord
+    # Create MealRecord (use client-provided ID if available)
     meal_record = MealRecord(
+        id=meal.id if meal.id else uuid.uuid4(),
         user_id=user_id,
         image_url=meal.image_url,
         meal_type=meal.meal_type,
@@ -259,6 +261,9 @@ async def update_meal(
         if field == "meal_time" and hasattr(value, "tzinfo") and value.tzinfo is not None:
             value = value.replace(tzinfo=None)
         setattr(meal_record, field, value)
+
+    # Explicitly update timestamp for LWW conflict resolution
+    meal_record.updated_at = datetime.utcnow()
 
     await db.flush()
 

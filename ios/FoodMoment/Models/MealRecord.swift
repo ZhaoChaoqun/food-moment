@@ -62,6 +62,9 @@ final class MealRecord {
     /// 是否已同步到云端
     var isSynced: Bool = false
 
+    /// 是否待离线删除（网络恢复后同步删除）
+    var pendingDeletion: Bool = false
+
     /// 创建时间
     var createdAt: Date = Date()
 
@@ -158,6 +161,29 @@ extension MealRecord {
     /// 宏量营养素总计（克）
     var totalMacros: Double {
         proteinGrams + carbsGrams + fatGrams
+    }
+
+    /// 用 API 响应更新本地记录字段（LWW：仅当远端更新时覆盖）
+    func update(from dto: MealResponseDTO) {
+        // LWW: 仅当远端更新时间更新时才覆盖本地字段
+        guard dto.updatedAt > self.updatedAt else {
+            isSynced = true  // 服务端有此记录，标记已同步
+            return
+        }
+        mealType = dto.mealType
+        mealTime = dto.mealTime
+        title = dto.title
+        descriptionText = dto.descriptionText
+        totalCalories = dto.totalCalories
+        proteinGrams = dto.proteinGrams
+        carbsGrams = dto.carbsGrams
+        fatGrams = dto.fatGrams
+        fiberGrams = dto.fiberGrams
+        aiAnalysis = dto.aiAnalysis
+        tags = dto.tags ?? []
+        imageURL = dto.imageUrl
+        isSynced = true
+        updatedAt = dto.updatedAt
     }
 
     /// 从 API 响应 DTO 创建 MealRecord（已标记为已同步）

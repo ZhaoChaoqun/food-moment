@@ -23,16 +23,27 @@ final class WeightLog {
     /// 创建时间
     var createdAt: Date = Date()
 
+    /// 更新时间
+    var updatedAt: Date = Date()
+
+    /// 是否已同步
+    var isSynced: Bool = false
+
+    /// 是否待离线删除
+    var pendingDeletion: Bool = false
+
     // MARK: - Initialization
 
     init(
         id: UUID = UUID(),
         weightKg: Double,
-        recordedAt: Date
+        recordedAt: Date,
+        isSynced: Bool = false
     ) {
         self.id = id
         self.weightKg = weightKg
         self.recordedAt = recordedAt
+        self.isSynced = isSynced
     }
 }
 

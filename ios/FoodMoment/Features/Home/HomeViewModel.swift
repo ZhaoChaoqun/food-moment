@@ -39,7 +39,7 @@ final class HomeViewModel {
 
     // MARK: - Public Methods
 
-    /// 从 API 刷新数据并更新 SwiftData 缓存
+    /// 从 API 刷新数据并更新 SwiftData 缓存（Smart Merge：保护未同步的本地记录）
     func refreshFromAPI(modelContext: ModelContext) async {
         let todayString = Date().apiDateString
 
@@ -54,24 +54,34 @@ final class HomeViewModel {
             // 更新用户配置到 SwiftData
             userName = profile.displayName
 
-            // 更新水量 - 将 API 同步到的水量日志写入 SwiftData
-            // (WaterLog 通过 @Query 自动驱动 UI)
-
-            // 更新餐食 - 清除旧缓存并写入新数据
+            // 餐食 Smart Merge：按 UUID upsert，保护未同步记录
             let calendar = Calendar.current
             let startOfDay = calendar.startOfDay(for: Date())
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? Date()
+            let remoteIDs = Set(mealDTOs.map { $0.id })
+
             let predicate = #Predicate<MealRecord> { record in
                 record.mealTime >= startOfDay && record.mealTime < endOfDay
             }
             let existing = (try? modelContext.fetch(FetchDescriptor<MealRecord>(predicate: predicate))) ?? []
-            for record in existing {
-                modelContext.delete(record)
+            let existingByID = Dictionary(uniqueKeysWithValues: existing.map { ($0.id, $0) })
+
+            // Upsert：插入新记录或更新已同步记录
+            for dto in mealDTOs {
+                if let local = existingByID[dto.id] {
+                    if local.isSynced && !local.pendingDeletion {
+                        local.update(from: dto)
+                    }
+                } else {
+                    modelContext.insert(MealRecord.from(dto))
+                }
             }
 
-            for dto in mealDTOs {
-                let record = MealRecord.from(dto)
-                modelContext.insert(record)
+            // 清理：只删除"已同步 + 非待删除 + 服务端已不存在"的记录
+            for record in existing {
+                if record.isSynced && !record.pendingDeletion && !remoteIDs.contains(record.id) {
+                    modelContext.delete(record)
+                }
             }
 
             // 同步水量：用 API 总量覆盖已同步记录，保留未同步的

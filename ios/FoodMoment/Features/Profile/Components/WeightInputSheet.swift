@@ -319,9 +319,22 @@ struct WeightInputSheet: View {
 
         let now = Date()
 
-        // 写入 SwiftData
+        // 写入 SwiftData（离线优先，isSynced 默认 false）
         let weightLog = WeightLog(weightKg: weightValue, recordedAt: now)
         modelContext.insert(weightLog)
+        try? modelContext.save()
+
+        // 尝试同步到后端
+        do {
+            let _ = try await UserService.shared.logWeight(
+                WeightLogCreateDTO(weightKg: weightValue, recordedAt: now)
+            )
+            weightLog.isSynced = true
+            try? modelContext.save()
+        } catch {
+            // API 失败，保留未同步记录，SyncManager 会重试
+            Self.logger.warning("[Weight] API sync failed, will retry: \(error.localizedDescription, privacy: .public)")
+        }
 
         // 写入 HealthKit
         do {

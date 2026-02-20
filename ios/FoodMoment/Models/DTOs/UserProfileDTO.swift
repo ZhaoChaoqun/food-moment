@@ -13,6 +13,12 @@ struct UserProfileResponseDTO: Decodable, Sendable {
     let dailyCarbsGoal: Int
     let dailyFatGoal: Int
     let targetWeight: Double?
+    let gender: String?
+    let birthYear: Int?
+    let heightCm: Double?
+    let activityLevel: String?
+    let dailyWaterGoal: Int
+    let dailyStepGoal: Int
     let createdAt: Date
 }
 
@@ -26,6 +32,12 @@ struct UserProfileUpdateDTO: Encodable, Sendable {
     let dailyCarbsGoal: Int?
     let dailyFatGoal: Int?
     let targetWeight: Double?
+    let gender: String?
+    let birthYear: Int?
+    let heightCm: Double?
+    let activityLevel: String?
+    let dailyWaterGoal: Int?
+    let dailyStepGoal: Int?
 }
 
 // MARK: - Goals Update DTO
@@ -35,6 +47,8 @@ struct GoalsUpdateDTO: Encodable, Sendable {
     let dailyProteinGoal: Int?
     let dailyCarbsGoal: Int?
     let dailyFatGoal: Int?
+    let dailyWaterGoal: Int?
+    let dailyStepGoal: Int?
 }
 
 // MARK: - Weight Log DTOs
@@ -49,6 +63,7 @@ struct WeightLogResponseDTO: Decodable, Sendable {
     let weightKg: Double
     let recordedAt: Date
     let createdAt: Date
+    let updatedAt: Date
 }
 
 // MARK: - Streak Response DTO
@@ -57,4 +72,10 @@ struct StreakResponseDTO: Decodable, Sendable {
     let currentStreak: Int
     let longestStreak: Int
     let totalDaysLogged: Int
+}
+
+// MARK: - Avatar Upload Response DTO
+
+struct AvatarUploadResponseDTO: Decodable, Sendable {
+    let avatarUrl: String
 }

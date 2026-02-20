@@ -220,9 +220,11 @@ final class AnalysisViewModel {
 
         let imageData = capturedImage.jpegData(compressionQuality: 0.8)
         let mealType = Self.inferMealType(from: Date())
+        let mealId = UUID()
 
-        // Build API DTO
+        // Build API DTO (with client-generated ID for consistent sync)
         let createDTO = MealCreateDTO(
+            id: mealId,
             imageUrl: result.imageUrl,
             mealType: mealType.rawValue,
             mealTime: Date(),
@@ -260,8 +262,9 @@ final class AnalysisViewModel {
                 Self.logger.warning("[Analysis] API save failed, saving locally")
             }
 
-            // 写入 SwiftData 缓存
+            // 写入 SwiftData 缓存（使用与 API 相同的 UUID）
             let meal = MealRecord(
+                id: mealId,
                 mealType: mealType.rawValue,
                 mealTime: Date(),
                 title: Self.generateMealTitle(from: result.detectedFoods),
@@ -273,12 +276,9 @@ final class AnalysisViewModel {
                 aiAnalysis: result.aiAnalysis,
                 tags: result.tags,
                 imageURL: result.imageUrl,
-                localImageData: imageData
+                localImageData: imageData,
+                isSynced: apiResponse != nil
             )
-            if let id = apiResponse?.id {
-                meal.id = id
-            }
-            meal.isSynced = apiResponse != nil
 
             modelContext.insert(meal)
 

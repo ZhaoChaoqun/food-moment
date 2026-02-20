@@ -6,6 +6,8 @@ struct WaterLogResponseDTO: Decodable, Sendable {
     let id: UUID
     let amountMl: Int
     let recordedAt: Date
+    let createdAt: Date
+    let updatedAt: Date
 }
 
 // MARK: - Daily Water Response DTO

@@ -15,6 +15,12 @@ class UserProfileResponse(BaseModel):
     daily_carbs_goal: int
     daily_fat_goal: int
     target_weight: float | None
+    gender: str | None = None
+    birth_year: int | None = None
+    height_cm: float | None = None
+    activity_level: str | None = None
+    daily_water_goal: int = 2500
+    daily_step_goal: int = 10000
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -28,6 +34,12 @@ class UserProfileUpdate(BaseModel):
     daily_carbs_goal: int | None = None
     daily_fat_goal: int | None = None
     target_weight: float | None = None
+    gender: str | None = None
+    birth_year: int | None = None
+    height_cm: float | None = None
+    activity_level: str | None = None
+    daily_water_goal: int | None = None
+    daily_step_goal: int | None = None
 
 
 class GoalsUpdate(BaseModel):
@@ -35,6 +47,8 @@ class GoalsUpdate(BaseModel):
     daily_protein_goal: int | None = None
     daily_carbs_goal: int | None = None
     daily_fat_goal: int | None = None
+    daily_water_goal: int | None = None
+    daily_step_goal: int | None = None
 
 
 class WeightLogCreate(BaseModel):
@@ -47,6 +61,7 @@ class WeightLogResponse(BaseModel):
     weight_kg: float
     recorded_at: datetime
     created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 
@@ -65,3 +80,7 @@ class AchievementResponse(BaseModel):
     unlocked: bool
     progress: int
     target: int
+
+
+class AvatarUploadResponse(BaseModel):
+    avatar_url: str

@@ -12,6 +12,8 @@ class WaterLogResponse(BaseModel):
     id: uuid.UUID
     amount_ml: int
     recorded_at: datetime
+    created_at: datetime
+    updated_at: datetime
 
     model_config = {"from_attributes": True}
 

@@ -19,7 +19,18 @@ final class WaterLog {
     var recordedAt: Date = Date()
 
     /// 是否已同步
-    var isSynced: Bool = true
+    var isSynced: Bool = false
+
+    /// 是否待离线删除
+    var pendingDeletion: Bool = false
+
+    // MARK: - Metadata
+
+    /// 创建时间
+    var createdAt: Date = Date()
+
+    /// 更新时间
+    var updatedAt: Date = Date()
 
     // MARK: - Initialization
 
@@ -27,7 +38,7 @@ final class WaterLog {
         id: UUID = UUID(),
         amountML: Int,
         recordedAt: Date = Date(),
-        isSynced: Bool = true
+        isSynced: Bool = false
     ) {
         self.id = id
         self.amountML = amountML
