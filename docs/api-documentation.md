@@ -22,6 +22,7 @@
 6. [错误处理](#6-错误处理)
 7. [业务流程](#7-业务流程)
 8. [附录](#8-附录)
+9. [日志系统](#9-日志系统)
 
 ---
 
@@ -1831,6 +1832,104 @@ interface Achievement {
 | 版本 | 日期 | 变更内容 |
 |------|------|---------|
 | v1.0.0 | 2026-02-09 | 初始版本发布 |
+
+---
+
+## 9. 日志系统
+
+### 9.1 技术方案
+
+| 组件 | 技术 | 用途 |
+|------|------|------|
+| 结构化日志 | [structlog](https://www.structlog.org/) | 将标准库 logging 输出转为结构化格式 |
+| 文件持久化 | RotatingFileHandler | 日志写入文件，自动轮转 |
+| 请求追踪 | FastAPI Middleware + contextvars | 自动为每个请求注入 request_id |
+
+### 9.2 配置文件
+
+| 文件 | 说明 |
+|------|------|
+| `backend/app/logging_config.py` | 日志核心配置（structlog + handler 设置） |
+| `backend/app/config.py` | `log_level` 和 `log_dir` 环境变量 |
+| `backend/app/main.py` | `setup_logging()` 调用 + 请求上下文中间件 |
+
+### 9.3 环境变量
+
+| 变量 | 默认值 | 说明 |
+|------|--------|------|
+| `LOG_LEVEL` | `INFO` | 日志级别（DEBUG / INFO / WARNING / ERROR） |
+| `LOG_DIR` | `logs` | 日志文件存放目录 |
+| `DEBUG` | `false` | 设为 `true` 时控制台输出彩色格式，否则输出 JSON |
+
+### 9.4 输出格式
+
+**开发环境**（`DEBUG=true`，彩色控制台）：
+
+```
+2026-02-20T10:30:45Z [info     ] Claude 响应状态码: 200  [app.services.ai_service] request_id=a3f2c1d8 path=/api/v1/food/analyze method=POST
+```
+
+**日志文件**（`logs/app.log`，始终 JSON）：
+
+```json
+{"event":"Claude 响应状态码: 200","level":"info","logger":"app.services.ai_service","timestamp":"2026-02-20T10:30:45Z","request_id":"a3f2c1d8","path":"/api/v1/food/analyze","method":"POST"}
+```
+
+### 9.5 日志文件轮转
+
+| 配置项 | 值 |
+|--------|-----|
+| 文件路径 | `backend/logs/app.log` |
+| 单文件大小上限 | 10 MB |
+| 保留备份数 | 5 个（`app.log.1` ~ `app.log.5`） |
+| 编码 | UTF-8 |
+
+### 9.6 请求上下文追踪
+
+每个 HTTP 请求自动注入以下字段到所有日志：
+
+| 字段 | 来源 | 示例 |
+|------|------|------|
+| `request_id` | 请求头 `X-Request-ID` 或自动生成 | `a3f2c1d8` |
+| `path` | 请求路径 | `/api/v1/food/analyze` |
+| `method` | HTTP 方法 | `POST` |
+
+### 9.7 常用查询
+
+```bash
+# 查看所有错误
+jq 'select(.level == "error")' backend/logs/app.log
+
+# 追踪单个请求的完整链路
+jq 'select(.request_id == "a3f2c1d8")' backend/logs/app.log
+
+# 查看 AI 服务日志
+jq 'select(.logger == "app.services.ai_service")' backend/logs/app.log
+
+# 实时监控日志
+tail -f backend/logs/app.log | jq .
+```
+
+### 9.8 第三方库日志过滤
+
+以下库的日志级别被设为 WARNING，避免刷屏：
+
+- `uvicorn.access`
+- `httpx` / `httpcore`
+- `sqlalchemy.engine`
+
+### 9.9 生产环境扩展
+
+当前方案使用标准库 `logging` 作为底层，未来部署到 Azure 后可无缝接入 Application Insights：
+
+```python
+# 仅生产环境
+if os.getenv("APPLICATIONINSIGHTS_CONNECTION_STRING"):
+    from azure.monitor.opentelemetry import configure_azure_monitor
+    configure_azure_monitor()
+```
+
+无需修改任何应用层代码。
 
 ---
 

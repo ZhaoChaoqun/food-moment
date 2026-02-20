@@ -1,21 +1,20 @@
 import logging
+import uuid as _uuid
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+import structlog
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.database import engine, Base
+from app.logging_config import setup_logging
 from app.models import User, MealRecord, DetectedFood, WaterLog, WeightLog  # noqa: F401 - register models with Base
 from app.api.v1.router import api_router
 from app.services.storage_service import storage_service
 
-# 配置 logging，确保所有 app 模块的日志都能输出
-logging.basicConfig(
-    level=getattr(logging, settings.log_level.upper(), logging.INFO),
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%H:%M:%S",
-)
+setup_logging(log_level=settings.log_level, log_dir=settings.log_dir)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -44,6 +43,19 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def logging_context_middleware(request: Request, call_next):
+    request_id = request.headers.get("X-Request-ID", str(_uuid.uuid4())[:8])
+    structlog.contextvars.clear_contextvars()
+    structlog.contextvars.bind_contextvars(
+        request_id=request_id,
+        path=request.url.path,
+        method=request.method,
+    )
+    response = await call_next(request)
+    return response
 
 # API routes
 app.include_router(api_router, prefix=settings.api_v1_prefix)

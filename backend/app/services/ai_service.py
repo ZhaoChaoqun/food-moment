@@ -19,8 +19,12 @@ from app.schemas.food import (
 logger = logging.getLogger(__name__)
 
 
-def _resize_image(image_data: bytes, max_size: int = 512, quality: int = 70) -> bytes:
-    """Resize and compress image to reduce token usage."""
+def _resize_image(image_data: bytes, max_size: int = 768, quality: int = 60) -> bytes:
+    """Resize and compress image to reduce token usage.
+
+    Claude vision recommends images ≤ 1568px per side.
+    768px balances quality and token cost (~786 tokens).
+    """
     try:
         img = Image.open(io.BytesIO(image_data))
 
@@ -58,7 +62,7 @@ Also provide:
 - total_calories: sum of all food items
 - total_nutrition: { protein_g, carbs_g, fat_g, fiber_g }
 - ai_analysis: a brief nutritional analysis in Chinese (2-3 sentences)
-- tags: relevant tags like ["high-protein", "low-carb", "balanced", "vegetarian", etc.]
+- tags: relevant tags IN CHINESE like ["高蛋白", "低碳水", "营养均衡", "素食", "低卡路里", "高纤维", "低脂", "生酮友好", "中式家常", "轻食"]
 
 Return ONLY valid JSON in this exact format:
 {
@@ -91,7 +95,7 @@ Return ONLY valid JSON in this exact format:
   "total_calories": 450,
   "total_nutrition": {"protein_g": 34.0, "carbs_g": 45.0, "fat_g": 12.5, "fiber_g": 2.0},
   "ai_analysis": "这顿饭蛋白质含量丰富...",
-  "tags": ["high-protein"]
+  "tags": ["高蛋白"]
 }"""
 
 
@@ -144,7 +148,7 @@ def _get_mock_analysis() -> dict:
             "fiber_g": 4.0,
         },
         "ai_analysis": "这顿饭营养较为均衡，包含主食、蔬菜和蛋白质。红烧肉的脂肪含量较高，建议适量食用。蔬菜提供了良好的膳食纤维。",
-        "tags": ["balanced", "chinese-cuisine", "home-cooked"],
+        "tags": ["营养均衡", "中式家常", "家常菜"],
     }
 
 
@@ -210,7 +214,7 @@ async def _analyze_with_anthropic(image_data: bytes) -> dict | None:
         return None
 
     try:
-        resized_image = _resize_image(image_data, max_size=512, quality=70)
+        resized_image = _resize_image(image_data)
         b64_image = base64.b64encode(resized_image).decode("utf-8")
         logger.info(f"Claude: 压缩后图片大小: {len(resized_image)} bytes, base64 长度: {len(b64_image)}")
 

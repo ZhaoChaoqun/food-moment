@@ -4,6 +4,7 @@ import logging
 import uuid
 
 from azure.storage.blob.aio import BlobServiceClient
+from azure.storage.blob import ContentSettings
 
 from app.config import settings
 
@@ -57,7 +58,7 @@ class StorageService:
 
         await blob.upload_blob(
             image_data,
-            content_settings={"content_type": content_type},
+            content_settings=ContentSettings(content_type=content_type),
             overwrite=True,
         )
 

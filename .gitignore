@@ -59,6 +59,7 @@ backend/.env
 # Logs
 *.log
 *-debug.log
+logs/
 
 # Stitch design node_modules
 stitch/*/node_modules/

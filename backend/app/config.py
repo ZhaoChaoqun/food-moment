@@ -31,6 +31,7 @@ class Settings(BaseSettings):
 
     # Logging
     log_level: str = "INFO"
+    log_dir: str = "logs"
 
     model_config = {"env_file": ".env", "extra": "ignore"}
 
