@@ -114,13 +114,13 @@ enum APIEndpoint {
 
         // Stats
         case .dailyStats(let date):
-            return "/stats/daily?date=\(date)"
+            return "/stats/daily?date=\(date)&tz_offset=\(Self.tzOffset)"
         case .weeklyStats(let week):
-            return "/stats/weekly?week=\(week)"
+            return "/stats/weekly?week=\(week)&tz_offset=\(Self.tzOffset)"
         case .monthlyStats(let month):
-            return "/stats/monthly?month=\(month)"
+            return "/stats/monthly?month=\(month)&tz_offset=\(Self.tzOffset)"
         case .insights:
-            return "/stats/insights"
+            return "/stats/insights?tz_offset=\(Self.tzOffset)"
 
         // User
         case .getProfile:

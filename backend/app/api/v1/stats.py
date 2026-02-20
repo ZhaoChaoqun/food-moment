@@ -15,10 +15,16 @@ async def _get_daily_stats(
     db,
     user_id,
     target_date: date,
+    tz_offset: int = 0,
 ) -> DailyStats:
-    """Helper to compute daily stats for a given date."""
-    day_start = datetime.combine(target_date, time.min)
-    day_end = datetime.combine(target_date, time.max)
+    """Helper to compute daily stats for a given date.
+
+    Args:
+        tz_offset: Client timezone offset in seconds from UTC (e.g. 28800 for UTC+8).
+    """
+    tz_delta = timedelta(seconds=tz_offset)
+    day_start = datetime.combine(target_date, time.min) - tz_delta
+    day_end = datetime.combine(target_date, time.max) - tz_delta
 
     # Aggregate meal data
     meal_result = await db.execute(
@@ -66,11 +72,13 @@ async def get_daily_stats(
     user_id: CurrentUserId,
     db: DbSession,
     date: str | None = None,
+    tz_offset: int = 0,
 ):
     """Get daily nutrition statistics.
 
     Args:
         date: Date string in ISO format (YYYY-MM-DD). Defaults to today.
+        tz_offset: Client timezone offset in seconds from UTC (e.g. 28800 for UTC+8).
     """
     from datetime import date as date_type
 
@@ -82,7 +90,7 @@ async def get_daily_stats(
     else:
         target_date = date_type.today()
 
-    return await _get_daily_stats(db, user_id, target_date)
+    return await _get_daily_stats(db, user_id, target_date, tz_offset)
 
 
 @router.get("/weekly", response_model=WeeklyStats)
@@ -90,11 +98,13 @@ async def get_weekly_stats(
     user_id: CurrentUserId,
     db: DbSession,
     week: str | None = None,
+    tz_offset: int = 0,
 ):
     """Get weekly nutrition statistics.
 
     Args:
         week: Start date of the week (YYYY-MM-DD). Defaults to current week (Monday).
+        tz_offset: Client timezone offset in seconds from UTC (e.g. 28800 for UTC+8).
     """
     from datetime import date as date_type
 
@@ -114,7 +124,7 @@ async def get_weekly_stats(
     daily_stats = []
     for i in range(7):
         day = week_start + timedelta(days=i)
-        stats = await _get_daily_stats(db, user_id, day)
+        stats = await _get_daily_stats(db, user_id, day, tz_offset)
         daily_stats.append(stats)
 
     # Calculate averages
@@ -144,11 +154,13 @@ async def get_monthly_stats(
     user_id: CurrentUserId,
     db: DbSession,
     month: str | None = None,
+    tz_offset: int = 0,
 ):
     """Get monthly nutrition statistics.
 
     Args:
         month: Month string (YYYY-MM). Defaults to current month.
+        tz_offset: Client timezone offset in seconds from UTC (e.g. 28800 for UTC+8).
     """
     from datetime import date as date_type
     import calendar
@@ -178,7 +190,7 @@ async def get_monthly_stats(
         # Don't query future dates
         if day > date_type.today():
             break
-        stats = await _get_daily_stats(db, user_id, day)
+        stats = await _get_daily_stats(db, user_id, day, tz_offset)
         daily_stats.append(stats)
 
         # Calculate streak
@@ -214,10 +226,14 @@ async def get_monthly_stats(
 async def get_insights(
     user_id: CurrentUserId,
     db: DbSession,
+    tz_offset: int = 0,
 ):
     """Get AI-powered dietary insights based on recent data.
 
     Analyzes the past 7 days of data to generate insights without calling an LLM.
+
+    Args:
+        tz_offset: Client timezone offset in seconds from UTC (e.g. 28800 for UTC+8).
     """
     from datetime import date as date_type
 
@@ -227,7 +243,7 @@ async def get_insights(
     recent_stats = []
     for i in range(7):
         day = today - timedelta(days=i)
-        stats = await _get_daily_stats(db, user_id, day)
+        stats = await _get_daily_stats(db, user_id, day, tz_offset)
         recent_stats.append(stats)
 
     days_with_data = [d for d in recent_stats if d.meal_count > 0]
