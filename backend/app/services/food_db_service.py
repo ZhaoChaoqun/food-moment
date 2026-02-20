@@ -1,4 +1,4 @@
-"""Food database service - local search + barcode lookup with USDA API placeholder."""
+"""Food database service - local search with USDA API placeholder."""
 
 import logging
 
@@ -40,13 +40,6 @@ _LOCAL_FOOD_DB: list[dict] = [
     {"name": "Mapo Tofu", "name_zh": "麻婆豆腐", "calories_per_100g": 112, "protein_per_100g": 7.5, "carbs_per_100g": 4.0, "fat_per_100g": 7.5},
     {"name": "Kung Pao Chicken", "name_zh": "宫保鸡丁", "calories_per_100g": 180, "protein_per_100g": 16.0, "carbs_per_100g": 10.0, "fat_per_100g": 9.0},
 ]
-
-# Mock barcode database
-_BARCODE_DB: dict[str, dict] = {
-    "6901028075831": {"name": "Coca-Cola", "name_zh": "可口可乐", "calories_per_100g": 43, "protein_per_100g": 0.0, "carbs_per_100g": 10.6, "fat_per_100g": 0.0},
-    "6920202888883": {"name": "Instant Noodles", "name_zh": "方便面", "calories_per_100g": 472, "protein_per_100g": 9.5, "carbs_per_100g": 61.6, "fat_per_100g": 21.1},
-    "4890008100057": {"name": "Vitasoy Soy Milk", "name_zh": "维他奶", "calories_per_100g": 45, "protein_per_100g": 2.5, "carbs_per_100g": 6.0, "fat_per_100g": 1.3},
-}
 
 
 async def search_food(query: str, limit: int = 20) -> list[FoodSearchResult]:
@@ -92,33 +85,3 @@ async def search_food(query: str, limit: int = 20) -> list[FoodSearchResult]:
     # url = f"https://api.nal.usda.gov/fdc/v1/foods/search?query={query}&api_key={usda_api_key}"
 
     return results
-
-
-async def lookup_barcode(barcode: str) -> FoodSearchResult | None:
-    """Look up food by barcode.
-
-    Currently uses a local mock database.
-    Future: integrate with Open Food Facts API or similar.
-
-    Args:
-        barcode: The barcode string
-
-    Returns:
-        FoodSearchResult if found, None otherwise
-    """
-    food_data = _BARCODE_DB.get(barcode)
-    if food_data:
-        return FoodSearchResult(
-            name=food_data["name"],
-            name_zh=food_data["name_zh"],
-            calories_per_100g=food_data["calories_per_100g"],
-            protein_per_100g=food_data["protein_per_100g"],
-            carbs_per_100g=food_data["carbs_per_100g"],
-            fat_per_100g=food_data["fat_per_100g"],
-            source="barcode_db",
-        )
-
-    # TODO: Query Open Food Facts API as fallback
-    # url = f"https://world.openfoodfacts.org/api/v2/product/{barcode}.json"
-
-    return None

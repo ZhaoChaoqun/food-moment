@@ -115,7 +115,6 @@ uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 | 方法 | 路径 | 说明 |
 |------|------|------|
 | POST | `/food/analyze` | 上传食物图片进行 AI 识别 |
-| GET | `/food/barcode/{code}` | 条码查询食物信息 |
 | GET | `/food/search?q=...` | 搜索食物数据库 |
 
 图片要求: JPEG / PNG / WebP，最大 10MB

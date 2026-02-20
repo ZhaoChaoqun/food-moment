@@ -38,8 +38,6 @@ struct CameraView: View {
                 controlsLayout(geometry: geometry)
 
                 captureFlashOverlay
-
-                barcodeResultOverlay
             }
         }
         .statusBarHidden()
@@ -143,11 +141,8 @@ struct CameraView: View {
 
             Spacer()
 
-            // AI hint badge (hide when showing barcode result)
-            if !viewModel.isShowingBarcodeResult {
-                AIHintBadge()
-                    .padding(.bottom, 20)
-            }
+            AIHintBadge()
+                .padding(.bottom, 20)
 
             bottomControlBar
                 .padding(.bottom, geometry.safeAreaInsets.bottom + 16)
@@ -226,28 +221,6 @@ struct CameraView: View {
                 .opacity(0.3)
                 .allowsHitTesting(false)
                 .transition(.opacity)
-        }
-    }
-
-    // MARK: - Barcode Result Overlay
-
-    @ViewBuilder
-    private var barcodeResultOverlay: some View {
-        if viewModel.isShowingBarcodeResult, let barcode = viewModel.detectedBarcode {
-            BarcodeResultOverlay(
-                result: barcode,
-                onLookup: {
-                    // TODO: Navigate to food lookup with barcode
-                    // For now, just dismiss and print the barcode
-                    Self.logger.debug("[Camera] Looking up barcode: \(barcode.payload, privacy: .public)")
-                    viewModel.dismissBarcodeResult()
-                },
-                onDismiss: {
-                    viewModel.dismissBarcodeResult()
-                }
-            )
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-            .animation(AppTheme.Animation.defaultSpring, value: viewModel.isShowingBarcodeResult)
         }
     }
 

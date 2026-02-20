@@ -50,9 +50,3 @@ class FoodSearchResult(BaseModel):
 class FoodSearchResponse(BaseModel):
     query: str
     results: list[FoodSearchResult]
-
-
-class BarcodeResponse(BaseModel):
-    code: str
-    found: bool
-    food: FoodSearchResult | None = None

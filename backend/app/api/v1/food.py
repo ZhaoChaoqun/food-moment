@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, status
 import logging
 
-from app.schemas.food import AnalysisResponse, FoodSearchResponse, BarcodeResponse
+from app.schemas.food import AnalysisResponse, FoodSearchResponse
 from app.services import ai_service, food_db_service
 from app.services.storage_service import storage_service
 
@@ -54,21 +54,6 @@ async def analyze_food(
     logger.info("========== /food/analyze 请求完成 ==========")
 
     return analysis
-
-
-@router.get("/barcode/{code}", response_model=BarcodeResponse)
-async def lookup_barcode(code: str):
-    """Look up food information by barcode.
-
-    Searches a local barcode database. Future integration with
-    Open Food Facts API is planned.
-    """
-    food = await food_db_service.lookup_barcode(code)
-    return BarcodeResponse(
-        code=code,
-        found=food is not None,
-        food=food,
-    )
 
 
 @router.get("/search", response_model=FoodSearchResponse)

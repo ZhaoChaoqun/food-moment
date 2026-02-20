@@ -1360,7 +1360,6 @@ private static let logger = Logger(subsystem: "com.foodmoment", category: "ViewN
 | `[Search]` | FoodSearchViewModel.swift | 食物搜索 |
 | `[App]` | FoodMomentApp.swift | 应用生命周期 |
 | `[Auth]` | ContentView.swift | 设备认证 |
-| `[Saliency]` | SaliencyDetectionService.swift | 图像显著性检测 |
 | `[Weight]` | WeightInputSheet.swift | 体重记录 |
 | `[SharedData]` | SharedDataManager.swift | App Group 共享数据 |
 | `[LiveActivity]` | MealRecordingLiveActivity.swift | Live Activity |

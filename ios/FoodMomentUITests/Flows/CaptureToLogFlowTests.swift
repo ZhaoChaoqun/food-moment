@@ -48,20 +48,6 @@ final class CaptureToLogFlowTests: XCTestCase {
         XCTAssertTrue(closeButton.waitForExistence(timeout: 10), "Close button should exist")
     }
 
-    func test_cameraView_modeSelector() throws {
-        // Navigate to camera
-        let scanButton = app.buttons["ScanTabButton"]
-        guard scanButton.waitForExistence(timeout: 10) else {
-            XCTFail("Scan button not found")
-            return
-        }
-        scanButton.tap()
-
-        // Check mode selector exists
-        let modeSelector = app.otherElements["ModeSelector"]
-        XCTAssertTrue(modeSelector.waitForExistence(timeout: 10), "Mode selector should exist")
-    }
-
     func test_cameraView_closeButton_dismisses() throws {
         // Navigate to camera
         let scanButton = app.buttons["ScanTabButton"]

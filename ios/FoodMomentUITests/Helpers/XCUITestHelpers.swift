@@ -105,8 +105,6 @@ enum AccessibilityID {
     static let shutterButton = "ShutterButton"
     static let flashButton = "FlashToggleButton"
     static let galleryButton = "GalleryThumbnailButton"
-    static let modeSelector = "ModeSelector"
-
     // Analysis
     static let logMealButton = "LogMealButton"
     static let shareButton = "ShareButton"

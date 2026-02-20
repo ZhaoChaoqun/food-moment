@@ -1,2 +1,2 @@
-# Food database models - for barcode lookup and search
+# Food database models - for search
 # Will be populated with USDA FoodData Central data
