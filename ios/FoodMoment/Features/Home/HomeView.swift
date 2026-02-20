@@ -12,6 +12,7 @@ struct HomeView: View {
 
     @State private var viewModel = HomeViewModel()
     @State private var isShowingWaterSheet = false
+    @State private var selectedMeal: MealRecord?
 
     // MARK: - Body
 
@@ -40,6 +41,9 @@ struct HomeView: View {
                         },
                         onMoreMealsTapped: {
                             appState.selectedTab = .diary
+                        },
+                        onMealTapped: { meal in
+                            selectedMeal = meal
                         }
                     )
                 }
@@ -54,6 +58,9 @@ struct HomeView: View {
             }
             .navigationBarHidden(true)
             .accessibilityIdentifier("HomeScrollView")
+            .navigationDestination(item: $selectedMeal) { meal in
+                MealDetailView(meal: meal)
+            }
         }
         .sheet(isPresented: $isShowingWaterSheet) {
             WaterTrackingSheet { amount in
@@ -198,6 +205,7 @@ private struct HomeDataContent: View {
     let onAddWater: () -> Void
     let onShowWaterOptions: () -> Void
     let onMoreMealsTapped: () -> Void
+    let onMealTapped: (MealRecord) -> Void
 
     init(
         startOfDay: Date,
@@ -207,7 +215,8 @@ private struct HomeDataContent: View {
         dailyStepGoal: Int,
         onAddWater: @escaping () -> Void,
         onShowWaterOptions: @escaping () -> Void,
-        onMoreMealsTapped: @escaping () -> Void
+        onMoreMealsTapped: @escaping () -> Void,
+        onMealTapped: @escaping (MealRecord) -> Void
     ) {
         self.stepCount = stepCount
         self.caloriesBurned = caloriesBurned
@@ -215,6 +224,7 @@ private struct HomeDataContent: View {
         self.onAddWater = onAddWater
         self.onShowWaterOptions = onShowWaterOptions
         self.onMoreMealsTapped = onMoreMealsTapped
+        self.onMealTapped = onMealTapped
 
         _todayMeals = Query(
             filter: #Predicate<MealRecord> { record in
@@ -402,6 +412,7 @@ private struct HomeDataContent: View {
     private var foodMomentSection: some View {
         FoodMomentCarousel(
             meals: Array(todayMeals),
+            onMealTapped: onMealTapped,
             onMoreTapped: onMoreMealsTapped
         )
         .accessibilityIdentifier("FoodMomentCarousel")

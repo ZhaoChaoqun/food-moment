@@ -6,6 +6,7 @@ struct FoodMomentCarousel: View {
     // MARK: - Properties
 
     let meals: [MealRecord]
+    var onMealTapped: ((MealRecord) -> Void)?
     var onMoreTapped: (() -> Void)?
 
     // MARK: - Body
@@ -59,6 +60,9 @@ struct FoodMomentCarousel: View {
             LazyHStack(spacing: 16) {
                 ForEach(meals, id: \.id) { meal in
                     FoodMomentCard(meal: meal)
+                        .onTapGesture {
+                            onMealTapped?(meal)
+                        }
                 }
             }
             .padding(.horizontal, 20)
