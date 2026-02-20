@@ -34,24 +34,24 @@ struct CalorieRingChart: View {
         )
     }
 
-    /// 中环渐变 - 蛋白质：黄绿色（青柠-鼠尾草渐变）
+    /// 中环渐变 - 蛋白质：绿色渐变
     private var proteinGradient: LinearGradient {
         LinearGradient(
             colors: [
-                Color(hex: "#E3EF26"),
-                Color(hex: "#076653")
+                AppTheme.Colors.protein,
+                AppTheme.Colors.protein.opacity(0.6)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
     }
 
-    /// 内环渐变 - 碳水：奶油到薄荷（奶油-薄荷渐变）
+    /// 内环渐变 - 碳水：黄色渐变
     private var carbsGradient: LinearGradient {
         LinearGradient(
             colors: [
-                Color(hex: "#FFFDEE"),
-                Color(hex: "#E2FBCE")
+                AppTheme.Colors.carbs,
+                AppTheme.Colors.carbs.opacity(0.6)
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing

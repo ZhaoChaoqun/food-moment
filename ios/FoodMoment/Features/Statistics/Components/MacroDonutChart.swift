@@ -8,9 +8,9 @@ struct MacroDonutChart: View {
     let carbsTotal: Double
     let fatTotal: Double
 
-    private let proteinColor = Color(hex: "#60A5FA")
-    private let carbsColor = Color(hex: "#FACC15")
-    private let fatColor = Color(hex: "#F87171")
+    private let proteinColor = AppTheme.Colors.protein
+    private let carbsColor = AppTheme.Colors.carbs
+    private let fatColor = AppTheme.Colors.fat
 
     // MARK: - Body
 

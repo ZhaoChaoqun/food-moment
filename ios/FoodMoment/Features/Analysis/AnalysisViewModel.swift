@@ -517,9 +517,9 @@ struct ShareableAnalysisView: View {
 
                 // Macros row
                 HStack(spacing: 32) {
-                    macroItem(value: nutrition.proteinG, label: "蛋白质", color: Color(hex: "#4ADE80"))
-                    macroItem(value: nutrition.carbsG, label: "碳水", color: Color(hex: "#FACC15"))
-                    macroItem(value: nutrition.fatG, label: "脂肪", color: Color(hex: "#FB923C"))
+                    macroItem(value: nutrition.proteinG, label: "蛋白质", color: AppTheme.Colors.protein)
+                    macroItem(value: nutrition.carbsG, label: "碳水", color: AppTheme.Colors.carbs)
+                    macroItem(value: nutrition.fatG, label: "脂肪", color: AppTheme.Colors.fat)
                 }
 
                 // Foods list

@@ -11,8 +11,8 @@ struct MacroIndicatorRow: View {
     // MARK: - Design Colors
 
     private let calorieColor = Color(hex: "#076653")
-    private let proteinColor = Color(hex: "#E3EF26")
-    private let carbsColor = Color(hex: "#E2FBCE")
+    private let proteinColor = AppTheme.Colors.protein
+    private let carbsColor = AppTheme.Colors.carbs
 
     // MARK: - Body
 
