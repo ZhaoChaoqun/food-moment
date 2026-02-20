@@ -12,7 +12,7 @@ struct ActivityCalendar: View {
     let activeDays: Set<Int>
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
-    private let weekdaySymbols = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    private let weekdaySymbols = ["一", "二", "三", "四", "五", "六", "日"]
 
     // MARK: - Computed Properties
 
@@ -20,7 +20,8 @@ struct ActivityCalendar: View {
 
     private var monthTitle: String {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM"
+        formatter.dateFormat = "yyyy年M月"
+        formatter.locale = Locale(identifier: "zh_CN")
         return formatter.string(from: displayedMonth)
     }
 

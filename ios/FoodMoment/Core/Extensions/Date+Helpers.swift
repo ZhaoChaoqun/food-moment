@@ -39,9 +39,10 @@ extension Date {
             .addingTimeInterval(-1)
     }
 
-    /// 本周开始时间
+    /// 本周开始时间（固定周一为一周第一天）
     var startOfWeek: Date {
-        let calendar = Calendar.current
+        var calendar = Calendar.current
+        calendar.firstWeekday = 2 // 周一
         let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: self)
         return calendar.date(from: components)!
     }
