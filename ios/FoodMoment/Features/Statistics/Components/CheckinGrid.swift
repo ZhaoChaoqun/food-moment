@@ -89,20 +89,25 @@ struct CheckinGrid: View {
 
     // MARK: - Computed Properties
 
-    private var last14Days: [Date] {
-        let today = Date()
-        return (0..<14).reversed().compactMap { offset in
-            calendar.date(byAdding: .day, value: -offset, to: today)
-        }
-    }
-
     private var checkedInCount: Int {
         last14Days.filter { isCheckedIn($0) }.count
     }
 
     private var weekdaySymbols: [String] {
-        let symbols = calendar.veryShortWeekdaySymbols
-        let firstWeekday = calendar.firstWeekday - 1
-        return Array(symbols[firstWeekday...]) + Array(symbols[..<firstWeekday])
+        ["一", "二", "三", "四", "五", "六", "日"]
+    }
+
+    private var last14Days: [Date] {
+        var cal = Calendar.current
+        cal.firstWeekday = 2 // 周一
+        let today = Date()
+        // 找到本周一
+        let components = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+        guard let thisMonday = cal.date(from: components) else { return [] }
+        // 上周一开始，共 14 天（两整周，周一→周日）
+        guard let startDate = cal.date(byAdding: .day, value: -7, to: thisMonday) else { return [] }
+        return (0..<14).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: startDate)
+        }
     }
 }

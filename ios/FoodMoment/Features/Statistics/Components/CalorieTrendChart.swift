@@ -6,11 +6,6 @@ struct CalorieTrendChart: View {
     // MARK: - Properties
 
     let data: [DailyCalorie]
-    @Binding var selectedDataPoint: DailyCalorie?
-
-    // MARK: - State
-
-    @State private var plotWidth: CGFloat = 0
 
     // MARK: - Body
 
@@ -22,45 +17,21 @@ struct CalorieTrendChart: View {
         .padding(20)
         .glassCard()
         .padding(.horizontal, 20)
-        .animation(.easeInOut(duration: 0.2), value: selectedDataPoint?.id)
         .accessibilityIdentifier("CalorieTrendChart")
     }
 
     // MARK: - Header Section
 
     private var headerSection: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("热量趋势")
-                    .font(.Jakarta.semiBold(18))
-                    .foregroundStyle(.primary)
+        VStack(alignment: .leading, spacing: 4) {
+            Text("热量趋势")
+                .font(.Jakarta.semiBold(18))
+                .foregroundStyle(.primary)
 
-                Text("每日摄入概览")
-                    .font(.Jakarta.regular(13))
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            if let selected = selectedDataPoint {
-                selectedDataPointView(selected)
-            }
-        }
-    }
-
-    // MARK: - Selected Data Point View
-
-    private func selectedDataPointView(_ selected: DailyCalorie) -> some View {
-        VStack(alignment: .trailing, spacing: 2) {
-            Text("\(selected.calories) kcal")
-                .font(.Jakarta.bold(16))
-                .foregroundStyle(AppTheme.Colors.primary)
-
-            Text(selected.date, format: .dateTime.month(.abbreviated).day())
-                .font(.Jakarta.regular(12))
+            Text("每日摄入概览")
+                .font(.Jakarta.regular(13))
                 .foregroundStyle(.secondary)
         }
-        .transition(.opacity.combined(with: .scale))
     }
 
     // MARK: - Chart Section
@@ -74,9 +45,6 @@ struct CalorieTrendChart: View {
         .chartYScale(domain: yAxisDomain)
         .chartXAxis { xAxisContent }
         .chartYAxis { yAxisContent }
-        .chartOverlay { proxy in
-            chartOverlayContent(proxy: proxy)
-        }
         .frame(height: 200)
     }
 
@@ -115,10 +83,8 @@ struct CalorieTrendChart: View {
             x: .value("Date", item.date, unit: .day),
             y: .value("Calories", item.calories)
         )
-        .foregroundStyle(
-            isSelected(item) ? AppTheme.Colors.primary : AppTheme.Colors.primary.opacity(0.6)
-        )
-        .symbolSize(isSelected(item) ? 80 : 30)
+        .foregroundStyle(AppTheme.Colors.primary.opacity(0.6))
+        .symbolSize(30)
     }
 
     // MARK: - Axis Content
@@ -153,33 +119,6 @@ struct CalorieTrendChart: View {
         }
     }
 
-    // MARK: - Chart Overlay
-
-    private func chartOverlayContent(proxy: ChartProxy) -> some View {
-        GeometryReader { geometry in
-            Rectangle()
-                .fill(.clear)
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { value in
-                            handleChartInteraction(
-                                at: value.location,
-                                proxy: proxy,
-                                geometry: geometry
-                            )
-                        }
-                )
-                .onTapGesture { location in
-                    handleChartInteraction(
-                        at: location,
-                        proxy: proxy,
-                        geometry: geometry
-                    )
-                }
-        }
-    }
-
     // MARK: - Computed Properties
 
     private var yAxisDomain: ClosedRange<Int> {
@@ -194,33 +133,5 @@ struct CalorieTrendChart: View {
         if count <= 14 { return 2 }
         if count <= 30 { return 5 }
         return 30
-    }
-
-    // MARK: - Helper Methods
-
-    private func isSelected(_ item: DailyCalorie) -> Bool {
-        selectedDataPoint?.id == item.id
-    }
-
-    private func handleChartInteraction(
-        at location: CGPoint,
-        proxy: ChartProxy,
-        geometry: GeometryProxy
-    ) {
-        let plotFrame = geometry[proxy.plotFrame!]
-        let xPosition = location.x - plotFrame.origin.x
-
-        guard xPosition >= 0, xPosition <= plotFrame.width else { return }
-        guard let date: Date = proxy.value(atX: xPosition) else { return }
-
-        let calendar = Calendar.current
-        if let closest = data.min(by: {
-            abs(calendar.dateComponents([.hour], from: $0.date, to: date).hour ?? 999) <
-            abs(calendar.dateComponents([.hour], from: $1.date, to: date).hour ?? 999)
-        }) {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                selectedDataPoint = closest
-            }
-        }
     }
 }

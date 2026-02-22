@@ -1,7 +1,12 @@
 import SwiftUI
+import SwiftData
 import Charts
 
 struct StatisticsView: View {
+
+    // MARK: - Environment
+
+    @Environment(\.modelContext) private var modelContext
 
     // MARK: - State
 
@@ -28,7 +33,6 @@ struct StatisticsView: View {
             }
             .premiumBackground()
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar { toolbarContent }
             .sheet(isPresented: $isShowingDatePicker) {
                 DatePickerSheet(selectedDate: $viewModel.selectedDate) {
                     isShowingDatePicker = false
@@ -37,7 +41,9 @@ struct StatisticsView: View {
                 .presentationDetents([.medium])
             }
             .animation(.easeInOut(duration: 0.3), value: viewModel.selectedRange)
-            .animation(.spring(response: 0.4, dampingFraction: 0.8), value: viewModel.selectedDataPoint?.id)
+            .onAppear {
+                viewModel.loadCheckinDaysFromLocal(modelContext: modelContext)
+            }
             .accessibilityIdentifier("StatisticsView")
         }
     }
@@ -45,22 +51,45 @@ struct StatisticsView: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("统计")
-                .font(.Jakarta.extraBold(32))
-                .foregroundStyle(
-                    LinearGradient(
-                        colors: [.primary, .primary.opacity(0.7)],
-                        startPoint: .leading,
-                        endPoint: .trailing
+        HStack(alignment: .center) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("统计")
+                    .font(.Jakarta.extraBold(32))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.primary, .primary.opacity(0.7)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
-                )
 
-            Text("概览与趋势")
-                .font(.Jakarta.regular(15))
-                .foregroundStyle(.secondary)
+                Text("概览与趋势")
+                    .font(.Jakarta.regular(15))
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            Button {
+                isShowingDatePicker = true
+            } label: {
+                Image(systemName: "calendar")
+                    .font(.Jakarta.medium(16))
+                    .foregroundStyle(AppTheme.Colors.primary)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        Circle()
+                            .fill(.white.opacity(0.7))
+                            .background(Circle().fill(.ultraThinMaterial))
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
+                    )
+                    .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
+            }
+            .accessibilityIdentifier("StatisticsView.Toolbar.CalendarButton")
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 20)
         .accessibilityIdentifier("StatisticsView.Header")
     }
@@ -69,7 +98,6 @@ struct StatisticsView: View {
 
     private var timeRangeSelectorSection: some View {
         TimeRangeSelector(viewModel: viewModel)
-            .padding(.horizontal, 20)
             .accessibilityIdentifier("StatisticsView.TimeRangeSelector")
     }
 
@@ -78,10 +106,7 @@ struct StatisticsView: View {
     private var calorieTrendSection: some View {
         VStack(spacing: 16) {
             weeklyAverageCard
-            CalorieTrendChart(
-                data: viewModel.calorieData,
-                selectedDataPoint: $viewModel.selectedDataPoint
-            )
+            CalorieTrendChart(data: viewModel.calorieData)
         }
         .accessibilityIdentifier("StatisticsView.CalorieTrend")
     }
@@ -160,33 +185,6 @@ struct StatisticsView: View {
     private var tabBarSpacerSection: some View {
         Spacer()
             .frame(height: AppTheme.Layout.tabBarClearance)
-    }
-
-    // MARK: - Toolbar Content
-
-    @ToolbarContentBuilder
-    private var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .topBarTrailing) {
-            Button {
-                isShowingDatePicker = true
-            } label: {
-                Image(systemName: "calendar")
-                    .font(.Jakarta.medium(16))
-                    .foregroundStyle(AppTheme.Colors.primary)
-                    .frame(width: 36, height: 36)
-                    .background(
-                        Circle()
-                            .fill(.white.opacity(0.7))
-                            .background(Circle().fill(.ultraThinMaterial))
-                    )
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
-                    )
-                    .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
-            }
-            .accessibilityIdentifier("StatisticsView.Toolbar.CalendarButton")
-        }
     }
 
     // MARK: - Helper Properties

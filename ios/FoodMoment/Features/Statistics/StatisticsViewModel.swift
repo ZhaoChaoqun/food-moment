@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import SwiftUI
+import SwiftData
 import UniformTypeIdentifiers
 import os
 
@@ -83,8 +84,6 @@ final class StatisticsViewModel {
 
     var aiInsight: String = ""
 
-    var selectedDataPoint: DailyCalorie?
-
     var isLoading = false
     var selectedDate: Date = Date()
 
@@ -142,7 +141,6 @@ final class StatisticsViewModel {
                 proteinTotal = stats.proteinGrams
                 carbsTotal = stats.carbsGrams
                 fatTotal = stats.fatGrams
-                checkinDays = stats.mealCount > 0 ? [today] : []
                 weeklyChange = 0
             } catch {
                 Self.logger.error("[Stats] Failed to load daily stats: \(error, privacy: .public)")
@@ -187,6 +185,30 @@ final class StatisticsViewModel {
     func isCheckedIn(date: Date) -> Bool {
         let calendar = Calendar.current
         return checkinDays.contains { calendar.isDate($0, inSameDayAs: date) }
+    }
+
+    /// 从本地 SwiftData 加载最近 14 天的打卡数据，与 Profile 页数据源保持一致
+    func loadCheckinDaysFromLocal(modelContext: ModelContext) {
+        var cal = Calendar.current
+        cal.firstWeekday = 2
+        let today = Date()
+        let components = cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)
+        guard let thisMonday = cal.date(from: components),
+              let startDate = cal.date(byAdding: .day, value: -7, to: thisMonday) else { return }
+
+        let descriptor = FetchDescriptor<MealRecord>(
+            predicate: #Predicate<MealRecord> { record in
+                record.mealTime >= startDate
+            }
+        )
+        let records = (try? modelContext.fetch(descriptor)) ?? []
+
+        var days: Set<Date> = []
+        for record in records {
+            let day = cal.startOfDay(for: record.mealTime)
+            days.insert(day)
+        }
+        checkinDays = Array(days)
     }
 
     // MARK: - CSV Export
@@ -276,9 +298,6 @@ final class StatisticsViewModel {
         proteinTotal = avgProtein * Double(dailyStats.count)
         carbsTotal = avgCarbs * Double(dailyStats.count)
         fatTotal = avgFat * Double(dailyStats.count)
-        checkinDays = dailyStats.filter { $0.mealCount > 0 }.compactMap {
-            Date.fromAPIDateString($0.date)
-        }
         weeklyChange = 0
     }
 
