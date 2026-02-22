@@ -63,15 +63,10 @@ extension View {
         calories: Int,
         time: Date
     ) -> some View {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "zh_CN")
-
         return self
             .accessibilityElement(children: .combine)
             .accessibilityLabel("\(mealType)，\(title)")
-            .accessibilityValue("\(calories)千卡，\(formatter.string(from: time))")
+            .accessibilityValue("\(calories)千卡，\(time.timeOnlyString)")
             .accessibilityHint("双击查看详情")
     }
 

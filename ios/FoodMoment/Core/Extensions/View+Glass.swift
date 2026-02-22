@@ -99,6 +99,7 @@ extension View {
                     endRadius: 400
                 )
             }
+            .drawingGroup()
             .ignoresSafeArea()
         )
     }

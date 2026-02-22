@@ -58,11 +58,7 @@ extension Date {
 
     /// API 请求用日期字符串（yyyy-MM-dd）
     var apiDateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.timeZone = .current
-        return formatter.string(from: self)
+        formatted(as: "yyyy-MM-dd", locale: "en_US_POSIX")
     }
 
     /// API 请求用月份字符串（yyyy-MM）
@@ -86,11 +82,46 @@ extension Date {
         formatted(Date.FormatStyle().year(.defaultDigits).month(.defaultDigits).day(.defaultDigits).locale(Locale(identifier: "zh_CN")))
     }
 
-    /// 使用指定格式格式化日期（兼容旧调用点）
+    /// 首页 header 日期（M月d日 EEEE）
+    var homeHeaderString: String {
+        formatted(as: "M月d日 EEEE")
+    }
+
+    /// 餐食详情日期（M月d日 HH:mm）
+    var mealDetailString: String {
+        formatted(as: "M月d日 HH:mm")
+    }
+
+    /// 月份标题（yyyy年M月）
+    var monthTitleString: String {
+        formatted(as: "yyyy年M月")
+    }
+
+    /// 短日期（MM月dd日）— 体重记录等
+    var shortDateString: String {
+        formatted(as: "MM月dd日")
+    }
+
+    /// 仅时间（HH:mm）— 饮水记录等
+    var timeOnlyString: String {
+        formatted(as: "HH:mm")
+    }
+
+    /// 成就日期（yyyy年MM月dd日）
+    var achievementDateString: String {
+        formatted(as: "yyyy年MM月dd日")
+    }
+
+    /// 使用指定格式格式化日期（中文 locale）
     func formatted(as format: String) -> String {
+        formatted(as: format, locale: "zh_CN")
+    }
+
+    /// 使用指定格式和 locale 格式化日期
+    func formatted(as format: String, locale: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = format
-        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.locale = Locale(identifier: locale)
         return formatter.string(from: self)
     }
 
@@ -108,14 +139,16 @@ extension Date {
     var greetingTime: String {
         let hour = Calendar.current.component(.hour, from: self)
         switch hour {
-        case 5..<12:
-            return "早安"
+        case 5..<9:
+            return "早上好"
+        case 9..<12:
+            return "上午好"
         case 12..<14:
-            return "午好"
+            return "中午好"
         case 14..<18:
             return "下午好"
         default:
-            return "晚好"
+            return "晚上好"
         }
     }
 

@@ -213,6 +213,60 @@ actor HealthKitManager {
 
         try await healthStore.save(sample)
     }
+
+    // MARK: - Delete: Nutrition
+
+    /// 删除指定时间点的营养数据（仅删除本 App 写入的 sample）
+    func deleteNutrition(at date: Date) async throws {
+        guard isAvailable else {
+            throw HealthKitError.notAvailable
+        }
+
+        let types: [HKQuantityTypeIdentifier] = [
+            .dietaryEnergyConsumed,
+            .dietaryProtein,
+            .dietaryCarbohydrates,
+            .dietaryFatTotal,
+        ]
+
+        let predicate = HKQuery.predicateForSamples(
+            withStart: date,
+            end: date.addingTimeInterval(1),
+            options: .strictStartDate
+        )
+
+        for typeIdentifier in types {
+            let quantityType = HKQuantityType(typeIdentifier)
+            let samples = try await querySamples(type: quantityType, predicate: predicate)
+            if !samples.isEmpty {
+                try await healthStore.delete(samples)
+            }
+        }
+    }
+
+    // MARK: - Private Helpers
+
+    /// 查询匹配条件的 HealthKit 样本
+    private func querySamples(
+        type: HKSampleType,
+        predicate: NSPredicate
+    ) async throws -> [HKSample] {
+        try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, error in
+                if let error {
+                    continuation.resume(throwing: HealthKitError.queryFailed(error))
+                    return
+                }
+                continuation.resume(returning: samples ?? [])
+            }
+            healthStore.execute(query)
+        }
+    }
 }
 
 // MARK: - HealthKit Errors
