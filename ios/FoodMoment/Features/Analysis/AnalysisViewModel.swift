@@ -189,6 +189,7 @@ final class AnalysisViewModel {
         analysisResult = AnalysisResponseDTO(
             imageUrl: result.imageUrl,
             totalCalories: totalCal,
+            mealName: result.mealName,
             totalNutrition: NutritionDataDTO(
                 proteinG: totalProtein,
                 carbsG: totalCarbs,
@@ -222,6 +223,10 @@ final class AnalysisViewModel {
         let mealType = Self.inferMealType(from: Date())
         let mealId = UUID()
 
+        let mealTitle = result.mealName?.isEmpty == false
+            ? result.mealName!
+            : Self.generateMealTitle(from: result.detectedFoods)
+
         // Build API DTO (with client-generated ID for consistent sync)
         let createDTO = MealCreateDTO(
             id: mealId,
@@ -233,7 +238,7 @@ final class AnalysisViewModel {
             carbsGrams: result.totalNutrition.carbsG,
             fatGrams: result.totalNutrition.fatG,
             fiberGrams: result.totalNutrition.fiberG,
-            title: Self.generateMealTitle(from: result.detectedFoods),
+            title: mealTitle,
             descriptionText: nil,
             aiAnalysis: result.aiAnalysis,
             tags: result.tags,
@@ -267,7 +272,7 @@ final class AnalysisViewModel {
                 id: mealId,
                 mealType: mealType.rawValue,
                 mealTime: Date(),
-                title: Self.generateMealTitle(from: result.detectedFoods),
+                title: mealTitle,
                 totalCalories: result.totalCalories,
                 proteinGrams: result.totalNutrition.proteinG,
                 carbsGrams: result.totalNutrition.carbsG,
@@ -373,6 +378,7 @@ final class AnalysisViewModel {
         AnalysisResponseDTO(
             imageUrl: "",
             totalCalories: 485,
+            mealName: "牛油果吐司",
             totalNutrition: NutritionDataDTO(
                 proteinG: 22,
                 carbsG: 45,

@@ -74,18 +74,21 @@ struct FloatingNutritionPanel: View {
 
     private func tagsRow(_ tags: [String]) -> some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
+            HStack(spacing: 6) {
                 ForEach(tags, id: \.self) { tag in
-                    Text(tag)
-                        .font(.Jakarta.medium(12))
-                        .foregroundColor(AppTheme.Colors.primary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
+                    Text("#\(tag)")
+                        .font(.Jakarta.medium(11))
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
                         .background(
-                            Capsule().fill(AppTheme.Colors.primary.opacity(0.12))
+                            Capsule()
+                                .fill(AppTheme.Colors.primary.opacity(0.06))
+                                .background(Capsule().fill(.ultraThinMaterial))
                         )
                         .overlay(
-                            Capsule().stroke(AppTheme.Colors.primary.opacity(0.3), lineWidth: 0.5)
+                            Capsule()
+                                .stroke(AppTheme.Colors.primary.opacity(0.12), lineWidth: 0.5)
                         )
                 }
             }
@@ -145,6 +148,7 @@ struct FloatingNutritionPanel: View {
             analysisResult: AnalysisResponseDTO(
                 imageUrl: "",
                 totalCalories: 650,
+                mealName: "营养套餐",
                 totalNutrition: NutritionDataDTO(
                     proteinG: 35.0,
                     carbsG: 60.0,

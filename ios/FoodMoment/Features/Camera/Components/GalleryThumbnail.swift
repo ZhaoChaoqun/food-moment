@@ -27,6 +27,7 @@ struct GalleryThumbnail: View {
     // MARK: - Body
 
     var body: some View {
+        let currentThumbnail = thumbnailImage
         PhotosPicker(
             selection: $selectedItem,
             matching: .images
@@ -36,8 +37,8 @@ struct GalleryThumbnail: View {
                     .fill(Color.white.opacity(0.15))
                     .frame(width: size, height: size)
 
-                if let thumbnailImage {
-                    Image(uiImage: thumbnailImage)
+                if let currentThumbnail {
+                    Image(uiImage: currentThumbnail)
                         .resizable()
                         .scaledToFill()
                         .frame(width: size, height: size)
