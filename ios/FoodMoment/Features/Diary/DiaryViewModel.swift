@@ -47,6 +47,16 @@ final class DiaryViewModel {
         selectedDate.formatted(as: "yyyy年M月")
     }
 
+    /// 当天是否有餐食记录（基于预计算缓存）
+    var currentDayHasMeals: Bool {
+        datesWithMeals.contains(selectedDate.apiDateString)
+    }
+
+    /// 搜索是否激活（搜索文本不为空）
+    var isSearchActive: Bool {
+        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
     // MARK: - Initialization
 
     init(

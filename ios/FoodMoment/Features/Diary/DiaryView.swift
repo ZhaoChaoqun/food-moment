@@ -2,15 +2,6 @@ import SwiftUI
 import SwiftData
 import os
 
-// MARK: - Scroll Offset Tracking
-
-private struct DiaryScrollOffsetKey: PreferenceKey {
-    nonisolated(unsafe) static var defaultValue: CGFloat = 0
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
-    }
-}
-
 struct DiaryView: View {
 
     // MARK: - Logger
@@ -25,34 +16,9 @@ struct DiaryView: View {
     // MARK: - State
 
     @State private var viewModel = DiaryViewModel()
-    @State private var isShowingSearchBar = false
-    @State private var scrollOffset: CGFloat = 0
-
-    // MARK: - Constants
-
-    /// WeekDatePicker 展开态完整高度
-    private let calendarExpandedHeight: CGFloat = 120
-    /// 开始折叠的滚动阈值
-    private let collapseStartOffset: CGFloat = -10
-    /// 完全折叠的滚动阈值
-    private let collapseEndOffset: CGFloat = -80
-
-    // MARK: - Computed
-
-    /// 0 = 完全折叠, 1 = 完全展开
-    private var calendarProgress: CGFloat {
-        if scrollOffset >= collapseStartOffset {
-            return 1
-        }
-        if scrollOffset <= collapseEndOffset {
-            return 0
-        }
-        return (scrollOffset - collapseEndOffset) / (collapseStartOffset - collapseEndOffset)
-    }
-
-    private var calendarHeight: CGFloat {
-        calendarExpandedHeight * calendarProgress
-    }
+    @State private var isShowingSearch = false
+    @State private var isCalendarExpanded = false
+    @FocusState private var isSearchFieldFocused: Bool
 
     // MARK: - Body
 
@@ -62,23 +28,31 @@ struct DiaryView: View {
                 .premiumBackground()
                 .navigationBarHidden(true)
                 .navigationDestination(item: $viewModel.selectedMeal) { meal in
-                    MealDetailView(meal: meal)
+                    MealDetailView(meal: meal, onDelete: {
+                        Task {
+                            await viewModel.deleteMeal(meal, modelContext: modelContext)
+                        }
+                        viewModel.selectedMeal = nil
+                    })
                 }
         }
-        .searchable(
-            text: $viewModel.searchText,
-            isPresented: $isShowingSearchBar,
-            placement: .navigationBarDrawer(displayMode: .automatic),
-            prompt: "搜索食物、标签..."
-        )
         .onChange(of: viewModel.selectedDate) { _, _ in
-            scrollOffset = 0
             Task {
                 await viewModel.refreshFromAPI(modelContext: modelContext)
             }
         }
         .onChange(of: viewModel.selectedMeal) { _, newValue in
             appState.isTabBarHidden = (newValue != nil)
+        }
+        .onChange(of: isShowingSearch) { _, newValue in
+            if !newValue {
+                viewModel.searchText = ""
+                isSearchFieldFocused = false
+            } else {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isSearchFieldFocused = true
+                }
+            }
         }
         .task {
             await viewModel.refreshFromAPI(modelContext: modelContext)
@@ -89,20 +63,16 @@ struct DiaryView: View {
     // MARK: - Main Content
 
     private var mainContent: some View {
-        VStack(spacing: 0) {
-            headerSection
-
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Scroll offset tracking anchor
-                    GeometryReader { proxy in
-                        Color.clear.preference(
-                            key: DiaryScrollOffsetKey.self,
-                            value: proxy.frame(in: .named("diaryScroll")).minY
-                        )
-                    }
-                    .frame(height: 0)
-
+        ScrollView {
+            VStack(spacing: 0) {
+                if isShowingSearch {
+                    SearchResultsView(
+                        searchText: viewModel.searchText,
+                        onSelectMeal: { meal in
+                            viewModel.selectedMeal = meal
+                        }
+                    )
+                } else {
                     DiaryContentView(
                         startOfDay: viewModel.selectedDate.startOfDay,
                         endOfDay: viewModel.selectedDate.endOfDay,
@@ -112,24 +82,34 @@ struct DiaryView: View {
                             viewModel.selectedMeal = meal
                         },
                         onDeleteMeal: { meal in
-                            Task {
-                                await viewModel.deleteMeal(meal, modelContext: modelContext)
-                            }
+                            viewModel.softDeleteMeal(meal, modelContext: modelContext)
                         }
                     )
                 }
             }
-            .coordinateSpace(name: "diaryScroll")
-            .scrollIndicators(.hidden)
-            .onPreferenceChange(DiaryScrollOffsetKey.self) { value in
-                scrollOffset = value
+        }
+        .scrollIndicators(.hidden)
+        .safeAreaInset(edge: .top) {
+            if isShowingSearch {
+                searchBarSection
+            } else {
+                fixedHeader
             }
         }
+        .overlay(alignment: .bottom) {
+            if let message = viewModel.undoToastMessage {
+                UndoToast(message: message) {
+                    viewModel.undoDelete(modelContext: modelContext)
+                }
+                .padding(.bottom, AppTheme.Layout.tabBarClearance + 8)
+            }
+        }
+        .animation(AppTheme.Animation.fastSpring, value: viewModel.undoToastMessage)
     }
 
-    // MARK: - Header Section
+    // MARK: - Fixed Header
 
-    private var headerSection: some View {
+    private var fixedHeader: some View {
         VStack(spacing: 0) {
             headerBar
                 .padding(.top, 6)
@@ -137,30 +117,34 @@ struct DiaryView: View {
             DiarySummaryBar(
                 startOfDay: viewModel.selectedDate.startOfDay,
                 endOfDay: viewModel.selectedDate.endOfDay,
-                selectedDate: viewModel.selectedDate
+                selectedDate: viewModel.selectedDate,
+                isCalendarExpanded: isCalendarExpanded,
+                onToggleCalendar: {
+                    withAnimation(AppTheme.Animation.defaultSpring) {
+                        isCalendarExpanded.toggle()
+                    }
+                }
             )
             .padding(.top, 2)
             .padding(.bottom, 8)
 
-            WeekDatePicker(
-                selectedDate: $viewModel.selectedDate,
-                weekDates: viewModel.weekDates,
-                dateHasMeals: { date in
-                    viewModel.dateHasMealsFromCache(date)
-                },
-                onPreviousWeek: {
-                    viewModel.previousWeek()
-                },
-                onNextWeek: {
-                    viewModel.nextWeek()
-                }
-            )
-            .padding(.top, 2)
-            .padding(.bottom, 6)
-            .frame(height: calendarHeight)
-            .clipped()
-            .opacity(calendarProgress)
-            .animation(AppTheme.Animation.fastSpring, value: calendarProgress)
+            // WeekDatePicker — 展开/收起
+            if isCalendarExpanded {
+                WeekDatePicker(
+                    selectedDate: $viewModel.selectedDate,
+                    weekDates: viewModel.weekDates,
+                    dateHasMeals: { date in
+                        viewModel.dateHasMealsFromCache(date)
+                    },
+                    onPreviousWeek: {
+                        viewModel.previousWeek()
+                    },
+                    onNextWeek: {
+                        viewModel.nextWeek()
+                    }
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
 
             // 底部渐变分隔线
             LinearGradient(
@@ -207,7 +191,9 @@ struct DiaryView: View {
 
     private var searchButton: some View {
         Button {
-            isShowingSearchBar.toggle()
+            withAnimation(.easeInOut(duration: 0.25)) {
+                isShowingSearch = true
+            }
         } label: {
             Image(systemName: "magnifyingglass")
                 .font(.Jakarta.medium(16))
@@ -227,6 +213,53 @@ struct DiaryView: View {
         .accessibilityIdentifier("DiaryView.SearchButton")
         .accessibilityLabel("搜索")
     }
+
+    // MARK: - Search Bar Section
+
+    private var searchBarSection: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15))
+                    .foregroundStyle(.secondary)
+
+                TextField("搜索食物、标签...", text: $viewModel.searchText)
+                    .font(.Jakarta.regular(15))
+                    .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+                    .focused($isSearchFieldFocused)
+                    .accessibilityIdentifier("DiaryView.SearchField")
+
+                if !viewModel.searchText.isEmpty {
+                    Button {
+                        viewModel.searchText = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 14))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(.systemGray6))
+            )
+
+            Button("取消") {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    viewModel.searchText = ""
+                    isShowingSearch = false
+                }
+            }
+            .font(.Jakarta.medium(15))
+            .foregroundStyle(AppTheme.Colors.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThinMaterial)
+    }
 }
 
 // MARK: - Summary Bar (uses @Query)
@@ -237,12 +270,17 @@ private struct DiarySummaryBar: View {
     @Query private var profiles: [UserProfile]
 
     let selectedDate: Date
+    let isCalendarExpanded: Bool
+    let onToggleCalendar: () -> Void
 
-    init(startOfDay: Date, endOfDay: Date, selectedDate: Date) {
+    init(startOfDay: Date, endOfDay: Date, selectedDate: Date, isCalendarExpanded: Bool, onToggleCalendar: @escaping () -> Void) {
         self.selectedDate = selectedDate
+        self.isCalendarExpanded = isCalendarExpanded
+        self.onToggleCalendar = onToggleCalendar
         _meals = Query(
             filter: #Predicate<MealRecord> { meal in
                 meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
+                && meal.pendingDeletion == false
             },
             sort: \.mealTime
         )
@@ -277,9 +315,20 @@ private struct DiarySummaryBar: View {
         VStack(spacing: 8) {
             // Info row
             HStack(alignment: .firstTextBaseline, spacing: 12) {
-                Text(selectedDate.formatted(as: "M月d日"))
-                    .font(.Jakarta.medium(13))
-                    .foregroundColor(.secondary)
+                // 可点击的日期 + 展开/收起指示器
+                Button(action: onToggleCalendar) {
+                    HStack(spacing: 6) {
+                        Text(selectedDate.formatted(as: "M月d日"))
+                            .font(.Jakarta.medium(13))
+                            .foregroundColor(.secondary)
+
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .rotationEffect(.degrees(isCalendarExpanded ? 180 : 0))
+                    }
+                }
+                .buttonStyle(.plain)
 
                 Spacer()
 
@@ -308,13 +357,12 @@ private struct DiarySummaryBar: View {
                     Capsule()
                         .fill(
                             LinearGradient(
-                                colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
+                                colors: [Color(hex: "#34C759"), Color(hex: "#30B350")],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
                         )
                         .frame(width: geometry.size.width * progressValue, height: 6)
-                        .shadow(color: AppTheme.Colors.primary.opacity(0.35), radius: 6, y: 0)
                         .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progressValue)
                 }
             }
@@ -330,6 +378,7 @@ private struct DiarySummaryBar: View {
 /// 独立子视图：使用 @Query 自动驱动餐食列表数据
 private struct DiaryContentView: View {
     @Query private var meals: [MealRecord]
+    @Environment(AppState.self) private var appState
 
     let searchText: String
     let onSelectMeal: (MealRecord) -> Void
@@ -349,6 +398,7 @@ private struct DiaryContentView: View {
         _meals = Query(
             filter: #Predicate<MealRecord> { meal in
                 meal.mealTime >= startOfDay && meal.mealTime <= endOfDay
+                && meal.pendingDeletion == false
             },
             sort: \.mealTime
         )
@@ -390,7 +440,7 @@ private struct DiaryContentView: View {
                 .onTapGesture {
                     onSelectMeal(meal)
                 }
-                .padding(.bottom, index == count - 1 ? AppTheme.Layout.tabBarClearance + 32 : 8)
+                .padding(.bottom, index == count - 1 ? AppTheme.Layout.tabBarClearance + 8 : 8)
             }
         }
         .padding(.top, 16)
@@ -411,13 +461,190 @@ private struct DiaryContentView: View {
                     : "换个关键词试试吧",
                 buttonTitle: searchText.isEmpty ? "拍照记录" : nil,
                 action: searchText.isEmpty ? {
-                    // 导航到相机 - 由父级 Tab 处理
+                    appState.activeFullScreen = .camera
                 } : nil
             )
 
             Spacer()
+            Spacer()
         }
+        .frame(minHeight: UIScreen.main.bounds.height * 0.55)
         .accessibilityIdentifier("DiaryView.EmptyState")
+    }
+}
+
+// MARK: - Search Results View (uses @Query)
+
+/// 全局搜索结果视图：查询所有餐食记录，在内存中过滤后按日期分组展示
+private struct SearchResultsView: View {
+    @Query(
+        filter: #Predicate<MealRecord> { meal in
+            meal.pendingDeletion == false
+        },
+        sort: \MealRecord.mealTime,
+        order: .reverse
+    ) private var allMeals: [MealRecord]
+
+    let searchText: String
+    let onSelectMeal: (MealRecord) -> Void
+
+    private var groupedResults: [(date: Date, meals: [MealRecord])] {
+        guard !searchText.isEmpty else { return [] }
+
+        let filtered = allMeals.filter { meal in
+            meal.title.localizedCaseInsensitiveContains(searchText)
+                || (meal.descriptionText?.localizedCaseInsensitiveContains(searchText) ?? false)
+                || meal.tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
+                || (meal.aiAnalysis?.localizedCaseInsensitiveContains(searchText) ?? false)
+                || meal.detectedFoods.contains {
+                    $0.name.localizedCaseInsensitiveContains(searchText)
+                    || $0.nameZh.localizedCaseInsensitiveContains(searchText)
+                }
+        }
+
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: filtered) { meal in
+            calendar.startOfDay(for: meal.mealTime)
+        }
+
+        return grouped
+            .sorted { $0.key > $1.key }
+            .map { (date: $0.key, meals: $0.value) }
+    }
+
+    var body: some View {
+        if groupedResults.isEmpty {
+            emptySearchView
+        } else {
+            searchResultsList
+        }
+    }
+
+    private var searchResultsList: some View {
+        LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+            ForEach(groupedResults, id: \.date) { group in
+                Section {
+                    ForEach(group.meals) { meal in
+                        SearchResultRow(meal: meal)
+                            .onTapGesture { onSelectMeal(meal) }
+                    }
+                } header: {
+                    searchSectionHeader(for: group.date, count: group.meals.count)
+                }
+            }
+        }
+        .padding(.top, 8)
+        .padding(.bottom, AppTheme.Layout.tabBarClearance)
+    }
+
+    private func searchSectionHeader(for date: Date, count: Int) -> some View {
+        HStack {
+            Text(date.formatted(as: "M月d日 EEEE"))
+                .font(.Jakarta.semiBold(13))
+                .foregroundStyle(.secondary)
+
+            Spacer()
+
+            Text("\(count)条记录")
+                .font(.Jakarta.regular(12))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 8)
+        .background(.ultraThinMaterial)
+    }
+
+    private var emptySearchView: some View {
+        VStack {
+            Spacer()
+
+            EmptyStateView(
+                icon: "magnifyingglass",
+                title: "未找到结果",
+                subtitle: "换个关键词试试吧",
+                buttonTitle: nil,
+                action: nil
+            )
+
+            Spacer()
+            Spacer()
+        }
+        .frame(minHeight: UIScreen.main.bounds.height * 0.55)
+        .accessibilityIdentifier("SearchResultsView.EmptyState")
+    }
+}
+
+// MARK: - Search Result Row
+
+private struct SearchResultRow: View {
+    let meal: MealRecord
+
+    var body: some View {
+        HStack(spacing: 12) {
+            mealThumbnail
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(meal.title)
+                    .font(.Jakarta.semiBold(15))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    Text(MealRecord.MealType(rawValue: meal.mealType)?.displayName ?? meal.mealType)
+                        .font(.Jakarta.medium(11))
+                        .foregroundStyle(.secondary)
+
+                    Text("·")
+                        .foregroundStyle(.quaternary)
+
+                    Text("\(meal.totalCalories) kcal")
+                        .font(.Jakarta.medium(11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            Text(meal.mealTime.formatted(as: "HH:mm"))
+                .font(.Jakarta.regular(12))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+    }
+
+    @ViewBuilder
+    private var mealThumbnail: some View {
+        if let imageData = meal.localImageData, let uiImage = UIImage(data: imageData) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 8))
+        } else if let urlString = meal.imageURL, let url = APIEndpoint.resolveMediaURL(urlString) {
+            AsyncImage(url: url) { phase in
+                if case .success(let image) = phase {
+                    image.resizable().scaledToFill()
+                } else {
+                    defaultThumbnail
+                }
+            }
+            .frame(width: 44, height: 44)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+        } else {
+            defaultThumbnail
+        }
+    }
+
+    private var defaultThumbnail: some View {
+        RoundedRectangle(cornerRadius: 8)
+            .fill(Color(.systemGray6))
+            .frame(width: 44, height: 44)
+            .overlay {
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 16))
+                    .foregroundStyle(.quaternary)
+            }
     }
 }
 

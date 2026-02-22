@@ -6,8 +6,10 @@ struct MealDetailView: View {
     // MARK: - Properties
 
     let meal: MealRecord
+    var onDelete: (() -> Void)?
 
     @State private var decodedImage: UIImage?
+    @State private var isShowingDeleteConfirmation = false
     @Environment(\.dismiss) private var dismiss
 
     private var nutrition: NutritionDataDTO {
@@ -54,6 +56,33 @@ struct MealDetailView: View {
                         .foregroundColor(.secondary)
                 }
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                if onDelete != nil {
+                    Button {
+                        isShowingDeleteConfirmation = true
+                        HapticManager.warning()
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.Jakarta.medium(14))
+                            .foregroundColor(.red.opacity(0.8))
+                    }
+                    .accessibilityIdentifier("MealDetailView.DeleteButton")
+                    .accessibilityLabel("删除记录")
+                }
+            }
+        }
+        .confirmationDialog(
+            "确定要删除这条餐食记录吗？",
+            isPresented: $isShowingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive) {
+                onDelete?()
+                dismiss()
+            }
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("此操作不可撤销")
         }
     }
 
@@ -174,7 +203,8 @@ struct MealDetailView: View {
 
     @ViewBuilder
     private var detectedFoodsList: some View {
-        let foods = meal.detectedFoods ?? []
+        let foods = meal.detectedFoods
+
         if !foods.isEmpty {
             VStack(alignment: .leading, spacing: 12) {
                 Text("识别食物")
@@ -260,15 +290,15 @@ struct MealDetailView: View {
                     ForEach(meal.tags, id: \.self) { tag in
                         Text("#\(tag)")
                             .font(.Jakarta.medium(12))
-                            .foregroundColor(AppTheme.Colors.primary)
+                            .foregroundColor(.secondary)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 6)
                             .background(
-                                Capsule().fill(AppTheme.Colors.primary.opacity(0.08))
+                                Capsule().fill(AppTheme.Colors.primary.opacity(0.06))
                                     .background(Capsule().fill(.ultraThinMaterial))
                             )
                             .overlay(
-                                Capsule().stroke(AppTheme.Colors.primary.opacity(0.15), lineWidth: 0.5)
+                                Capsule().stroke(AppTheme.Colors.primary.opacity(0.12), lineWidth: 0.5)
                             )
                     }
                 }

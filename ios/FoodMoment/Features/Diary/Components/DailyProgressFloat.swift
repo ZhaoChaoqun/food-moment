@@ -105,13 +105,12 @@ struct DailyProgressFloat: View {
         Capsule()
             .fill(
                 LinearGradient(
-                    colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.7)],
+                    colors: [Color(hex: "#34C759"), Color(hex: "#30B350")],
                     startPoint: .leading,
                     endPoint: .trailing
                 )
             )
             .frame(width: width, height: 6)
-            .shadow(color: AppTheme.Colors.primary.opacity(0.4), radius: 6, y: 0)
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progress)
     }
 

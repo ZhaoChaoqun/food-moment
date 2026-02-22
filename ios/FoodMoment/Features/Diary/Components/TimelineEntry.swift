@@ -10,6 +10,10 @@ struct TimelineEntry: View {
     let isLast: Bool
     let onDelete: () -> Void
 
+    // MARK: - State
+
+    @State private var isShowingDeleteConfirmation = false
+
     // MARK: - Computed Properties
 
     private var mealColor: Color {
@@ -27,9 +31,22 @@ struct TimelineEntry: View {
         }
         .padding(.horizontal, 20)
         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button(role: .destructive, action: onDelete) {
+            Button(role: .destructive) {
+                isShowingDeleteConfirmation = true
+                HapticManager.warning()
+            } label: {
                 Label("删除", systemImage: "trash")
             }
+        }
+        .confirmationDialog(
+            "确定要删除这条餐食记录吗？",
+            isPresented: $isShowingDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("删除", role: .destructive, action: onDelete)
+            Button("取消", role: .cancel) {}
+        } message: {
+            Text("\(meal.title) · \(meal.totalCalories) kcal")
         }
         .accessibilityIdentifier("TimelineEntry.\(meal.id)")
     }

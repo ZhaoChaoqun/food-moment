@@ -163,21 +163,17 @@ struct FoodPhotoCard: View {
 
     private var mealTypeBadge: some View {
         HStack(spacing: 6) {
-            Circle()
-                .fill(mealColor)
-                .frame(width: 8, height: 8)
-
             Text(mealType.displayName)
-                .font(.Jakarta.medium(12))
+                .font(.Jakarta.semiBold(11))
                 .foregroundColor(.white)
 
             Text(meal.mealTime.mealTimeString)
                 .font(.Jakarta.regular(11))
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(.white.opacity(0.85))
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(.ultraThinMaterial)
+        .background(mealColor.opacity(0.85))
         .clipShape(Capsule())
         .accessibilityIdentifier("FoodPhotoCard.MealTypeBadge")
     }
@@ -188,7 +184,7 @@ struct FoodPhotoCard: View {
             .foregroundColor(.white)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(.ultraThinMaterial)
+            .background(AppTheme.Colors.calorieBadgeBackground)
             .clipShape(Capsule())
             .accessibilityIdentifier("FoodPhotoCard.CalorieBadge")
     }
@@ -212,17 +208,17 @@ struct FoodPhotoCard: View {
     private func tagView(tag: String) -> some View {
         Text("#\(tag)")
             .font(.Jakarta.medium(11))
-            .foregroundColor(AppTheme.Colors.primary)
+            .foregroundColor(.secondary)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(AppTheme.Colors.primary.opacity(0.08))
+                    .fill(AppTheme.Colors.primary.opacity(0.06))
                     .background(Capsule().fill(.ultraThinMaterial))
             )
             .overlay(
                 Capsule()
-                    .stroke(AppTheme.Colors.primary.opacity(0.15), lineWidth: 0.5)
+                    .stroke(AppTheme.Colors.primary.opacity(0.12), lineWidth: 0.5)
             )
     }
 
