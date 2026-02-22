@@ -43,19 +43,19 @@ enum AppTheme {
         /// 加餐颜色 - 蓝色
         static let snack = Color(hex: "#60A5FA")
 
-        // MARK: - Nutrient Colors (方案 B：暖冷对比)
+        // MARK: - Nutrient Colors (方案 A：经典行业标准)
 
-        /// 蛋白质颜色 - 珊瑚红
-        static let protein = Color(hex: "#FF6B6B")
+        /// 蛋白质颜色 - 蓝色
+        static let protein = Color(hex: "#60A5FA")
 
-        /// 碳水化合物颜色 - 电光蓝
-        static let carbs = Color(hex: "#4DA8FF")
+        /// 碳水化合物颜色 - 绿色
+        static let carbs = Color(hex: "#34D399")
 
-        /// 脂肪颜色 - 明黄
-        static let fat = Color(hex: "#FFD43B")
+        /// 脂肪颜色 - 琥珀黄
+        static let fat = Color(hex: "#FBBF24")
 
-        /// 膳食纤维颜色 - 翠绿
-        static let fiber = Color(hex: "#51CF66")
+        /// 膳食纤维颜色 - 紫色
+        static let fiber = Color(hex: "#A78BFA")
 
         // MARK: - Text Colors
 
@@ -81,6 +81,9 @@ enum AppTheme {
 
         /// 拖拽指示条颜色
         static let dragIndicator = Color(hex: "#CBD5E1")
+
+        /// 卡路里标签背景色
+        static let calorieBadgeBackground = Color.black.opacity(0.35)
     }
 
     // MARK: - Corner Radius
