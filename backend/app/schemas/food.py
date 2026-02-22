@@ -31,6 +31,7 @@ class NutritionData(BaseModel):
 class AnalysisResponse(BaseModel):
     image_url: str
     total_calories: int
+    meal_name: str | None = None
     total_nutrition: NutritionData
     detected_foods: list[DetectedFoodResponse]
     ai_analysis: str

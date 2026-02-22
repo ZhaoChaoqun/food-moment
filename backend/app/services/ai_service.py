@@ -59,6 +59,7 @@ For each food item, provide:
 10. color (a unique hex color for each food item, use visually distinct colors)
 
 Also provide:
+- meal_name: a concise Chinese name for this meal (2-6 characters), summarizing the main dish. Do NOT list all foods. Examples: "烤鸡饭", "蛋糕", "水饺", "牛肉面"
 - total_calories: sum of all food items
 - total_nutrition: { protein_g, carbs_g, fat_g, fiber_g }
 - ai_analysis: a brief nutritional analysis in Chinese (2-3 sentences)
@@ -93,6 +94,7 @@ Return ONLY valid JSON in this exact format:
     }
   ],
   "total_calories": 450,
+  "meal_name": "烤鸡饭",
   "total_nutrition": {"protein_g": 34.0, "carbs_g": 45.0, "fat_g": 12.5, "fiber_g": 2.0},
   "ai_analysis": "这顿饭蛋白质含量丰富...",
   "tags": ["高蛋白"]
@@ -141,6 +143,7 @@ def _get_mock_analysis() -> dict:
             },
         ],
         "total_calories": 600,
+        "meal_name": "红烧肉饭",
         "total_nutrition": {
             "protein_g": 29.0,
             "carbs_g": 58.0,
@@ -196,6 +199,7 @@ def _parse_ai_response(raw: dict) -> AnalysisResponse:
     return AnalysisResponse(
         image_url="",
         total_calories=raw.get("total_calories", 0),
+        meal_name=raw.get("meal_name"),
         total_nutrition=total_nutrition,
         detected_foods=detected_foods,
         ai_analysis=raw.get("ai_analysis", ""),

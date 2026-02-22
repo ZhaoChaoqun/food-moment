@@ -27,7 +27,9 @@ class Settings(BaseSettings):
     # Storage - Azure Blob Storage（本地 Azurite / 生产 Azure）
     azure_storage_connection_string: str = "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
     azure_storage_container: str = "uploads"
-    storage_public_url: str = "http://127.0.0.1:10000/devstoreaccount1/uploads"
+    # 本地开发：通过后端代理访问（/api/v1/storage/{blob}），iPhone 可通过 ngrok 到达
+    # 生产环境：替换为 Azure CDN URL（如 https://xxx.blob.core.windows.net/uploads）
+    storage_public_url: str = "/api/v1/storage"
 
     # Logging
     log_level: str = "INFO"

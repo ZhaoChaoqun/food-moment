@@ -78,6 +78,21 @@ class StorageService:
         except Exception as e:
             logger.warning(f"Failed to delete image {blob_name}: {e}")
 
+    async def download_image(self, blob_name: str) -> tuple[bytes, str]:
+        """从 Blob Storage 下载图片。
+
+        Returns:
+            (image_data, content_type)
+        """
+        assert self._client is not None, "StorageService not initialized"
+
+        container = self._client.get_container_client(settings.azure_storage_container)
+        blob = container.get_blob_client(blob_name)
+        stream = await blob.download_blob()
+        data = await stream.readall()
+        content_type = stream.properties.content_settings.content_type or "image/jpeg"
+        return data, content_type
+
     async def close(self) -> None:
         """关闭连接。"""
         if self._client:
