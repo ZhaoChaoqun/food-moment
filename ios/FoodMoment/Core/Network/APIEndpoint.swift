@@ -20,8 +20,8 @@ enum APIEndpoint {
     // 开发环境：通过 ngrok 代理连接后端服务（真机测试用）
     private static let baseURL = "https://sparkle-regardant-mirella.ngrok-free.dev"
     #else
-    // 生产环境
-    private static let baseURL = "https://api.foodmoment.app"
+    // 生产环境：Azure App Service
+    private static let baseURL = "https://app-foodmoment-api-dev-blzg3g.azurewebsites.net"
     #endif
     private static let apiVersion = "/api/v1"
 

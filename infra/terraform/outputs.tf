@@ -37,28 +37,8 @@ output "postgresql_database_name" {
 
 output "postgresql_connection_string" {
   description = "PostgreSQL 连接字符串（不含密码）"
-  value       = "postgresql+asyncpg://${var.db_admin_username}:<PASSWORD>@${azurerm_postgresql_flexible_server.main.fqdn}:5432/foodmoment"
+  value       = "postgresql+asyncpg://${var.db_admin_username}:<PASSWORD>@${azurerm_postgresql_flexible_server.main.fqdn}:5432/foodmoment?ssl=require"
   sensitive   = false
-}
-
-# -----------------------------------------------------------------------------
-# Redis
-# -----------------------------------------------------------------------------
-
-output "redis_hostname" {
-  description = "Redis 主机名"
-  value       = azurerm_redis_cache.main.hostname
-}
-
-output "redis_ssl_port" {
-  description = "Redis SSL 端口"
-  value       = azurerm_redis_cache.main.ssl_port
-}
-
-output "redis_connection_string" {
-  description = "Redis 连接字符串"
-  value       = "rediss://:${azurerm_redis_cache.main.primary_access_key}@${azurerm_redis_cache.main.hostname}:${azurerm_redis_cache.main.ssl_port}/0"
-  sensitive   = true
 }
 
 # -----------------------------------------------------------------------------
@@ -125,20 +105,6 @@ output "key_vault_uri" {
 }
 
 # -----------------------------------------------------------------------------
-# CDN (可选)
-# -----------------------------------------------------------------------------
-
-output "cdn_endpoint_hostname" {
-  description = "CDN 端点主机名"
-  value       = var.enable_cdn ? azurerm_cdn_endpoint.main[0].fqdn : null
-}
-
-output "cdn_endpoint_url" {
-  description = "CDN 端点 URL"
-  value       = var.enable_cdn ? "https://${azurerm_cdn_endpoint.main[0].fqdn}" : null
-}
-
-# -----------------------------------------------------------------------------
 # Application Insights
 # -----------------------------------------------------------------------------
 
@@ -183,13 +149,8 @@ output "summary" {
     数据库: foodmoment
     用户: ${var.db_admin_username}
 
-  Redis:
-    主机: ${azurerm_redis_cache.main.hostname}
-    端口: ${azurerm_redis_cache.main.ssl_port} (SSL)
-
   存储:
     Blob 端点: ${azurerm_storage_account.main.primary_blob_endpoint}
-    CDN: ${var.enable_cdn ? "https://${azurerm_cdn_endpoint.main[0].fqdn}" : "未启用"}
 
   Key Vault:
     URI: ${azurerm_key_vault.main.vault_uri}

@@ -250,7 +250,7 @@ async def _analyze_with_anthropic(image_data: bytes) -> dict | None:
 
         headers = {
             "Content-Type": "application/json",
-            "x-api-key": "agent-maestro",
+            "x-api-key": settings.anthropic_proxy_key or "",
             "anthropic-version": "2023-06-01",
         }
 

@@ -76,18 +76,17 @@ variable "jwt_secret_key" {
 }
 
 # -----------------------------------------------------------------------------
-# AI 服务配置
+# AI 服务配置 - Anthropic (via Agent Maestro)
 # -----------------------------------------------------------------------------
 
-variable "gemini_api_key" {
-  description = "Google Gemini API Key"
+variable "anthropic_base_url" {
+  description = "Anthropic API base URL（Agent Maestro ngrok 地址）"
   type        = string
-  sensitive   = true
   default     = ""
 }
 
-variable "openai_api_key" {
-  description = "OpenAI API Key"
+variable "anthropic_proxy_key" {
+  description = "Agent Maestro proxy key"
   type        = string
   sensitive   = true
   default     = ""
@@ -101,22 +100,6 @@ variable "cors_allowed_origins" {
   description = "CORS 允许的源"
   type        = list(string)
   default     = ["*"]
-}
-
-# -----------------------------------------------------------------------------
-# 可选功能
-# -----------------------------------------------------------------------------
-
-variable "enable_cdn" {
-  description = "是否启用 CDN（会增加约 $20-30/月成本）"
-  type        = bool
-  default     = false
-}
-
-variable "enable_staging_slot" {
-  description = "是否启用 staging 部署槽（仅 prod 环境）"
-  type        = bool
-  default     = false
 }
 
 # -----------------------------------------------------------------------------
