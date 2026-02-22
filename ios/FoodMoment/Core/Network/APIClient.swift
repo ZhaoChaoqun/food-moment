@@ -50,7 +50,7 @@ actor APIClient {
         let cacheKey = endpoint.path
 
         // GET 请求先查缓存
-        if endpoint.method == .get, body == nil, let ttl = cacheTTL(for: endpoint) {
+        if endpoint.method == .get, body == nil, cacheTTL(for: endpoint) != nil {
             if let cachedData = await APICache.shared.get(for: cacheKey) {
                 return try decoder.decode(T.self, from: cachedData)
             }
@@ -182,7 +182,7 @@ actor APIClient {
         case .createMeal, .updateMeal, .deleteMeal:
             await APICache.shared.invalidate(matching: "/meals")
             await APICache.shared.invalidate(matching: "/stats")
-        case .updateProfile, .updateGoals:
+        case .updateProfile, .updateGoals, .uploadAvatar:
             await APICache.shared.invalidate(matching: "/user/profile")
         case .logWater:
             await APICache.shared.invalidate(matching: "/water")

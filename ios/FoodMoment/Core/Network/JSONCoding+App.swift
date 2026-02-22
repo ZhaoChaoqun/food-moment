@@ -1,16 +1,42 @@
 import Foundation
 
+// MARK: - ISO 8601 Date Strategy
+
+/// 后端统一输出 ISO 8601 带时区格式，支持带/不带微秒：
+/// - `"2026-02-20T14:07:49.969004Z"`
+/// - `"2026-02-20T14:07:49Z"`
+private let iso8601WithFractional: JSONDecoder.DateDecodingStrategy = .custom { decoder in
+    let container = try decoder.singleValueContainer()
+    let string = try container.decode(String.self)
+
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    if let date = formatter.date(from: string) {
+        return date
+    }
+
+    formatter.formatOptions = [.withInternetDateTime]
+    if let date = formatter.date(from: string) {
+        return date
+    }
+
+    throw DecodingError.dataCorruptedError(
+        in: container,
+        debugDescription: "无法解析日期: \(string)"
+    )
+}
+
 // MARK: - JSONDecoder 全局预配置
 
 extension JSONDecoder {
 
-    /// 应用主 Decoder：snake_case key + ISO 8601 日期
+    /// 应用主 Decoder：snake_case key + ISO 8601 日期（带时区）
     ///
     /// 用于与后端 API 通信的标准解码器。
     static let appSnakeCase: JSONDecoder = {
         let decoder = JSONDecoder()
         decoder.keyDecodingStrategy = .convertFromSnakeCase
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = iso8601WithFractional
         return decoder
     }()
 
@@ -19,7 +45,7 @@ extension JSONDecoder {
     /// 用于第三方 API 或自定义 CodingKeys 的场景。
     static let appDefault: JSONDecoder = {
         let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
+        decoder.dateDecodingStrategy = iso8601WithFractional
         return decoder
     }()
 }

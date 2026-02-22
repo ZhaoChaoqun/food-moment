@@ -9,6 +9,7 @@ protocol UserServiceProtocol: Sendable {
     func getAchievements() async throws -> [AchievementResponseDTO]
     func getStreaks() async throws -> StreakResponseDTO
     func logWeight(_ entry: WeightLogCreateDTO) async throws -> WeightLogResponseDTO
+    func uploadAvatar(imageData: Data) async throws -> AvatarUploadResponseDTO
 }
 
 // MARK: - User Service
@@ -40,5 +41,9 @@ final class UserService: UserServiceProtocol {
 
     func logWeight(_ entry: WeightLogCreateDTO) async throws -> WeightLogResponseDTO {
         try await APIClient.shared.request(.logWeight, body: entry)
+    }
+
+    func uploadAvatar(imageData: Data) async throws -> AvatarUploadResponseDTO {
+        try await APIClient.shared.upload(.uploadAvatar, imageData: imageData, filename: "avatar.jpg", mimeType: "image/jpeg")
     }
 }

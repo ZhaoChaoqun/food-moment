@@ -30,6 +30,18 @@ enum APIEndpoint {
         TimeZone.current.secondsFromGMT()
     }
 
+    /// 将后端返回的相对路径或完整 URL 转为可用的完整 URL
+    ///
+    /// 后端 storage_public_url 在开发环境返回相对路径（如 `/api/v1/storage/xxx.jpg`），
+    /// 需要拼接 baseURL 才能在真机上通过 ngrok 访问。
+    static func resolveMediaURL(_ urlString: String) -> URL? {
+        if urlString.hasPrefix("http://") || urlString.hasPrefix("https://") {
+            return URL(string: urlString)
+        }
+        // 相对路径，拼接 baseURL
+        return URL(string: baseURL + urlString)
+    }
+
     // MARK: - Auth Endpoints
 
     case deviceAuth
@@ -65,6 +77,7 @@ enum APIEndpoint {
 
     case getProfile
     case updateProfile
+    case uploadAvatar
     case achievements
     case updateGoals
     case logWeight
@@ -127,6 +140,8 @@ enum APIEndpoint {
             return "/user/profile"
         case .updateProfile:
             return "/user/profile"
+        case .uploadAvatar:
+            return "/user/avatar"
         case .achievements:
             return "/user/achievements"
         case .updateGoals:
@@ -147,7 +162,7 @@ enum APIEndpoint {
     /// HTTP 请求方法
     var method: HTTPMethod {
         switch self {
-        case .deviceAuth, .appleSignIn, .refreshToken, .analyzeFood, .createMeal, .logWeight, .logWater, .seedDemo:
+        case .deviceAuth, .appleSignIn, .refreshToken, .analyzeFood, .createMeal, .logWeight, .logWater, .seedDemo, .uploadAvatar:
             return .post
         case .updateProfile, .updateMeal, .updateGoals:
             return .put
@@ -197,6 +212,7 @@ enum APIEndpoint {
         case .insights:         return "数据洞察"
         case .getProfile:       return "获取档案"
         case .updateProfile:    return "更新档案"
+        case .uploadAvatar:     return "上传头像"
         case .achievements:     return "成就列表"
         case .updateGoals:      return "更新目标"
         case .logWeight:        return "记录体重"

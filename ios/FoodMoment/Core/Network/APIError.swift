@@ -110,6 +110,16 @@ enum APIError: LocalizedError {
         }
     }
 
+    /// 是否为网络连接错误（用于离线队列判断）
+    var isNetworkError: Bool {
+        switch self {
+        case .networkError:
+            return true
+        default:
+            return false
+        }
+    }
+
     /// 获取底层错误（如果有）
     var underlyingError: Error? {
         switch self {
