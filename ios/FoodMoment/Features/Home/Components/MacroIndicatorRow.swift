@@ -4,27 +4,20 @@ struct MacroIndicatorRow: View {
 
     // MARK: - Properties
 
-    let calories: Int
     let proteinGrams: Double
     let carbsGrams: Double
+    let fatGrams: Double
 
     // MARK: - Design Colors
 
-    private let calorieColor = Color(hex: "#076653")
     private let proteinColor = AppTheme.Colors.protein
     private let carbsColor = AppTheme.Colors.carbs
+    private let fatColor = AppTheme.Colors.fat
 
     // MARK: - Body
 
     var body: some View {
         HStack(spacing: 8) {
-            MacroIndicatorItem(
-                color: calorieColor,
-                label: "热量",
-                value: "\(calories)",
-                unit: "kcal"
-            )
-
             MacroIndicatorItem(
                 color: proteinColor,
                 label: "蛋白质",
@@ -36,6 +29,13 @@ struct MacroIndicatorRow: View {
                 color: carbsColor,
                 label: "碳水",
                 value: String(format: "%.0f", carbsGrams),
+                unit: "g"
+            )
+
+            MacroIndicatorItem(
+                color: fatColor,
+                label: "脂肪",
+                value: String(format: "%.0f", fatGrams),
                 unit: "g",
                 needsBorder: true
             )
@@ -118,16 +118,16 @@ private struct MacroIndicatorItem: View {
 #Preview {
     VStack(spacing: 20) {
         MacroIndicatorRow(
-            calories: 850,
             proteinGrams: 45,
-            carbsGrams: 120
+            carbsGrams: 120,
+            fatGrams: 38
         )
         .padding(.horizontal)
 
         MacroIndicatorRow(
-            calories: 1260,
             proteinGrams: 62,
-            carbsGrams: 180
+            carbsGrams: 180,
+            fatGrams: 55
         )
         .padding(.horizontal)
         .background(Color.gray.opacity(0.1))

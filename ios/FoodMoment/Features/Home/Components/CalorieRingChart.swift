@@ -4,59 +4,20 @@ struct CalorieRingChart: View {
 
     // MARK: - Properties
 
-    let calorieProgress: Double
-    let proteinProgress: Double
-    let carbsProgress: Double
+    let progress: Double
 
     // MARK: - State
 
-    @State private var animatedCalorieProgress: Double = 0
-    @State private var animatedProteinProgress: Double = 0
-    @State private var animatedCarbsProgress: Double = 0
+    @State private var animatedProgress: Double = 0
 
     // MARK: - Design Constants
 
-    private let lineWidth: CGFloat = 14
-    private let ringGap: CGFloat = 22
-    private let trackColor: Color = .gray.opacity(0.1)
+    private let lineWidth: CGFloat = 24
 
-    // MARK: - Gradient Colors
-
-    /// 外环渐变 - 卡路里：深绿到墨绿（森林渐变）
-    private var calorieGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                Color(hex: "#076653"),
-                Color(hex: "#102216")
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    /// 中环渐变 - 蛋白质：绿色渐变
-    private var proteinGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                AppTheme.Colors.protein,
-                AppTheme.Colors.protein.opacity(0.6)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-
-    /// 内环渐变 - 碳水：黄色渐变
-    private var carbsGradient: LinearGradient {
-        LinearGradient(
-            colors: [
-                AppTheme.Colors.carbs,
-                AppTheme.Colors.carbs.opacity(0.6)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
+    /// 亮黄绿色（进度弧线）
+    private var progressColor: Color { Color(hex: "#C8E64E") }
+    /// 深绿色（底部轨道）
+    private var trackColor: Color { Color(hex: "#2D4A2D") }
 
     // MARK: - Body
 
@@ -65,85 +26,163 @@ struct CalorieRingChart: View {
             let size = min(geometry.size.width, geometry.size.height)
 
             ZStack {
-                outerRing(diameter: size)
-                middleRing(diameter: size - ringGap * 2)
-                innerRing(diameter: size - ringGap * 4)
+                singleRing(diameter: size)
             }
             .frame(width: size, height: size)
             .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
         }
         .aspectRatio(1, contentMode: .fit)
         .onAppear {
-            animateProgressOnAppear()
+            withAnimation(.easeOut(duration: 1.2)) {
+                animatedProgress = progress
+            }
         }
-        .onChange(of: calorieProgress) { _, newValue in
-            withAnimation(.easeOut(duration: 0.6)) { animatedCalorieProgress = newValue }
-        }
-        .onChange(of: proteinProgress) { _, newValue in
-            withAnimation(.easeOut(duration: 0.6)) { animatedProteinProgress = newValue }
-        }
-        .onChange(of: carbsProgress) { _, newValue in
-            withAnimation(.easeOut(duration: 0.6)) { animatedCarbsProgress = newValue }
+        .onChange(of: progress) { _, newValue in
+            withAnimation(.easeOut(duration: 0.6)) {
+                animatedProgress = newValue
+            }
         }
     }
 
-    // MARK: - Ring Layers
+    // MARK: - Single Ring
 
-    private func outerRing(diameter: CGFloat) -> some View {
-        ringLayer(
-            progress: animatedCalorieProgress,
-            gradient: calorieGradient,
-            diameter: diameter
-        )
-    }
+    private func singleRing(diameter: CGFloat) -> some View {
+        let ringDiameter = diameter - lineWidth
+        let radius = ringDiameter / 2
+        let clampedProgress = max(animatedProgress, 0)
 
-    private func middleRing(diameter: CGFloat) -> some View {
-        ringLayer(
-            progress: animatedProteinProgress,
-            gradient: proteinGradient,
-            diameter: diameter
-        )
-    }
-
-    private func innerRing(diameter: CGFloat) -> some View {
-        ringLayer(
-            progress: animatedCarbsProgress,
-            gradient: carbsGradient,
-            diameter: diameter
-        )
-    }
-
-    @ViewBuilder
-    private func ringLayer(
-        progress: Double,
-        gradient: LinearGradient,
-        diameter: CGFloat
-    ) -> some View {
-        ZStack {
+        return ZStack {
+            // 底部轨道
             Circle()
                 .stroke(trackColor, lineWidth: lineWidth)
-                .frame(width: diameter - lineWidth, height: diameter - lineWidth)
+                .frame(width: ringDiameter, height: ringDiameter)
 
-            Circle()
-                .trim(from: 0, to: CGFloat(min(progress, 1.0)))
-                .stroke(
-                    gradient,
-                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+            if clampedProgress <= 1.0 {
+                normalArc(
+                    progress: clampedProgress,
+                    ringDiameter: ringDiameter,
+                    radius: radius
                 )
-                .frame(width: diameter - lineWidth, height: diameter - lineWidth)
-                .rotationEffect(.degrees(-90))
-                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+            } else {
+                overflowArc(
+                    progress: clampedProgress,
+                    ringDiameter: ringDiameter,
+                    radius: radius
+                )
+            }
         }
     }
 
-    // MARK: - Private Methods
+    // MARK: - Normal Arc (≤ 100%)
 
-    private func animateProgressOnAppear() {
-        withAnimation(.easeOut(duration: 1.2)) {
-            animatedCalorieProgress = calorieProgress
-            animatedProteinProgress = proteinProgress
-            animatedCarbsProgress = carbsProgress
+    @ViewBuilder
+    private func normalArc(
+        progress: Double,
+        ringDiameter: CGFloat,
+        radius: CGFloat
+    ) -> some View {
+        Circle()
+            .trim(from: 0, to: CGFloat(progress))
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(colors: [
+                        progressColor.opacity(0.8),
+                        progressColor,
+                        progressColor.opacity(0.9)
+                    ]),
+                    center: .center,
+                    startAngle: .degrees(0),
+                    endAngle: .degrees(360 * progress)
+                ),
+                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+            )
+            .frame(width: ringDiameter, height: ringDiameter)
+            .rotationEffect(.degrees(-90))
+            .shadow(color: progressColor.opacity(0.4), radius: 8, x: 0, y: 0)
+
+        if progress > 0.05 {
+            endCapCircle(
+                progress: progress,
+                radius: radius,
+                shadowRadius: 6,
+                shadowOpacity: 0.4
+            )
         }
+    }
+
+    // MARK: - Overflow Arc (> 100%)
+
+    @ViewBuilder
+    private func overflowArc(
+        progress: Double,
+        ringDiameter: CGFloat,
+        radius: CGFloat
+    ) -> some View {
+        let overProgress = progress - 1.0
+
+        // 底层：完整一圈
+        Circle()
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(colors: [
+                        progressColor.opacity(0.6),
+                        progressColor.opacity(0.7),
+                        progressColor.opacity(0.6)
+                    ]),
+                    center: .center
+                ),
+                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+            )
+            .frame(width: ringDiameter, height: ringDiameter)
+            .rotationEffect(.degrees(-90))
+
+        // 叠加层：超出弧线（更亮 + 发光）
+        Circle()
+            .trim(from: 0, to: CGFloat(min(overProgress, 1.0)))
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(colors: [
+                        progressColor,
+                        Color(hex: "#E8FF6B"),
+                        progressColor
+                    ]),
+                    center: .center,
+                    startAngle: .degrees(0),
+                    endAngle: .degrees(360 * min(overProgress, 1.0))
+                ),
+                style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
+            )
+            .frame(width: ringDiameter, height: ringDiameter)
+            .rotationEffect(.degrees(-90))
+            .shadow(color: progressColor.opacity(0.6), radius: 12, x: 0, y: 0)
+
+        // 末端阴影圆
+        endCapCircle(
+            progress: min(overProgress, 1.0),
+            radius: radius,
+            shadowRadius: 8,
+            shadowOpacity: 0.6
+        )
+    }
+
+    // MARK: - End Cap Circle
+
+    private func endCapCircle(
+        progress: Double,
+        radius: CGFloat,
+        shadowRadius: CGFloat,
+        shadowOpacity: Double
+    ) -> some View {
+        let angle = Angle(degrees: 360 * progress - 90)
+        let x = radius * cos(CGFloat(angle.radians))
+        let y = radius * sin(CGFloat(angle.radians))
+
+        return Circle()
+            .fill(progressColor)
+            .frame(width: lineWidth, height: lineWidth)
+            .shadow(color: progressColor.opacity(shadowOpacity), radius: shadowRadius, x: 0, y: 0)
+            .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+            .offset(x: x, y: y)
     }
 }
 
@@ -151,19 +190,13 @@ struct CalorieRingChart: View {
 
 #Preview {
     VStack(spacing: 40) {
-        CalorieRingChart(
-            calorieProgress: 0.72,
-            proteinProgress: 0.75,
-            carbsProgress: 0.48
-        )
-        .frame(width: 200, height: 200)
+        // 正常进度
+        CalorieRingChart(progress: 0.72)
+            .frame(width: 220, height: 220)
 
-        CalorieRingChart(
-            calorieProgress: 0.5,
-            proteinProgress: 0.6,
-            carbsProgress: 0.4
-        )
-        .frame(width: 150, height: 150)
+        // 超标情况
+        CalorieRingChart(progress: 1.15)
+            .frame(width: 220, height: 220)
     }
     .padding()
 }

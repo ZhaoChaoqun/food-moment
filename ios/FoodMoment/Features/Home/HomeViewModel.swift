@@ -10,6 +10,8 @@ final class HomeViewModel {
 
     var userName: String = "User"
     var userAvatarAssetName: String?
+    var userAvatarUrl: String?
+    var localAvatarData: Data?
     var stepCount: Int = 0
     var caloriesBurned: Int = 0
 
@@ -51,8 +53,24 @@ final class HomeViewModel {
         do {
             let (mealDTOs, waterDTO, profile) = try await (mealsTask, waterTask, profileTask)
 
-            // 更新用户配置到 SwiftData
+            // 更新用户配置
             userName = profile.displayName
+            userAvatarUrl = profile.avatarUrl
+
+            // 同步 avatarUrl 到 SwiftData UserProfile（不存在则创建）
+            let profileDescriptor = FetchDescriptor<UserProfile>(
+                sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+            )
+            let userProfile: UserProfile
+            if let existing = try? modelContext.fetch(profileDescriptor).first {
+                userProfile = existing
+            } else {
+                userProfile = UserProfile(id: profile.id, displayName: profile.displayName)
+                modelContext.insert(userProfile)
+            }
+            userProfile.avatarUrl = profile.avatarUrl
+            userProfile.displayName = profile.displayName
+            localAvatarData = userProfile.localAvatarData
 
             // 餐食 Smart Merge：按 UUID upsert，保护未同步记录
             let calendar = Calendar.current

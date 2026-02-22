@@ -27,7 +27,6 @@ struct HomeView: View {
                         endOfDay: Date().endOfDay,
                         stepCount: viewModel.stepCount,
                         caloriesBurned: viewModel.caloriesBurned,
-                        dailyStepGoal: 10000,
                         onAddWater: {
                             Task {
                                 await viewModel.addWater(
@@ -44,6 +43,9 @@ struct HomeView: View {
                         },
                         onMealTapped: { meal in
                             selectedMeal = meal
+                        },
+                        onCameraTapped: {
+                            appState.activeFullScreen = .camera
                         }
                     )
                 }
@@ -59,8 +61,23 @@ struct HomeView: View {
             .navigationBarHidden(true)
             .accessibilityIdentifier("HomeScrollView")
             .navigationDestination(item: $selectedMeal) { meal in
-                MealDetailView(meal: meal)
+                MealDetailView(meal: meal, onDelete: {
+                    Task {
+                        do {
+                            try await MealService.shared.deleteMeal(id: meal.id.uuidString)
+                            modelContext.delete(meal)
+                            try? modelContext.save()
+                            HapticManager.success()
+                        } catch {
+                            HapticManager.error()
+                        }
+                    }
+                    selectedMeal = nil
+                })
             }
+        }
+        .onChange(of: selectedMeal) { _, newValue in
+            appState.isTabBarHidden = (newValue != nil)
         }
         .sheet(isPresented: $isShowingWaterSheet) {
             WaterTrackingSheet { amount in
@@ -82,18 +99,13 @@ struct HomeView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text(formattedDate)
-                    .font(.Jakarta.semiBold(12))
+                    .font(.Jakarta.semiBold(14))
                     .foregroundStyle(.secondary)
                     .tracking(1.2)
                     .textCase(.uppercase)
                     .accessibilityIdentifier("DateLabel")
 
-                Text("\(viewModel.greeting),")
-                    .font(.Jakarta.medium(20))
-                    .foregroundStyle(.secondary)
-                    .accessibilityIdentifier("GreetingText")
-
-                Text(viewModel.userName)
+                Text("\(viewModel.greeting), \(viewModel.userName)")
                     .font(.Jakarta.bold(28))
                     .foregroundStyle(
                         LinearGradient(
@@ -102,7 +114,9 @@ struct HomeView: View {
                             endPoint: .trailing
                         )
                     )
-                    .accessibilityIdentifier("UserNameText")
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                    .accessibilityIdentifier("GreetingText")
             }
 
             Spacer()
@@ -117,7 +131,35 @@ struct HomeView: View {
 
     private var userAvatarView: some View {
         ZStack(alignment: .bottomTrailing) {
-            if let assetName = viewModel.userAvatarAssetName {
+            if let imageData = viewModel.localAvatarData,
+               let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 48, height: 48)
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                    )
+                    .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+            } else if let urlString = viewModel.userAvatarUrl, let url = APIEndpoint.resolveMediaURL(urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFill()
+                            .frame(width: 48, height: 48)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                            )
+                            .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+                    default:
+                        defaultAvatarView
+                    }
+                }
+            } else if let assetName = viewModel.userAvatarAssetName {
                 Image(assetName)
                     .resizable()
                     .scaledToFill()
@@ -178,16 +220,7 @@ struct HomeView: View {
     // MARK: - Helper Methods
 
     private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMM d"
-        formatter.locale = Locale(identifier: "en_US")
-        return formatter.string(from: Date())
-    }
-
-    private func formattedNumber(_ value: Int) -> String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        Date().homeHeaderString
     }
 }
 
@@ -201,34 +234,35 @@ private struct HomeDataContent: View {
 
     let stepCount: Int
     let caloriesBurned: Int
-    let dailyStepGoal: Int
     let onAddWater: () -> Void
     let onShowWaterOptions: () -> Void
     let onMoreMealsTapped: () -> Void
     let onMealTapped: (MealRecord) -> Void
+    let onCameraTapped: () -> Void
 
     init(
         startOfDay: Date,
         endOfDay: Date,
         stepCount: Int,
         caloriesBurned: Int,
-        dailyStepGoal: Int,
         onAddWater: @escaping () -> Void,
         onShowWaterOptions: @escaping () -> Void,
         onMoreMealsTapped: @escaping () -> Void,
-        onMealTapped: @escaping (MealRecord) -> Void
+        onMealTapped: @escaping (MealRecord) -> Void,
+        onCameraTapped: @escaping () -> Void
     ) {
         self.stepCount = stepCount
         self.caloriesBurned = caloriesBurned
-        self.dailyStepGoal = dailyStepGoal
         self.onAddWater = onAddWater
         self.onShowWaterOptions = onShowWaterOptions
         self.onMoreMealsTapped = onMoreMealsTapped
         self.onMealTapped = onMealTapped
+        self.onCameraTapped = onCameraTapped
 
         _todayMeals = Query(
             filter: #Predicate<MealRecord> { record in
                 record.mealTime >= startOfDay && record.mealTime < endOfDay
+                && record.pendingDeletion == false
             },
             sort: \.mealTime
         )
@@ -278,25 +312,27 @@ private struct HomeDataContent: View {
         profiles.first?.dailyFatGoal ?? 65
     }
 
-    private var dailyWaterGoal: Int { 2500 }
+    private var dailyWaterGoal: Int { profiles.first?.dailyWaterGoal ?? 2500 }
 
-    private var caloriesLeft: Int {
-        max(dailyCalorieGoal - consumedCalories, 0)
+    private var dailyStepGoal: Int { profiles.first?.dailyStepGoal ?? 10000 }
+
+    private var isOverGoal: Bool {
+        consumedCalories > dailyCalorieGoal
     }
 
     private var calorieProgress: Double {
         guard dailyCalorieGoal > 0 else { return 0 }
-        return min(Double(consumedCalories) / Double(dailyCalorieGoal), 1.0)
+        return Double(consumedCalories) / Double(dailyCalorieGoal)
     }
 
     private var proteinProgress: Double {
         guard dailyProteinGoal > 0 else { return 0 }
-        return min(proteinGrams / Double(dailyProteinGoal), 1.0)
+        return proteinGrams / Double(dailyProteinGoal)
     }
 
     private var carbsProgress: Double {
         guard dailyCarbsGoal > 0 else { return 0 }
-        return min(carbsGrams / Double(dailyCarbsGoal), 1.0)
+        return carbsGrams / Double(dailyCarbsGoal)
     }
 
     private var waterProgress: Double {
@@ -327,25 +363,19 @@ private struct HomeDataContent: View {
     private var calorieRingCard: some View {
         VStack(spacing: 16) {
             ZStack {
-                CalorieRingChart(
-                    calorieProgress: calorieProgress,
-                    proteinProgress: proteinProgress,
-                    carbsProgress: carbsProgress
-                )
-                .frame(width: 200, height: 200)
-                .accessibilityIdentifier("CalorieRingChart")
+                CalorieRingChart(progress: calorieProgress)
+                    .frame(width: 220, height: 220)
+                    .accessibilityIdentifier("CalorieRingChart")
 
                 caloriesCenterContent
             }
 
-            Text("每日目标: \(formattedNumber(dailyCalorieGoal))")
-                .font(.Jakarta.medium(12))
-                .foregroundStyle(.tertiary)
+            caloriesSummaryText
 
             MacroIndicatorRow(
-                calories: consumedCalories,
                 proteinGrams: proteinGrams,
-                carbsGrams: carbsGrams
+                carbsGrams: carbsGrams,
+                fatGrams: fatGrams
             )
             .accessibilityIdentifier("MacroIndicators")
         }
@@ -369,18 +399,50 @@ private struct HomeDataContent: View {
     }
 
     private var caloriesCenterContent: some View {
-        VStack(spacing: 4) {
-            Text(formattedNumber(caloriesLeft))
-                .font(.Jakarta.extraBold(48))
+        VStack(spacing: 6) {
+            Text("\(percentageText)%")
+                .font(.Jakarta.extraBold(44))
                 .foregroundStyle(.primary)
                 .contentTransition(.numericText())
-                .accessibilityIdentifier("CaloriesRemainingText")
+                .accessibilityIdentifier("CaloriePercentageText")
 
-            Text("剩余千卡")
+            Text("目标完成度")
                 .font(.Jakarta.semiBold(11))
                 .foregroundStyle(.secondary)
                 .tracking(1.5)
+                .textCase(.uppercase)
+
+            if isOverGoal {
+                Text("已超出目标")
+                    .font(.Jakarta.bold(10))
+                    .foregroundStyle(Color(hex: "#C8E64E"))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color(hex: "#C8E64E").opacity(0.15))
+                    )
+                    .padding(.top, 2)
+            }
         }
+    }
+
+    private var caloriesSummaryText: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            Text(formattedCalories(consumedCalories))
+                .font(.Jakarta.bold(20))
+                .foregroundStyle(.primary)
+
+            Text("/ \(formattedCalories(dailyCalorieGoal)) kcal")
+                .font(.Jakarta.medium(13))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityIdentifier("CalorieSummaryText")
+    }
+
+    private var percentageText: Int {
+        guard dailyCalorieGoal > 0 else { return 0 }
+        return Int(Double(consumedCalories) / Double(dailyCalorieGoal) * 100)
     }
 
     // MARK: - Health Metrics Grid
@@ -413,16 +475,22 @@ private struct HomeDataContent: View {
         FoodMomentCarousel(
             meals: Array(todayMeals),
             onMealTapped: onMealTapped,
-            onMoreTapped: onMoreMealsTapped
+            onMoreTapped: onMoreMealsTapped,
+            onCameraTapped: onCameraTapped
         )
         .accessibilityIdentifier("FoodMomentCarousel")
     }
 
     // MARK: - Helpers
 
-    private func formattedNumber(_ value: Int) -> String {
+    private static let calorieFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+        formatter.groupingSeparator = ","
+        return formatter
+    }()
+
+    private func formattedCalories(_ value: Int) -> String {
+        Self.calorieFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 }

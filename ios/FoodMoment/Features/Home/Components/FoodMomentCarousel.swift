@@ -8,6 +8,7 @@ struct FoodMomentCarousel: View {
     let meals: [MealRecord]
     var onMealTapped: ((MealRecord) -> Void)?
     var onMoreTapped: (() -> Void)?
+    var onCameraTapped: (() -> Void)?
 
     // MARK: - Body
 
@@ -75,49 +76,52 @@ struct FoodMomentCarousel: View {
     // MARK: - Empty State
 
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                AppTheme.Colors.primary.opacity(0.08),
-                                AppTheme.Colors.primary.opacity(0.02)
-                            ],
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 35
+        Button(action: { onCameraTapped?() }) {
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    AppTheme.Colors.primary.opacity(0.08),
+                                    AppTheme.Colors.primary.opacity(0.02)
+                                ],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 35
+                            )
                         )
-                    )
-                    .frame(width: 72, height: 72)
+                        .frame(width: 72, height: 72)
 
-                Image(systemName: "camera.fill")
-                    .font(.Jakarta.regular(32))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                AppTheme.Colors.primary.opacity(0.6),
-                                AppTheme.Colors.primary.opacity(0.3)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+                    Image(systemName: "camera.fill")
+                        .font(.Jakarta.regular(32))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    AppTheme.Colors.primary.opacity(0.6),
+                                    AppTheme.Colors.primary.opacity(0.3)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
-                    )
+                }
+
+                Text("还没有记录今天的美食")
+                    .font(.Jakarta.medium(14))
+                    .foregroundStyle(.secondary)
+
+                Text("拍张照片，开启你的食刻")
+                    .font(.Jakarta.regular(12))
+                    .foregroundStyle(.tertiary)
             }
-
-            Text("还没有记录今天的美食")
-                .font(.Jakarta.medium(14))
-                .foregroundStyle(.secondary)
-
-            Text("拍张照片，开启你的食刻")
-                .font(.Jakarta.regular(12))
-                .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 32)
+            .padding(.horizontal, 20)
+            .glassCard(cornerRadius: AppTheme.CornerRadius.medium)
+            .padding(.horizontal, 20)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-        .padding(.horizontal, 20)
-        .glassCard(cornerRadius: AppTheme.CornerRadius.medium)
-        .padding(.horizontal, 20)
+        .buttonStyle(.plain)
     }
 }
 
@@ -169,8 +173,14 @@ private struct FoodMomentCard: View {
 
     @ViewBuilder
     private var imageLayer: some View {
-        if let assetName = meal.localAssetName {
-            // 优先使用本地 Asset 图片（用于演示数据）
+        if let imageData = meal.localImageData,
+                  let uiImage = UIImage(data: imageData) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: cardWidth, height: cardHeight)
+                .clipped()
+        } else if let assetName = meal.localAssetName {
             Image(assetName)
                 .resizable()
                 .scaledToFill()
@@ -194,13 +204,6 @@ private struct FoodMomentCard: View {
                     placeholderView
                 }
             }
-        } else if let imageData = meal.localImageData,
-                  let uiImage = UIImage(data: imageData) {
-            Image(uiImage: uiImage)
-                .resizable()
-                .scaledToFill()
-                .frame(width: cardWidth, height: cardHeight)
-                .clipped()
         } else {
             placeholderView
         }
@@ -250,7 +253,7 @@ private struct FoodMomentCard: View {
                     .foregroundStyle(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color.black.opacity(0.35))
+                    .background(AppTheme.Colors.calorieBadgeBackground)
                     .clipShape(Capsule())
             }
             Spacer()
