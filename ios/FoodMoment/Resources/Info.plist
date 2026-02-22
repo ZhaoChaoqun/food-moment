@@ -39,6 +39,13 @@
 	<string>FoodMoment needs access to your photo library to select food images.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>UIAppFonts</key>
+	<array>
+		<string>SweiGothicCJKsc-Regular.ttf</string>
+		<string>SweiGothicCJKsc-Medium.ttf</string>
+		<string>SweiGothicCJKsc-Bold.ttf</string>
+		<string>SweiGothicCJKsc-Black.ttf</string>
+	</array>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
@@ -47,7 +54,7 @@
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
-		<string></string>
+		<string>LaunchBackground</string>
 	</dict>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

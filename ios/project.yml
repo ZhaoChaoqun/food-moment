@@ -84,7 +84,7 @@ targets:
       path: FoodMoment/Resources/Info.plist
       properties:
         UILaunchScreen:
-          UIColorName: ""
+          UIColorName: LaunchBackground
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:

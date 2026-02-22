@@ -7,7 +7,7 @@ extension Font {
 
     /// 应用字体配置
     ///
-    /// 英文/数字使用 SF Pro Rounded，中文使用圆体 SC (Yuanti SC)
+    /// 英文/数字使用 SF Pro Rounded，中文使用狮尾圆体 (Swei Gothic CJK SC)
     /// 通过 UIFont cascade list 实现中英文圆角风格统一
     ///
     /// ## 使用示例
@@ -22,7 +22,7 @@ extension Font {
     /// - Parameters:
     ///   - weight: 字重
     ///   - size: 字体大小
-    /// - Returns: SF Pro Rounded + 圆体 SC 组合字体
+    /// - Returns: SF Pro Rounded + 狮尾圆体组合字体
     static func appFont(_ weight: Font.Weight = .regular, size: CGFloat) -> Font {
         Font(FontBuilder.build(weight: weight.uiFontWeight, size: size))
     }
@@ -39,7 +39,7 @@ extension Font {
     // MARK: - 兼容旧 API（Jakarta 别名）
 
     /// Jakarta Sans 兼容层
-    /// 现已改用 SF Pro Rounded + 圆体 SC，保留此命名空间以兼容现有代码
+    /// 现已改用 SF Pro Rounded + 狮尾圆体，保留此命名空间以兼容现有代码
     enum Jakarta {
 
         /// 常规字重
@@ -71,15 +71,12 @@ extension Font {
 
 // MARK: - Font Builder
 
-/// 构建 SF Pro Rounded + 圆体 SC 组合字体
+/// 构建 SF Pro Rounded + 狮尾圆体组合字体
 ///
 /// 使用 UIFont cascade list 机制：
 /// - 主字体：SF Pro Rounded（英文/数字）
-/// - 回退字体：圆体 SC（中文），替代默认的 PingFang SC
+/// - 回退字体：狮尾圆体 CJK SC（中文），内嵌于 App 包内
 private enum FontBuilder {
-
-    /// 圆体 SC 的字体族名
-    private static let yuantiFamily = "Yuanti SC"
 
     /// 构建组合字体
     static func build(weight: UIFont.Weight, size: CGFloat) -> UIFont {
@@ -93,33 +90,32 @@ private enum FontBuilder {
 
         let baseFont = UIFont(descriptor: roundedDescriptor, size: size)
 
-        // 2. 创建圆体 SC 作为中文回退字体
-        let yuantiPostScriptName = yuantiName(for: weight)
-        guard let yuantiFont = UIFont(name: yuantiPostScriptName, size: size) else {
-            // 圆体不可用时回退到纯 rounded 系统字体
+        // 2. 创建狮尾圆体作为中文回退字体
+        let postScriptName = sweiGothicName(for: weight)
+        guard let cjkFont = UIFont(name: postScriptName, size: size) else {
             return baseFont
         }
 
-        let cascadeDescriptor = yuantiFont.fontDescriptor
         let combinedDescriptor = baseFont.fontDescriptor.addingAttributes([
-            .cascadeList: [cascadeDescriptor]
+            .cascadeList: [cjkFont.fontDescriptor]
         ])
 
         return UIFont(descriptor: combinedDescriptor, size: size)
     }
 
-    /// 根据字重映射圆体 SC 的 PostScript 名称
+    /// 根据字重映射狮尾圆体的 PostScript 名称
     ///
-    /// 圆体 SC 只有 Light / Regular / Bold 三个字重，
-    /// 需要将 UIFont.Weight 映射到最接近的变体。
-    private static func yuantiName(for weight: UIFont.Weight) -> String {
+    /// 内嵌 4 个字重：Regular / Medium / Bold / Black
+    private static func sweiGothicName(for weight: UIFont.Weight) -> String {
         switch weight {
-        case .ultraLight, .thin, .light:
-            return "YuantiSC-Light"
-        case .regular, .medium:
-            return "YuantiSC-Regular"
-        default: // semibold, bold, heavy, black
-            return "YuantiSC-Bold"
+        case .ultraLight, .thin, .light, .regular:
+            return "SweiGothicCJKsc-Regular"
+        case .medium:
+            return "SweiGothicCJKsc-Medium"
+        case .semibold, .bold:
+            return "SweiGothicCJKsc-Bold"
+        default: // heavy, black
+            return "SweiGothicCJKsc-Black"
         }
     }
 }
