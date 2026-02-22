@@ -42,6 +42,34 @@ final class UserProfile {
     /// 目标体重（公斤）
     var targetWeight: Double?
 
+    // MARK: - Personal Info
+
+    /// 性别（male/female/other）
+    var gender: String?
+
+    /// 出生年份
+    var birthYear: Int?
+
+    /// 身高（厘米）
+    var heightCm: Double?
+
+    /// 活动水平（sedentary/light/moderate/active/veryActive）
+    var activityLevel: String?
+
+    /// 头像远程 URL
+    var avatarUrl: String?
+
+    /// 头像本地缓存数据（外部存储）
+    @Attribute(.externalStorage) var localAvatarData: Data?
+
+    // MARK: - Lifestyle Goals
+
+    /// 每日饮水目标（毫升）
+    var dailyWaterGoal: Int = 2500
+
+    /// 每日步数目标
+    var dailyStepGoal: Int = 10000
+
     // MARK: - Metadata
 
     /// 创建时间
@@ -62,7 +90,15 @@ final class UserProfile {
         dailyProteinGoal: Int = 50,
         dailyCarbsGoal: Int = 250,
         dailyFatGoal: Int = 65,
-        targetWeight: Double? = nil
+        targetWeight: Double? = nil,
+        gender: String? = nil,
+        birthYear: Int? = nil,
+        heightCm: Double? = nil,
+        activityLevel: String? = nil,
+        avatarUrl: String? = nil,
+        localAvatarData: Data? = nil,
+        dailyWaterGoal: Int = 2500,
+        dailyStepGoal: Int = 10000
     ) {
         self.id = id
         self.displayName = displayName
@@ -74,6 +110,14 @@ final class UserProfile {
         self.dailyCarbsGoal = dailyCarbsGoal
         self.dailyFatGoal = dailyFatGoal
         self.targetWeight = targetWeight
+        self.gender = gender
+        self.birthYear = birthYear
+        self.heightCm = heightCm
+        self.activityLevel = activityLevel
+        self.avatarUrl = avatarUrl
+        self.localAvatarData = localAvatarData
+        self.dailyWaterGoal = dailyWaterGoal
+        self.dailyStepGoal = dailyStepGoal
     }
 }
 

@@ -4,10 +4,8 @@ import Foundation
 
 struct AchievementResponseDTO: Decodable, Sendable {
     let id: String
-    let title: String
-    let description: String
-    let emoji: String
     let unlocked: Bool
     let progress: Int
     let target: Int
+    let category: String
 }

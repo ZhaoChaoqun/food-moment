@@ -67,8 +67,6 @@ extension WaterLog {
 
     /// 格式化的记录时间
     var formattedTime: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: recordedAt)
+        recordedAt.timeOnlyString
     }
 }

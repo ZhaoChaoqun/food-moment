@@ -13,6 +13,9 @@ struct AnalysisResponseDTO: Codable, Sendable {
     /// 总卡路里
     let totalCalories: Int
 
+    /// AI 生成的简洁餐食名称
+    let mealName: String?
+
     /// 总营养成分
     let totalNutrition: NutritionDataDTO
 

@@ -372,8 +372,6 @@ extension Achievement {
 
     /// 格式化的获得日期
     var formattedEarnedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年MM月dd日"
-        return formatter.string(from: earnedAt)
+        earnedAt.achievementDateString
     }
 }

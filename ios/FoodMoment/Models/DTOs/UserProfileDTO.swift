@@ -20,6 +20,7 @@ struct UserProfileResponseDTO: Decodable, Sendable {
     let dailyWaterGoal: Int
     let dailyStepGoal: Int
     let createdAt: Date
+    let updatedAt: Date
 }
 
 // MARK: - User Profile Update DTO

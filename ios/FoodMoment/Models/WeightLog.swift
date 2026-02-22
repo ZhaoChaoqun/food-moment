@@ -63,8 +63,6 @@ extension WeightLog {
 
     /// 格式化的记录日期
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MM月dd日"
-        return formatter.string(from: recordedAt)
+        recordedAt.shortDateString
     }
 }
