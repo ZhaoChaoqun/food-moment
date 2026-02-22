@@ -11,6 +11,7 @@ struct ProfileView: View {
     // MARK: - State
 
     @State private var viewModel = ProfileViewModel()
+    @State private var isShowingEditProfile = false
 
     // MARK: - Body
 
@@ -29,65 +30,71 @@ struct ProfileView: View {
                 .padding(.top, 8)
             }
             .premiumBackground()
-            .navigationTitle("我的")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    settingsButton
+            .navigationTitle("我的")
+            .toolbar(.hidden, for: .navigationBar)
+            .safeAreaInset(edge: .top) {
+                HStack {
+                    Spacer()
+                    Text("我的")
+                        .font(.Jakarta.semiBold(17))
+                    Spacer()
                 }
+                .overlay(alignment: .trailing) {
+                    Button {
+                        viewModel.isShowingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.primary)
+                    }
+                    .padding(.trailing, 16)
+                    .accessibilityIdentifier("ProfileSettingsButton")
+                }
+                .padding(.vertical, 8)
+                .background(.clear)
             }
             .navigationDestination(isPresented: $viewModel.isShowingSettings) {
                 SettingsView(viewModel: viewModel)
             }
+            .navigationDestination(isPresented: $viewModel.isShowingAchievements) {
+                AchievementsGalleryView(viewModel: viewModel)
+            }
             .onChange(of: viewModel.isShowingSettings) { _, newValue in
                 appState.isTabBarHidden = newValue
             }
-            .sheet(isPresented: $viewModel.isShowingWeightInput) {
-                WeightInputSheet()
+            .onChange(of: viewModel.isShowingAchievements) { _, newValue in
+                appState.isTabBarHidden = newValue
+            }
+            .sheet(isPresented: $isShowingEditProfile, onDismiss: {
+                viewModel.loadProfile(modelContext: modelContext)
+            }) {
+                EditProfileView(userProfile: viewModel.userProfile)
             }
             .onAppear {
                 viewModel.loadProfile(modelContext: modelContext)
             }
             .task {
-                await viewModel.refreshFromAPI()
+                await viewModel.refreshFromAPI(modelContext: modelContext)
             }
             .accessibilityIdentifier("ProfileView")
         }
     }
 
-    // MARK: - Settings Button
-
-    private var settingsButton: some View {
-        Button {
-            viewModel.isShowingSettings = true
-        } label: {
-            Image(systemName: "gearshape.fill")
-                .font(.Jakarta.regular(17))
-                .foregroundStyle(.primary)
-                .frame(width: 36, height: 36)
-                .background(
-                    Circle()
-                        .fill(.white.opacity(0.7))
-                        .background(Circle().fill(.ultraThinMaterial))
-                )
-                .overlay(
-                    Circle()
-                        .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
-                )
-                .shadow(color: .black.opacity(0.06), radius: 8, y: 2)
-        }
-        .accessibilityIdentifier("ProfileSettingsButton")
-    }
-
     // MARK: - Profile Section
 
     private var profileSection: some View {
-        VStack(spacing: 16) {
-            avatarWithBadge
-            userNameText
+        Button {
+            isShowingEditProfile = true
+        } label: {
+            VStack(spacing: 16) {
+                avatarWithBadge
+                userNameText
+            }
+            .padding(.top, 16)
+            .padding(.bottom, 8)
         }
-        .padding(.top, 16)
-        .padding(.bottom, 8)
+        .buttonStyle(.plain)
         .accessibilityIdentifier("ProfileSection")
     }
 
@@ -125,7 +132,27 @@ struct ProfileView: View {
 
     @ViewBuilder
     private var avatarView: some View {
-        if let assetName = viewModel.avatarAssetName {
+        if let imageData = viewModel.userProfile?.localAvatarData,
+           let uiImage = UIImage(data: imageData) {
+            Image(uiImage: uiImage)
+                .resizable()
+                .scaledToFill()
+                .frame(width: 112, height: 112)
+        } else if let urlString = viewModel.avatarUrl, let url = APIEndpoint.resolveMediaURL(urlString) {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .success(let image):
+                    image.resizable().scaledToFill()
+                        .frame(width: 112, height: 112)
+                case .failure:
+                    defaultAvatar
+                        .frame(width: 112, height: 112)
+                default:
+                    ProgressView()
+                        .frame(width: 112, height: 112)
+                }
+            }
+        } else if let assetName = viewModel.avatarAssetName {
             Image(assetName)
                 .resizable()
                 .scaledToFill()
@@ -187,10 +214,16 @@ struct ProfileView: View {
                 currentWeight: viewModel.currentWeight,
                 targetWeight: viewModel.targetWeight,
                 trend: viewModel.weightTrend,
-                onTap: {
-                    viewModel.isShowingWeightInput = true
-                }
+                weightHistory: viewModel.weightHistory,
+                recordCount: viewModel.weightRecordCount
             )
+            .overlay {
+                // 将 sheet 隔离在一个独立的轻量级视图中
+                // 避免 sheet 展示/消失触发 ProfileView 整体 body 重新评估
+                WeightSheetHost(modelContext: modelContext, onWeightSaved: {
+                    viewModel.loadProfile(modelContext: modelContext)
+                })
+            }
 
             StreakCard(streakDays: viewModel.streakDays)
         }
@@ -201,12 +234,8 @@ struct ProfileView: View {
     // MARK: - Activity Calendar Section
 
     private var activityCalendarSection: some View {
-        ActivityCalendar(
-            activeDays: Set(
-                viewModel.dailyActivities.filter { $0.hasActivity }.map { $0.day }
-            )
-        )
-        .accessibilityIdentifier("ActivityCalendarSection")
+        ActivityCalendar()
+            .accessibilityIdentifier("ActivityCalendarSection")
     }
 
     // MARK: - Achievements Section
@@ -214,7 +243,7 @@ struct ProfileView: View {
     private var achievementsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
             achievementsSectionHeader
-            achievementsByCategory
+            achievementsRow
         }
         .accessibilityIdentifier("AchievementsSection")
     }
@@ -225,10 +254,16 @@ struct ProfileView: View {
                 .font(.Jakarta.semiBold(20))
                 .foregroundStyle(.primary)
 
+            if viewModel.unlockedCount > 0 {
+                Text("\(viewModel.unlockedCount)/\(viewModel.totalVisibleCount)")
+                    .font(.Jakarta.medium(13))
+                    .foregroundStyle(.secondary)
+            }
+
             Spacer()
 
             Button {
-                // View all achievements
+                viewModel.isShowingAchievements = true
             } label: {
                 HStack(spacing: 4) {
                     Text("更多")
@@ -243,42 +278,58 @@ struct ProfileView: View {
         .padding(.horizontal, 4)
     }
 
-    private var achievementsByCategory: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            ForEach(Achievement.AchievementCategory.allCases, id: \.self) { category in
-                let items = viewModel.achievements.filter { $0.category == category }
-                if !items.isEmpty {
-                    achievementCategoryRow(category: category, items: items)
+    private var achievementsRow: some View {
+        Group {
+            let items = viewModel.highlightedAchievements
+            if items.isEmpty {
+                // 引导卡片
+                achievementsEmptyCard
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(items) { achievement in
+                            AchievementBadge(item: achievement, renderMode: .swiftUI)
+                        }
+                    }
+                    .padding(.horizontal, 4)
+                    .padding(.vertical, 4)
                 }
             }
         }
     }
 
-    private func achievementCategoryRow(
-        category: Achievement.AchievementCategory,
-        items: [AchievementItem]
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 6) {
-                Image(systemName: category.icon)
-                    .font(.Jakarta.regular(12))
-                    .foregroundStyle(AppTheme.Colors.primary)
-                Text(category.displayName)
-                    .font(.Jakarta.semiBold(14))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 4)
+    private var achievementsEmptyCard: some View {
+        Button {
+            viewModel.isShowingAchievements = true
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "trophy")
+                    .font(.Jakarta.medium(24))
+                    .foregroundStyle(AppTheme.Colors.primary.opacity(0.6))
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(items) { achievement in
-                        AchievementBadge(item: achievement, renderMode: .swiftUI)
-                    }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("开始收集徽章吧")
+                        .font(.Jakarta.semiBold(14))
+                        .foregroundStyle(.primary)
+                    Text("记录饮食解锁专属成就")
+                        .font(.Jakarta.regular(12))
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal, 4)
-                .padding(.vertical, 4)
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.Jakarta.medium(12))
+                    .foregroundStyle(.tertiary)
             }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.systemGray6).opacity(0.7))
+            )
         }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier("AchievementsEmptyCard")
     }
 
     // MARK: - Intake Chart Section
@@ -297,6 +348,7 @@ struct ProfileView: View {
     private var bottomPadding: some View {
         Color.clear.frame(height: AppTheme.Layout.tabBarClearance)
     }
+
 }
 
 // MARK: - Preview

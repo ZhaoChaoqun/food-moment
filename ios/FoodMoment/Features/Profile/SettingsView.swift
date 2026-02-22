@@ -23,19 +23,83 @@ struct SettingsView: View {
     // MARK: - Body
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                notificationsSection
-                unitsSection
-                appearanceSection
-                aboutSection
-                accountSection
+        Form {
+            Section("通知") {
+                Toggle(isOn: $isMealReminderEnabled) {
+                    settingsLabel("用餐提醒", icon: "bell.fill", color: .red)
+                }
+                .accessibilityIdentifier("MealReminderToggle")
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, AppTheme.Layout.tabBarClearance)
+
+            Section("单位") {
+                Picker(selection: $selectedCalorieUnit) {
+                    ForEach(CalorieUnit.allCases) { unit in
+                        Text(unit.rawValue).tag(unit)
+                    }
+                } label: {
+                    settingsLabel("热量单位", icon: "flame.fill", color: .orange)
+                }
+                .accessibilityIdentifier("CalorieUnitPicker")
+
+                Picker(selection: $selectedWeightUnit) {
+                    ForEach(WeightUnit.allCases) { unit in
+                        Text(unit.rawValue).tag(unit)
+                    }
+                } label: {
+                    settingsLabel("体重单位", icon: "scalemass.fill", color: .purple)
+                }
+                .accessibilityIdentifier("WeightUnitPicker")
+            }
+
+            Section("外观") {
+                Picker(selection: $selectedAppearanceMode) {
+                    ForEach(AppearanceMode.allCases) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                } label: {
+                    settingsLabel("外观", icon: "circle.lefthalf.filled", color: .indigo)
+                }
+                .accessibilityIdentifier("AppearanceModePicker")
+
+                Picker(selection: $selectedLanguage) {
+                    ForEach(AppLanguage.allCases) { lang in
+                        Text(lang.rawValue).tag(lang)
+                    }
+                } label: {
+                    settingsLabel("语言", icon: "globe", color: .blue)
+                }
+                .accessibilityIdentifier("LanguagePicker")
+            }
+
+            Section("关于") {
+                Link(destination: URL(string: "https://foodmoment.app/privacy")!) {
+                    HStack {
+                        settingsLabel("隐私政策", icon: "hand.raised.fill", color: .gray)
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .accessibilityIdentifier("PrivacyPolicyLink")
+
+                NavigationLink {
+                    aboutView
+                } label: {
+                    settingsLabel("关于食刻", icon: "info.circle.fill", color: .blue)
+                }
+                .accessibilityIdentifier("AboutLink")
+            }
+
+            Section {
+                Button(role: .destructive) {
+                    isShowingDeleteAccountAlert = true
+                } label: {
+                    Label("删除账户", systemImage: "trash.fill")
+                }
+                .accessibilityIdentifier("DeleteAccountButton")
+            }
         }
-        .premiumBackground()
         .navigationTitle("设置")
         .navigationBarTitleDisplayMode(.inline)
         .alert("删除账户", isPresented: $isShowingDeleteAccountAlert) {
@@ -50,163 +114,18 @@ struct SettingsView: View {
         .accessibilityIdentifier("SettingsView")
     }
 
-    // MARK: - Notifications Section
+    // MARK: - Settings Label
 
-    private var notificationsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("通知")
-
-            VStack(spacing: 0) {
-                Toggle(isOn: $isMealReminderEnabled) {
-                    Label("用餐提醒", systemImage: "bell.fill")
-                }
-                .tint(AppTheme.Colors.primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-            }
-            .glassSection()
-            .accessibilityIdentifier("MealReminderToggle")
+    private func settingsLabel(_ title: String, icon: String, color: Color) -> some View {
+        Label {
+            Text(title)
+        } icon: {
+            Image(systemName: icon)
+                .font(.system(size: 14))
+                .foregroundStyle(.white)
+                .frame(width: 28, height: 28)
+                .background(color, in: RoundedRectangle(cornerRadius: 6))
         }
-    }
-
-    // MARK: - Units Section
-
-    private var unitsSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("单位")
-
-            VStack(spacing: 0) {
-                Picker(selection: $selectedCalorieUnit) {
-                    ForEach(CalorieUnit.allCases) { unit in
-                        Text(unit.rawValue).tag(unit)
-                    }
-                } label: {
-                    Label("热量单位", systemImage: "flame.fill")
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("CalorieUnitPicker")
-
-                Divider().padding(.leading, 16)
-
-                Picker(selection: $selectedWeightUnit) {
-                    ForEach(WeightUnit.allCases) { unit in
-                        Text(unit.rawValue).tag(unit)
-                    }
-                } label: {
-                    Label("体重单位", systemImage: "scalemass.fill")
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("WeightUnitPicker")
-            }
-            .glassSection()
-        }
-    }
-
-    // MARK: - Appearance Section
-
-    private var appearanceSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("外观")
-
-            VStack(spacing: 0) {
-                Picker(selection: $selectedAppearanceMode) {
-                    ForEach(AppearanceMode.allCases) { mode in
-                        Text(mode.rawValue).tag(mode)
-                    }
-                } label: {
-                    Label("外观", systemImage: "circle.lefthalf.filled")
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("AppearanceModePicker")
-
-                Divider().padding(.leading, 16)
-
-                Picker(selection: $selectedLanguage) {
-                    ForEach(AppLanguage.allCases) { lang in
-                        Text(lang.rawValue).tag(lang)
-                    }
-                } label: {
-                    Label("语言", systemImage: "globe")
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("LanguagePicker")
-            }
-            .glassSection()
-        }
-    }
-
-    // MARK: - About Section
-
-    private var aboutSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("关于")
-
-            VStack(spacing: 0) {
-                Link(destination: URL(string: "https://foodmoment.app/privacy")!) {
-                    HStack {
-                        Label("隐私政策", systemImage: "hand.raised.fill")
-                            .foregroundStyle(.primary)
-                        Spacer()
-                        Image(systemName: "arrow.up.right")
-                            .font(.Jakarta.regular(12))
-                            .foregroundStyle(.tertiary)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("PrivacyPolicyLink")
-
-                Divider().padding(.leading, 16)
-
-                NavigationLink {
-                    aboutView
-                } label: {
-                    Label("关于食刻", systemImage: "info.circle.fill")
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("AboutLink")
-            }
-            .glassSection()
-        }
-    }
-
-    // MARK: - Account Section
-
-    private var accountSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            sectionHeader("账户")
-
-            VStack(spacing: 0) {
-                Button {
-                    isShowingDeleteAccountAlert = true
-                } label: {
-                    HStack {
-                        Label("删除账户", systemImage: "trash.fill")
-                            .foregroundStyle(.red)
-                        Spacer()
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .accessibilityIdentifier("DeleteAccountButton")
-            }
-            .glassSection()
-        }
-    }
-
-    // MARK: - Section Header
-
-    private func sectionHeader(_ title: String) -> some View {
-        Text(title)
-            .font(.Jakarta.medium(12))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-            .padding(.horizontal, 4)
     }
 
     // MARK: - About View
@@ -215,51 +134,33 @@ struct SettingsView: View {
         VStack(spacing: 24) {
             Spacer()
 
-            appIcon
+            Image(systemName: "fork.knife.circle.fill")
+                .font(.system(size: 80))
+                .foregroundStyle(.tint)
 
-            appInfo
+            VStack(spacing: 8) {
+                Text("食刻")
+                    .font(.title)
+                    .fontWeight(.bold)
 
-            appDescription
+                Text("版本 1.0.0")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
+            Text("AI 驱动的食物追踪，助你更健康。")
+                .font(.body)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
 
             Spacer()
             Spacer()
         }
         .frame(maxWidth: .infinity)
-        .premiumBackground()
         .navigationTitle("关于")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("AboutView")
-    }
-
-    private var appIcon: some View {
-        Image(systemName: "fork.knife.circle.fill")
-            .font(.Jakarta.regular(80))
-            .foregroundStyle(
-                LinearGradient(
-                    colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.6)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-    }
-
-    private var appInfo: some View {
-        VStack(spacing: 8) {
-            Text("食刻")
-                .font(.Jakarta.bold(28))
-
-            Text("版本 1.0.0")
-                .font(.Jakarta.regular(15))
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    private var appDescription: some View {
-        Text("AI 驱动的食物追踪，助你更健康。")
-            .font(.Jakarta.regular(17))
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, 40)
     }
 }
 

@@ -18,6 +18,13 @@ struct AchievementItem: Identifiable, Sendable {
     let isHidden: Bool
     let description: String
     let badgeAssetName: String
+    let progress: Int
+    let target: Int
+
+    /// 完成比例 (0.0 ~ 1.0)
+    var progressRatio: Double {
+        target > 0 ? Double(progress) / Double(target) : 0
+    }
 
     init(
         type: String,
@@ -31,7 +38,9 @@ struct AchievementItem: Identifiable, Sendable {
         category: Achievement.AchievementCategory = .habit,
         isHidden: Bool = false,
         description: String = "",
-        badgeAssetName: String = ""
+        badgeAssetName: String = "",
+        progress: Int = 0,
+        target: Int = 1
     ) {
         self.type = type
         self.title = title
@@ -45,6 +54,8 @@ struct AchievementItem: Identifiable, Sendable {
         self.isHidden = isHidden
         self.description = description
         self.badgeAssetName = badgeAssetName
+        self.progress = progress
+        self.target = target
     }
 
     enum AchievementTier: String, Sendable {
@@ -126,23 +137,28 @@ final class ProfileViewModel {
 
     var userName: String = ""
     var avatarAssetName: String?
+    var avatarUrl: String?
     var isPro: Bool = false
     var currentWeight: Double = 0.0
     var targetWeight: Double = 0.0
     var weightTrend: String = ""
+    /// 最近体重记录（按时间升序），用于 sparkline
+    var weightHistory: [(date: Date, weight: Double)] = []
+    /// 体重记录总数
+    var weightRecordCount: Int = 0
     var streakDays: Int = 0
     var achievements: [AchievementItem] = []
     var averageCalories: Int = 0
     var calorieChange: String = ""
     var isShowingSettings: Bool = false
-    var isShowingWeightInput: Bool = false
+    var isShowingAchievements: Bool = false
     var dailyActivities: [DailyActivityData] = []
     var dailyCalories: [Int] = []
+    var userProfile: UserProfile?
 
     // MARK: - Private
 
     private let userService: UserServiceProtocol
-    private let statsService: StatsServiceProtocol
 
     // MARK: - Computed Properties
 
@@ -150,14 +166,69 @@ final class ProfileViewModel {
         !achievements.isEmpty
     }
 
+    // MARK: - Achievement Gallery Computed Properties
+
+    /// 已解锁成就数量
+    var unlockedCount: Int {
+        achievements.filter { $0.isEarned }.count
+    }
+
+    /// 总可见成就数量（隐藏彩蛋未解锁时不计入分母）
+    var totalVisibleCount: Int {
+        achievements.filter { !$0.isHidden || $0.isEarned }.count
+    }
+
+    /// 总完成度比例 (0.0 ~ 1.0)
+    var completionProgress: Double {
+        guard totalVisibleCount > 0 else { return 0 }
+        return Double(unlockedCount) / Double(totalVisibleCount)
+    }
+
+    /// 最近解锁的成就
+    var latestUnlockedAchievement: AchievementItem? {
+        achievements
+            .filter { $0.isEarned && $0.earnedDate != nil }
+            .sorted { ($0.earnedDate ?? .distantPast) > ($1.earnedDate ?? .distantPast) }
+            .first
+    }
+
+    /// 按分类分组的成就
+    var achievementsByCategory: [(category: Achievement.AchievementCategory, items: [AchievementItem])] {
+        Achievement.AchievementCategory.allCases.compactMap { category in
+            let items = achievements.filter { $0.category == category }
+            guard !items.isEmpty else { return nil }
+            return (category: category, items: items)
+        }
+    }
+
+    /// Profile 页单行展示用：已解锁徽章 + 接近解锁的徽章，保证至少 3 个
+    var highlightedAchievements: [AchievementItem] {
+        let unlocked = achievements
+            .filter { $0.isEarned }
+            .sorted { ($0.earnedDate ?? .distantPast) > ($1.earnedDate ?? .distantPast) }
+
+        // 未解锁且非隐藏，按进度降序排列
+        let lockedCandidates = achievements
+            .filter { !$0.isEarned && !$0.isHidden }
+            .sorted { $0.progressRatio > $1.progressRatio }
+
+        // 优先选进度 >= 50% 的
+        let nearlyUnlocked = lockedCandidates.filter { $0.progressRatio >= 0.5 }
+
+        let minTotal = 3
+        let needed = max(0, minTotal - unlocked.count - nearlyUnlocked.count)
+        // 不够 3 个时，从剩余候选中补充（进度最高的优先）
+        let filler = Array(lockedCandidates.filter { $0.progressRatio < 0.5 }.prefix(needed))
+
+        return unlocked + nearlyUnlocked + filler
+    }
+
     // MARK: - Initialization
 
     init(
-        userService: UserServiceProtocol = UserService.shared,
-        statsService: StatsServiceProtocol = StatsService.shared
+        userService: UserServiceProtocol = UserService.shared
     ) {
         self.userService = userService
-        self.statsService = statsService
     }
 
     // MARK: - Public Methods
@@ -172,82 +243,70 @@ final class ProfileViewModel {
         loadDailyActivities(modelContext: modelContext)
     }
 
-    /// 从 API 刷新数据
-    func refreshFromAPI() async {
-        // 并发获取所有数据
+    /// 从 API 刷新数据，同步到 SwiftData 后重新从本地计算统计值
+    func refreshFromAPI(modelContext: ModelContext) async {
+        // 并发获取用户档案和成就
         async let profileTask = userService.getProfile()
-        async let streaksTask = userService.getStreaks()
         async let achievementsTask = userService.getAchievements()
 
-        // 获取当前月的月统计
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM"
-        let currentMonth = dateFormatter.string(from: Date())
-        async let monthlyTask = statsService.getMonthlyStats(month: currentMonth)
-
-        // 获取本周的周统计
-        let weekFormatter = DateFormatter()
-        weekFormatter.dateFormat = "yyyy-MM-dd"
-        let weekStart = Date().startOfWeek
-        let weekString = weekFormatter.string(from: weekStart)
-        async let weeklyTask = statsService.getWeeklyStats(week: weekString)
-
+        // 用户档案：写入 SwiftData（不存在则创建），再从 SwiftData 读取
         do {
             let profile = try await profileTask
-            userName = profile.displayName
-            isPro = profile.isPro
-            targetWeight = profile.targetWeight ?? 65.0
+            updateUserProfileInSwiftData(profile, modelContext: modelContext)
+            loadUserProfile(modelContext: modelContext)
         } catch {
-            // 保持缓存
+            // API 失败时保持 SwiftData 缓存
         }
 
-        do {
-            let streakDTO = try await streaksTask
-            streakDays = streakDTO.currentStreak
-        } catch {}
-
+        // 成就：保持现有同步模式（API → SwiftData + 内存 progress）
         do {
             let achievementDTOs = try await achievementsTask
-            achievements = achievementDTOs.map { mapAchievement($0) }
-        } catch {}
-
-        do {
-            let weeklyStats = try await weeklyTask
-            averageCalories = Int(weeklyStats.avgCalories)
-            dailyCalories = weeklyStats.dailyStats.map { $0.totalCalories }
-
-            // 计算变化率（简化：对比平均与目标）
-            if averageCalories > 0 {
-                calorieChange = "+0%"
-            }
-        } catch {}
-
-        do {
-            let monthlyStats = try await monthlyTask
-            let calendar = Calendar.current
-            let now = Date()
-            let range = calendar.range(of: .day, in: .month, for: now) ?? 1..<31
-            let daysInMonth = range.count
-
-            dailyActivities = (1...daysInMonth).map { day in
-                guard let date = calendar.date(bySetting: .day, value: day, of: now) else {
-                    return DailyActivityData(day: day, date: now, proteinProgress: 0, carbsProgress: 0, fatProgress: 0, hasActivity: false)
+            let apiMap = Dictionary(uniqueKeysWithValues: achievementDTOs.map { ($0.id, $0) })
+            achievements = Achievement.AchievementType.allCases.map { type in
+                if let dto = apiMap[type.rawValue], let item = mapAchievement(dto) {
+                    return item
                 }
-
-                let dayString = weekFormatter.string(from: date)
-                let dayStats = monthlyStats.dailyStats.first { $0.date == dayString }
-                let hasActivity = (dayStats?.mealCount ?? 0) > 0
-
-                return DailyActivityData(
-                    day: day,
-                    date: date,
-                    proteinProgress: hasActivity ? min(dayStats!.proteinGrams / NutritionGoals.dailyProteinGrams, 1.0) : 0,
-                    carbsProgress: hasActivity ? min(dayStats!.carbsGrams / NutritionGoals.dailyCarbsGrams, 1.0) : 0,
-                    fatProgress: hasActivity ? min(dayStats!.fatGrams / NutritionGoals.dailyFatGrams, 1.0) : 0,
-                    hasActivity: hasActivity
-                )
+                return buildLocalFallback(type)
             }
+            syncAchievementsToSwiftData(achievementDTOs, modelContext: modelContext)
         } catch {}
+
+        // 统计数据：统一从 SwiftData 本地计算（包含离线未同步记录）
+        loadStreakData(modelContext: modelContext)
+        loadCalorieData(modelContext: modelContext)
+        loadDailyActivities(modelContext: modelContext)
+    }
+
+    /// 将 API 用户档案数据写入 SwiftData（不存在则创建）
+    private func updateUserProfileInSwiftData(_ dto: UserProfileResponseDTO, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<UserProfile>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        let profile: UserProfile
+        if let existing = try? modelContext.fetch(descriptor).first {
+            profile = existing
+        } else {
+            profile = UserProfile(id: dto.id, displayName: dto.displayName)
+            modelContext.insert(profile)
+        }
+
+        profile.displayName = dto.displayName
+        profile.avatarUrl = dto.avatarUrl
+        profile.isPro = dto.isPro
+        profile.targetWeight = dto.targetWeight
+        profile.dailyCalorieGoal = dto.dailyCalorieGoal
+        profile.dailyProteinGoal = dto.dailyProteinGoal
+        profile.dailyCarbsGoal = dto.dailyCarbsGoal
+        profile.dailyFatGoal = dto.dailyFatGoal
+        profile.dailyWaterGoal = dto.dailyWaterGoal
+        profile.dailyStepGoal = dto.dailyStepGoal
+        profile.gender = dto.gender
+        profile.birthYear = dto.birthYear
+        profile.heightCm = dto.heightCm
+        profile.activityLevel = dto.activityLevel
+        profile.updatedAt = Date()
+
+        try? modelContext.save()
     }
 
     func logWeight(_ weight: Double) async {
@@ -284,15 +343,16 @@ final class ProfileViewModel {
     private func formatWeightTrend(current: Double, previous: Double) -> String {
         let diff = current - previous
         if diff < 0 {
-            return String(format: "\u{2193} %.1fkg", abs(diff))
+            return String(format: "▾%.1f", abs(diff))
         } else if diff > 0 {
-            return String(format: "\u{2191} %.1fkg", diff)
+            return String(format: "▴%.1f", diff)
         } else {
-            return "-- 0.0kg"
+            return ""
         }
     }
 
-    private func mapAchievement(_ dto: AchievementResponseDTO) -> AchievementItem {
+    private func mapAchievement(_ dto: AchievementResponseDTO) -> AchievementItem? {
+        guard let localType = Achievement.AchievementType(rawValue: dto.id) else { return nil }
         let ratio = dto.target > 0 ? Double(dto.progress) / Double(dto.target) : 0
         let tier: AchievementItem.AchievementTier = switch ratio {
             case 1.0: .gold
@@ -302,13 +362,62 @@ final class ProfileViewModel {
 
         return AchievementItem(
             type: dto.id,
-            title: dto.title,
-            subtitle: dto.description,
-            icon: dto.emoji,
+            title: localType.displayName,
+            subtitle: localType.subtitle,
+            icon: localType.icon,
             tier: tier,
             isEarned: dto.unlocked,
-            description: dto.description
+            theme: localType.theme,
+            category: localType.category,
+            isHidden: localType.isHidden,
+            description: localType.description,
+            badgeAssetName: localType.badgeAssetName,
+            progress: dto.progress,
+            target: dto.target
         )
+    }
+
+    /// 为未被 API 返回的成就类型构建本地默认状态
+    private func buildLocalFallback(_ type: Achievement.AchievementType) -> AchievementItem {
+        // 尝试从当前数组中找到已有项
+        if let existing = achievements.first(where: { $0.type == type.rawValue }) {
+            return existing
+        }
+        return AchievementItem(
+            type: type.rawValue,
+            title: type.displayName,
+            subtitle: type.subtitle,
+            icon: type.icon,
+            tier: .bronze,
+            isEarned: false,
+            theme: type.theme,
+            category: type.category,
+            isHidden: type.isHidden,
+            description: type.description,
+            badgeAssetName: type.badgeAssetName
+        )
+    }
+
+    /// 将 API 返回的已解锁成就同步写入 SwiftData
+    private func syncAchievementsToSwiftData(_ dtos: [AchievementResponseDTO], modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<Achievement>()
+        let earned = (try? modelContext.fetch(descriptor)) ?? []
+        let earnedTypes = Set(earned.map { $0.type })
+
+        var inserted = false
+        for dto in dtos where dto.unlocked {
+            guard !earnedTypes.contains(dto.id) else { continue }
+            let achievement = Achievement(
+                type: dto.id,
+                tier: dto.progress >= dto.target ? "gold" : "bronze",
+                earnedAt: Date()
+            )
+            modelContext.insert(achievement)
+            inserted = true
+        }
+        if inserted {
+            try? modelContext.save()
+        }
     }
 
     // MARK: - SwiftData Cache Methods (for initial sync load)
@@ -318,8 +427,10 @@ final class ProfileViewModel {
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
         if let profile = try? modelContext.fetch(descriptor).first {
+            userProfile = profile
             userName = profile.displayName
             avatarAssetName = profile.avatarAssetName
+            avatarUrl = profile.avatarUrl
             isPro = profile.isPro
             targetWeight = profile.targetWeight ?? 65.0
         }
@@ -330,14 +441,23 @@ final class ProfileViewModel {
             sortBy: [SortDescriptor(\.recordedAt, order: .reverse)]
         )
         let logs = (try? modelContext.fetch(descriptor)) ?? []
+        weightRecordCount = logs.count
+
+        // 取最近 7 条记录，按时间升序排列，用于 sparkline
+        let recent = Array(logs.prefix(7)).reversed()
+        weightHistory = recent.map { (date: $0.recordedAt, weight: $0.weightKg) }
+
         if let latest = logs.first {
             currentWeight = latest.weightKg
             if logs.count >= 2 {
                 let previous = logs[1].weightKg
                 weightTrend = formatWeightTrend(current: latest.weightKg, previous: previous)
             } else {
-                weightTrend = "\u{2193} 0.0kg"
+                weightTrend = ""
             }
+        } else {
+            currentWeight = 0
+            weightTrend = ""
         }
     }
 
@@ -404,7 +524,9 @@ final class ProfileViewModel {
                     category: achievementType.category,
                     isHidden: achievementType.isHidden,
                     description: achievementType.description,
-                    badgeAssetName: achievementType.badgeAssetName
+                    badgeAssetName: achievementType.badgeAssetName,
+                    progress: isEarned ? 1 : 0,
+                    target: 1
                 )
             }
         }

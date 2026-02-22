@@ -3,13 +3,14 @@ import SwiftData
 
 struct ActivityCalendar: View {
 
+    // MARK: - Environment
+
+    @Environment(\.modelContext) private var modelContext
+
     // MARK: - State
 
     @State private var displayedMonth: Date = Date()
-
-    // MARK: - Properties
-
-    let activeDays: Set<Int>
+    @State private var activeDays: Set<Int> = []
 
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 4), count: 7)
     private let weekdaySymbols = ["一", "二", "三", "四", "五", "六", "日"]
@@ -19,10 +20,7 @@ struct ActivityCalendar: View {
     private var calendar: Calendar { Calendar.current }
 
     private var monthTitle: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy年M月"
-        formatter.locale = Locale(identifier: "zh_CN")
-        return formatter.string(from: displayedMonth)
+        displayedMonth.monthTitleString
     }
 
     private var daysInMonth: Int {
@@ -49,6 +47,12 @@ struct ActivityCalendar: View {
         }
         .padding(20)
         .glassCard(cornerRadius: 32)
+        .onAppear {
+            loadActiveDays()
+        }
+        .onChange(of: displayedMonth) {
+            loadActiveDays()
+        }
         .accessibilityIdentifier("ActivityCalendar")
     }
 
@@ -151,9 +155,35 @@ struct ActivityCalendar: View {
             )
             .accessibilityIdentifier("DayCell_\(day)")
     }
+
+    // MARK: - Data Loading
+
+    private func loadActiveDays() {
+        let cal = calendar
+        guard let startOfMonth = cal.date(from: cal.dateComponents([.year, .month], from: displayedMonth)),
+              let startOfNextMonth = cal.date(byAdding: .month, value: 1, to: startOfMonth) else {
+            activeDays = []
+            return
+        }
+
+        let descriptor = FetchDescriptor<MealRecord>(
+            predicate: #Predicate<MealRecord> { record in
+                record.mealTime >= startOfMonth && record.mealTime < startOfNextMonth
+            }
+        )
+        let records = (try? modelContext.fetch(descriptor)) ?? []
+
+        var days: Set<Int> = []
+        for record in records {
+            let day = cal.component(.day, from: record.mealTime)
+            days.insert(day)
+        }
+        activeDays = days
+    }
 }
 
 #Preview {
-    ActivityCalendar(activeDays: [1, 3, 5, 7, 10, 12, 15, 18, 20, 22, 25])
+    ActivityCalendar()
         .padding()
+        .modelContainer(for: MealRecord.self)
 }

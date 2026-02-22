@@ -121,37 +121,32 @@ struct AchievementBadge: View {
             .frame(width: 72, height: 72)
     }
 
-    // MARK: - Locked Badge (Neumorphism Style)
+    // MARK: - Locked Badge (Desaturated Theme Color Style)
 
     private var lockedBadge: some View {
         ZStack {
-            // 外圈：neumorphism 凹陷效果
+            // 外圈：主题色淡化背景
             Circle()
-                .fill(Color(hex: "#ECECEC"))
-                .shadow(color: .white, radius: 4, x: -2, y: -2)
-                .shadow(color: Color.black.opacity(0.12), radius: 4, x: 2, y: 2)
-                .frame(width: 72, height: 72)
-
-            // 外圈描边
-            Circle()
-                .strokeBorder(
+                .fill(
                     LinearGradient(
-                        colors: [Color.white.opacity(0.8), Color.gray.opacity(0.3)],
+                        colors: [
+                            item.theme.primaryColor.opacity(0.15),
+                            item.theme.shadowColor.opacity(0.06)
+                        ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 2
+                    )
                 )
                 .frame(width: 72, height: 72)
 
-            // 内圆：银色渐变
+            // 内圆：主题色低饱和渐变
             Circle()
                 .fill(
                     LinearGradient(
                         stops: [
-                            .init(color: Color(hex: "#E0E0E0"), location: 0.0),
-                            .init(color: Color(hex: "#F5F5F5"), location: 0.4),
-                            .init(color: Color(hex: "#D0D0D0"), location: 1.0)
+                            .init(color: item.theme.primaryColor.opacity(0.18), location: 0.0),
+                            .init(color: item.theme.highlightColor.opacity(0.12), location: 0.5),
+                            .init(color: item.theme.shadowColor.opacity(0.10), location: 1.0)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -159,20 +154,11 @@ struct AchievementBadge: View {
                 )
                 .frame(width: 56, height: 56)
 
-            // 内圆描边
-            Circle()
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [Color.white.opacity(0.6), Color.gray.opacity(0.2)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-                .frame(width: 56, height: 56)
-
-            // 图标
+            // 真实图标（主题色降低不透明度）
             lockedIcon
+
+            // 右下角小锁标识
+            lockIndicator
         }
     }
 
@@ -181,12 +167,24 @@ struct AchievementBadge: View {
         if item.isHidden {
             Text("???")
                 .font(.Jakarta.bold(14))
-                .foregroundStyle(Color.gray.opacity(0.5))
+                .foregroundStyle(Color.gray.opacity(0.4))
         } else {
-            Image(systemName: "lock.fill")
+            Image(systemName: item.icon)
                 .font(.Jakarta.medium(20))
-                .foregroundStyle(Color.gray.opacity(0.5))
+                .foregroundStyle(item.theme.primaryColor.opacity(0.4))
         }
+    }
+
+    private var lockIndicator: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 8, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 16, height: 16)
+            .background(
+                Circle()
+                    .fill(Color.gray.opacity(0.55))
+            )
+            .offset(x: 24, y: 24)
     }
 
     // MARK: - Title Text
@@ -215,12 +213,15 @@ struct AchievementBadge: View {
                             .fill(item.theme.primaryColor.opacity(0.15))
                     )
             } else {
-                // 占位符：与等级标签等高，保持所有徽章垂直对齐一致
-                Text(" ")
+                Text("未达成")
                     .font(.Jakarta.bold(8))
+                    .foregroundStyle(Color.gray.opacity(0.4))
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .hidden()
+                    .background(
+                        Capsule()
+                            .fill(Color.gray.opacity(0.08))
+                    )
             }
         }
     }
