@@ -3,19 +3,19 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.base import AppBaseModel
+
 
 class WaterLogCreate(BaseModel):
     amount_ml: int = 250
 
 
-class WaterLogResponse(BaseModel):
+class WaterLogResponse(AppBaseModel):
     id: uuid.UUID
     amount_ml: int
     recorded_at: datetime
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class DailyWaterResponse(BaseModel):

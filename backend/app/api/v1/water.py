@@ -28,11 +28,7 @@ async def log_water(
     db.add(water_log)
     await db.flush()
 
-    return WaterLogResponse(
-        id=water_log.id,
-        amount_ml=water_log.amount_ml,
-        recorded_at=water_log.recorded_at,
-    )
+    return WaterLogResponse.model_validate(water_log)
 
 
 @router.get("", response_model=DailyWaterResponse)
@@ -71,11 +67,7 @@ async def get_water(
         date=target_date.isoformat(),
         total_ml=total_ml,
         logs=[
-            WaterLogResponse(
-                id=log.id,
-                amount_ml=log.amount_ml,
-                recorded_at=log.recorded_at,
-            )
+            WaterLogResponse.model_validate(log)
             for log in logs
         ],
     )

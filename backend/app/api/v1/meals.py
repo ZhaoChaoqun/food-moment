@@ -13,15 +13,6 @@ from app.models.meal import MealRecord, DetectedFood
 router = APIRouter(prefix="/meals", tags=["Meal Records"])
 
 
-def _ensure_utc(dt: datetime) -> datetime:
-    """Ensure datetime is UTC-aware for correct ISO 8601 serialization (with Z suffix)."""
-    if dt is None:
-        return dt
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
-
-
 def _meal_to_response(meal: MealRecord) -> MealResponse:
     """Convert a MealRecord ORM model to MealResponse schema."""
     detected_foods = []
@@ -49,7 +40,7 @@ def _meal_to_response(meal: MealRecord) -> MealResponse:
         id=meal.id,
         image_url=meal.image_url,
         meal_type=meal.meal_type,
-        meal_time=_ensure_utc(meal.meal_time),
+        meal_time=meal.meal_time,
         total_calories=meal.total_calories,
         protein_grams=meal.protein_grams,
         carbs_grams=meal.carbs_grams,
@@ -60,8 +51,8 @@ def _meal_to_response(meal: MealRecord) -> MealResponse:
         ai_analysis=meal.ai_analysis,
         tags=meal.tags,
         detected_foods=detected_foods,
-        created_at=_ensure_utc(meal.created_at),
-        updated_at=_ensure_utc(meal.updated_at),
+        created_at=meal.created_at,
+        updated_at=meal.updated_at,
     )
 
 
@@ -72,16 +63,13 @@ async def create_meal(
     meal: MealCreate,
 ):
     """Record a meal with associated detected foods."""
-    # Ensure meal_time is naive (UTC) for the database
-    meal_time = meal.meal_time.replace(tzinfo=None) if meal.meal_time.tzinfo else meal.meal_time
-
     # Create MealRecord (use client-provided ID if available)
     meal_record = MealRecord(
         id=meal.id if meal.id else uuid.uuid4(),
         user_id=user_id,
         image_url=meal.image_url,
         meal_type=meal.meal_type,
-        meal_time=meal_time,
+        meal_time=meal.meal_time,
         total_calories=meal.total_calories,
         protein_grams=meal.protein_grams,
         carbs_grams=meal.carbs_grams,
@@ -257,13 +245,10 @@ async def update_meal(
     # Update only provided fields
     update_data = meal.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        # Strip tzinfo for naive datetime columns
-        if field == "meal_time" and hasattr(value, "tzinfo") and value.tzinfo is not None:
-            value = value.replace(tzinfo=None)
         setattr(meal_record, field, value)
 
     # Explicitly update timestamp for LWW conflict resolution
-    meal_record.updated_at = datetime.utcnow()
+    meal_record.updated_at = datetime.now(timezone.utc)
 
     await db.flush()
 

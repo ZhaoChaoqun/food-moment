@@ -3,8 +3,10 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.base import AppBaseModel
 
-class UserProfileResponse(BaseModel):
+
+class UserProfileResponse(AppBaseModel):
     id: uuid.UUID
     display_name: str
     email: str | None
@@ -22,8 +24,7 @@ class UserProfileResponse(BaseModel):
     daily_water_goal: int = 2500
     daily_step_goal: int = 10000
     created_at: datetime
-
-    model_config = {"from_attributes": True}
+    updated_at: datetime
 
 
 class UserProfileUpdate(BaseModel):
@@ -56,14 +57,12 @@ class WeightLogCreate(BaseModel):
     recorded_at: datetime
 
 
-class WeightLogResponse(BaseModel):
+class WeightLogResponse(AppBaseModel):
     id: uuid.UUID
     weight_kg: float
     recorded_at: datetime
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class StreakResponse(BaseModel):
@@ -74,12 +73,10 @@ class StreakResponse(BaseModel):
 
 class AchievementResponse(BaseModel):
     id: str
-    title: str
-    description: str
-    emoji: str
     unlocked: bool
     progress: int
     target: int
+    category: str
 
 
 class AvatarUploadResponse(BaseModel):

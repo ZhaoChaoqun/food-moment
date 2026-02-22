@@ -1,11 +1,15 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import String, Integer, Float, DateTime, Boolean, Text, ForeignKey, ARRAY
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class MealRecord(Base):
@@ -15,7 +19,7 @@ class MealRecord(Base):
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), index=True)
     image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
     meal_type: Mapped[str] = mapped_column(String(20))  # breakfast / lunch / dinner / snack
-    meal_time: Mapped[datetime] = mapped_column(DateTime, index=True)
+    meal_time: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
     total_calories: Mapped[int] = mapped_column(Integer)
     protein_grams: Mapped[float] = mapped_column(Float)
     carbs_grams: Mapped[float] = mapped_column(Float)
@@ -26,8 +30,8 @@ class MealRecord(Base):
     ai_analysis: Mapped[str | None] = mapped_column(Text, nullable=True)
     tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
     is_synced: Mapped[bool] = mapped_column(Boolean, default=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)
 
     detected_foods: Mapped[list["DetectedFood"]] = relationship(
         back_populates="meal_record", cascade="all, delete-orphan"

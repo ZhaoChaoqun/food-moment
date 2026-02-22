@@ -1,11 +1,15 @@
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from sqlalchemy import String, Boolean, Integer, Float, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 class User(Base):
@@ -23,5 +27,11 @@ class User(Base):
     daily_carbs_goal: Mapped[int] = mapped_column(Integer, default=250)
     daily_fat_goal: Mapped[int] = mapped_column(Integer, default=65)
     target_weight: Mapped[float | None] = mapped_column(Float, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    birth_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
+    activity_level: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    daily_water_goal: Mapped[int] = mapped_column(Integer, default=2500)
+    daily_step_goal: Mapped[int] = mapped_column(Integer, default=10000)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow, onupdate=_utcnow)

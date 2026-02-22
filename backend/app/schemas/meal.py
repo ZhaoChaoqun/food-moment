@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.schemas.base import AppBaseModel
 from app.schemas.food import DetectedFoodResponse
 
 
@@ -38,7 +39,7 @@ class MealCreate(BaseModel):
     detected_foods: list[DetectedFoodCreate] = []
 
 
-class MealResponse(BaseModel):
+class MealResponse(AppBaseModel):
     id: uuid.UUID
     image_url: str | None
     meal_type: str
@@ -55,8 +56,6 @@ class MealResponse(BaseModel):
     detected_foods: list[DetectedFoodResponse]
     created_at: datetime
     updated_at: datetime
-
-    model_config = {"from_attributes": True}
 
 
 class MealUpdate(BaseModel):
