@@ -16,6 +16,9 @@ final class DiaryViewModel {
     /// 是否正在从 API 刷新数据
     var isRefreshing: Bool = false
 
+    /// 刷新错误消息
+    var refreshError: String?
+
     /// 当前周中有餐食记录的日期集合（以 "yyyy-MM-dd" 字符串标识）
     var datesWithMeals: Set<String> = []
 
@@ -117,7 +120,18 @@ final class DiaryViewModel {
 
             try? modelContext.save()
         } catch {
-            // API 失败时保持 SwiftData 缓存数据
+            refreshError = "数据同步失败，显示的是缓存数据"
+        }
+    }
+
+    /// 下拉刷新入口：包含触觉反馈
+    func refresh(modelContext: ModelContext) async {
+        refreshError = nil
+        await refreshFromAPI(modelContext: modelContext)
+        if refreshError != nil {
+            HapticManager.error()
+        } else {
+            HapticManager.success()
         }
     }
 

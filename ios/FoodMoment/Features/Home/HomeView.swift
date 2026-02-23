@@ -579,7 +579,7 @@ private struct HomeDataContent: View {
 
 // MARK: - Refresh Error Toast
 
-private struct RefreshErrorToast: View {
+struct RefreshErrorToast: View {
     let message: String
 
     var body: some View {

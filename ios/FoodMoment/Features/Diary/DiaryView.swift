@@ -90,6 +90,9 @@ struct DiaryView: View {
             }
         }
         .scrollIndicators(.hidden)
+        .refreshable {
+            await viewModel.refresh(modelContext: modelContext)
+        }
         .safeAreaInset(edge: .top) {
             if isShowingSearch {
                 searchBarSection
@@ -106,6 +109,22 @@ struct DiaryView: View {
             }
         }
         .animation(AppTheme.Animation.fastSpring, value: viewModel.undoToastMessage)
+        .overlay(alignment: .top) {
+            if let error = viewModel.refreshError {
+                RefreshErrorToast(message: error)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .onAppear {
+                        Task {
+                            try? await Task.sleep(for: .seconds(3))
+                            withAnimation {
+                                viewModel.refreshError = nil
+                            }
+                        }
+                    }
+                    .padding(.top, 8)
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: viewModel.refreshError != nil)
     }
 
     // MARK: - Fixed Header
