@@ -9,6 +9,7 @@ struct FoodPhotoCard: View {
     let meal: MealRecord
 
     @State private var decodedImage: UIImage?
+    @State private var imageRetryID: Int = 0
 
     // MARK: - Computed Properties
 
@@ -103,11 +104,12 @@ struct FoodPhotoCard: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
             case .failure:
-                placeholderView
+                imageErrorView
             @unknown default:
                 placeholderView
             }
         }
+        .id(imageRetryID)
     }
 
     private var placeholderView: some View {
@@ -125,6 +127,44 @@ struct FoodPhotoCard: View {
                 Text(mealType.displayName)
                     .font(.Jakarta.medium(14))
                     .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private var imageErrorView: some View {
+        ZStack {
+            LinearGradient(
+                colors: [Color(.systemGray5), Color(.systemGray6)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+
+            VStack(spacing: 8) {
+                Image(systemName: "photo.badge.exclamationmark")
+                    .font(.system(size: 28))
+                    .foregroundStyle(.secondary)
+
+                Text("图片加载失败")
+                    .font(.Jakarta.medium(12))
+                    .foregroundStyle(.secondary)
+
+                Button {
+                    imageRetryID += 1
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("重试")
+                            .font(.Jakarta.semiBold(12))
+                    }
+                    .foregroundStyle(AppTheme.Colors.primary)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(AppTheme.Colors.primary.opacity(0.1))
+                    )
+                }
             }
         }
     }
