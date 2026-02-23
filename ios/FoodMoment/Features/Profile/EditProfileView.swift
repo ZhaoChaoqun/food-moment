@@ -25,7 +25,7 @@ struct EditProfileView: View {
             ScrollView {
                 VStack(spacing: 20) {
                     avatarSection
-                    basicInfoSection
+                    bodyDataSection
                     bodyGoalsSection
                     tdeeRecommendationCard
                     nutritionGoalsSection
@@ -79,12 +79,32 @@ struct EditProfileView: View {
             }
             .buttonStyle(.plain)
 
-            TextField("昵称", text: $viewModel.displayName)
-                .font(.Jakarta.bold(20))
-                .multilineTextAlignment(.center)
-                .textFieldStyle(.plain)
+            VStack(spacing: 4) {
+                TextField("昵称", text: $viewModel.displayName)
+                    .font(.Jakarta.bold(20))
+                    .multilineTextAlignment(.center)
+                    .textFieldStyle(.plain)
+                    .onChange(of: viewModel.displayName) { _, newValue in
+                        if newValue.count > EditProfileViewModel.maxNicknameLength {
+                            viewModel.displayName = String(newValue.prefix(EditProfileViewModel.maxNicknameLength))
+                        }
+                    }
+
+                nicknameCounter
+            }
         }
         .padding(.vertical, 8)
+    }
+
+    private var nicknameCounter: some View {
+        let count = viewModel.displayName.count
+        let max = EditProfileViewModel.maxNicknameLength
+        let remaining = max - count
+        let color: Color = remaining <= 0 ? .red : remaining <= 3 ? .orange : .tertiary
+
+        return Text("\(count)/\(max)")
+            .font(.Jakarta.regular(11))
+            .foregroundStyle(color)
     }
 
     @ViewBuilder
@@ -128,127 +148,315 @@ struct EditProfileView: View {
             )
     }
 
-    // MARK: - Basic Info Section
+    // MARK: - Body Data Section (原"基本信息")
 
-    private var basicInfoSection: some View {
+    private var bodyDataSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("基本信息")
+            sectionHeader("身体数据", description: "用于计算你的每日推荐热量")
 
-            // Gender
-            VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("性别")
-                Picker("性别", selection: $viewModel.gender) {
-                    Text("未设置").tag(EditProfileViewModel.Gender?.none)
-                    ForEach(EditProfileViewModel.Gender.allCases) { g in
-                        Text(g.displayName).tag(EditProfileViewModel.Gender?.some(g))
-                    }
-                }
-                .pickerStyle(.segmented)
-            }
+            // Gender - 3段 Segmented + 清除按钮
+            genderRow
 
-            // Birth Year
-            VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("出生年份")
-                HStack {
-                    Text(viewModel.birthYear.map { "\($0) 年" } ?? "未设置")
-                        .font(.Jakarta.medium(16))
-                        .foregroundStyle(viewModel.birthYear == nil ? .tertiary : .primary)
+            // Birth Date - 展开式 DatePicker
+            birthDateRow
 
-                    Spacer()
-
-                    Picker("", selection: Binding(
-                        get: { viewModel.birthYear ?? 1990 },
-                        set: { viewModel.birthYear = $0 }
-                    )) {
-                        ForEach((1920...Calendar.current.component(.year, from: Date())).reversed(), id: \.self) { year in
-                            Text("\(year)").tag(year)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .tint(AppTheme.Colors.primary)
-                }
-            }
-
-            // Height
-            VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("身高")
-                HStack {
-                    TextField("170.0", value: $viewModel.heightCm, format: .number)
-                        .font(.Jakarta.medium(16))
-                        .keyboardType(.decimalPad)
-                        .frame(width: 80)
-
-                    Text("cm")
-                        .font(.Jakarta.regular(14))
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Stepper("", value: Binding(
-                        get: { viewModel.heightCm ?? 170.0 },
-                        set: { viewModel.heightCm = $0 }
-                    ), in: 100...250, step: 0.5)
-                    .labelsHidden()
-                }
-            }
+            // Height - 展开式 WheelValuePicker
+            heightRow
         }
         .padding(16)
         .glassCard(cornerRadius: AppTheme.CornerRadius.medium)
     }
 
-    // MARK: - Body Goals Section
+    // MARK: - Gender Row
 
-    private var bodyGoalsSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("身体目标")
-
-            // Target Weight
-            VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("目标体重")
-                HStack {
-                    TextField("60.0", value: $viewModel.targetWeight, format: .number)
-                        .font(.Jakarta.medium(16))
-                        .keyboardType(.decimalPad)
-                        .frame(width: 80)
-
-                    Text("kg")
-                        .font(.Jakarta.regular(14))
-                        .foregroundStyle(.secondary)
-
-                    Spacer()
-
-                    Stepper("", value: Binding(
-                        get: { viewModel.targetWeight ?? 65.0 },
-                        set: { viewModel.targetWeight = $0 }
-                    ), in: 30...200, step: 0.5)
-                    .labelsHidden()
+    private var genderRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                fieldLabel("生理性别")
+                Spacer()
+                if viewModel.gender != nil {
+                    Button {
+                        withAnimation(AppTheme.Animation.defaultSpring) {
+                            viewModel.gender = nil
+                        }
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 16))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
-            // Activity Level
-            VStack(alignment: .leading, spacing: 8) {
-                fieldLabel("活动水平")
-                Picker("活动水平", selection: $viewModel.activityLevel) {
-                    Text("未设置").tag(EditProfileViewModel.ActivityLevel?.none)
-                    ForEach(EditProfileViewModel.ActivityLevel.allCases) { level in
-                        VStack(alignment: .leading) {
-                            Text(level.displayName)
-                        }
-                        .tag(EditProfileViewModel.ActivityLevel?.some(level))
-                    }
+            Picker("性别", selection: Binding(
+                get: { viewModel.gender ?? .male },
+                set: { viewModel.gender = $0 }
+            )) {
+                ForEach(EditProfileViewModel.Gender.allCases) { g in
+                    Text(g.displayName).tag(g)
                 }
-                .pickerStyle(.menu)
-                .tint(AppTheme.Colors.primary)
+            }
+            .pickerStyle(.segmented)
 
-                if let level = viewModel.activityLevel {
-                    Text(level.description)
-                        .font(.Jakarta.regular(12))
+            Text("用于基础代谢率计算")
+                .font(.Jakarta.regular(11))
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    // MARK: - Birth Date Row
+
+    private var birthDateRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(AppTheme.Animation.defaultSpring) {
+                    viewModel.collapseAllPickers(except: "birthDate")
+                    viewModel.isBirthDateExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    fieldLabel("出生日期")
+                    Spacer()
+                    Text(birthDateDisplayText)
+                        .font(.Jakarta.medium(16))
+                        .foregroundStyle(viewModel.birthDate == nil ? .tertiary : .primary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(viewModel.isBirthDateExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.plain)
+
+            if viewModel.isBirthDateExpanded {
+                VStack(spacing: 8) {
+                    DatePicker(
+                        "",
+                        selection: Binding(
+                            get: { viewModel.birthDate ?? defaultBirthDate },
+                            set: { viewModel.birthDate = $0 }
+                        ),
+                        in: birthDateRange,
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .environment(\.locale, Locale(identifier: "zh_CN"))
+                    .frame(height: 150)
+                    .clipped()
+
+                    Text("填写完整日期，生日当天会有惊喜")
+                        .font(.Jakarta.regular(11))
+                        .foregroundStyle(.tertiary)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    private var birthDateDisplayText: String {
+        guard let date = viewModel.birthDate else { return "未设置" }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "zh_CN")
+        formatter.dateFormat = "yyyy年M月d日"
+        return formatter.string(from: date)
+    }
+
+    private var defaultBirthDate: Date {
+        Calendar.current.date(from: DateComponents(year: 1990, month: 1, day: 1)) ?? Date()
+    }
+
+    private var birthDateRange: ClosedRange<Date> {
+        let min = Calendar.current.date(from: DateComponents(year: 1920, month: 1, day: 1)) ?? Date()
+        return min...Date()
+    }
+
+    // MARK: - Height Row
+
+    private var heightRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(AppTheme.Animation.defaultSpring) {
+                    viewModel.collapseAllPickers(except: "height")
+                    viewModel.isHeightExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    fieldLabel("身高")
+                    Spacer()
+                    Text(viewModel.heightCm.map { String(format: "%.1f cm", $0) } ?? "未设置")
+                        .font(.Jakarta.medium(16))
+                        .foregroundStyle(viewModel.heightCm == nil ? .tertiary : .primary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(viewModel.isHeightExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.plain)
+
+            if viewModel.isHeightExpanded {
+                WheelValuePicker(
+                    integerPart: Binding(
+                        get: { viewModel.heightInteger },
+                        set: { viewModel.heightInteger = $0 }
+                    ),
+                    decimalPart: Binding(
+                        get: { viewModel.heightDecimal },
+                        set: { viewModel.heightDecimal = $0 }
+                    ),
+                    integerRange: 100...250,
+                    unit: "cm"
+                )
+                .frame(maxWidth: .infinity)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .onChange(of: viewModel.heightInteger) { _, _ in
+                    if viewModel.heightCm == nil { viewModel.heightCm = 170.0 }
                 }
             }
         }
+    }
+
+    // MARK: - Body Goals Section (原"身体目标")
+
+    private var bodyGoalsSection: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            sectionHeader("我的目标", description: "设定你想达到的身体状态")
+
+            // Target Weight - 展开式 WheelValuePicker
+            targetWeightRow
+
+            // Activity Level - 展开式单选列表
+            activityLevelRow
+        }
         .padding(16)
         .glassCard(cornerRadius: AppTheme.CornerRadius.medium)
+    }
+
+    // MARK: - Target Weight Row
+
+    private var targetWeightRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(AppTheme.Animation.defaultSpring) {
+                    viewModel.collapseAllPickers(except: "targetWeight")
+                    viewModel.isTargetWeightExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    fieldLabel("目标体重")
+                    Spacer()
+                    Text(viewModel.targetWeight.map { String(format: "%.1f kg", $0) } ?? "未设置")
+                        .font(.Jakarta.medium(16))
+                        .foregroundStyle(viewModel.targetWeight == nil ? .tertiary : .primary)
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(viewModel.isTargetWeightExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.plain)
+
+            if viewModel.isTargetWeightExpanded {
+                WheelValuePicker(
+                    integerPart: Binding(
+                        get: { viewModel.targetWeightInteger },
+                        set: { viewModel.targetWeightInteger = $0 }
+                    ),
+                    decimalPart: Binding(
+                        get: { viewModel.targetWeightDecimal },
+                        set: { viewModel.targetWeightDecimal = $0 }
+                    ),
+                    integerRange: 30...200,
+                    unit: "kg"
+                )
+                .frame(maxWidth: .infinity)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .onChange(of: viewModel.targetWeightInteger) { _, _ in
+                    if viewModel.targetWeight == nil { viewModel.targetWeight = 65.0 }
+                }
+            }
+        }
+    }
+
+    // MARK: - Activity Level Row
+
+    private var activityLevelRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Button {
+                withAnimation(AppTheme.Animation.defaultSpring) {
+                    viewModel.collapseAllPickers(except: "activityLevel")
+                    viewModel.isActivityLevelExpanded.toggle()
+                }
+            } label: {
+                HStack {
+                    fieldLabel("活动水平")
+                    Spacer()
+                    Text(viewModel.activityLevel?.displayName ?? "未设置")
+                        .font(.Jakarta.medium(16))
+                        .foregroundStyle(viewModel.activityLevel == nil ? .tertiary : .primary)
+
+                    if viewModel.activityLevel != nil {
+                        Button {
+                            withAnimation(AppTheme.Animation.defaultSpring) {
+                                viewModel.activityLevel = nil
+                            }
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.tertiary)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(viewModel.isActivityLevelExpanded ? 90 : 0))
+                }
+            }
+            .buttonStyle(.plain)
+
+            if viewModel.isActivityLevelExpanded {
+                VStack(spacing: 0) {
+                    ForEach(EditProfileViewModel.ActivityLevel.allCases) { level in
+                        activityLevelOption(level)
+                        if level != EditProfileViewModel.ActivityLevel.allCases.last {
+                            Divider().padding(.leading, 36)
+                        }
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+    }
+
+    private func activityLevelOption(_ level: EditProfileViewModel.ActivityLevel) -> some View {
+        Button {
+            withAnimation(AppTheme.Animation.defaultSpring) {
+                viewModel.activityLevel = level
+                viewModel.isActivityLevelExpanded = false
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: viewModel.activityLevel == level ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(viewModel.activityLevel == level ? AppTheme.Colors.primary : .tertiary)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(level.displayName)
+                        .font(.Jakarta.medium(15))
+                        .foregroundStyle(.primary)
+                    Text(level.description)
+                        .font(.Jakarta.regular(12))
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+            }
+            .padding(.vertical, 10)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - TDEE Recommendation
@@ -309,11 +517,11 @@ struct EditProfileView: View {
         }
     }
 
-    // MARK: - Nutrition Goals Section
+    // MARK: - Nutrition Goals Section (原"营养目标")
 
     private var nutritionGoalsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("营养目标")
+            sectionHeader("营养计划", description: "每日摄入的热量与宏量素分配")
 
             // Calorie Goal
             VStack(alignment: .leading, spacing: 8) {
@@ -386,11 +594,11 @@ struct EditProfileView: View {
         }
     }
 
-    // MARK: - Lifestyle Goals Section
+    // MARK: - Lifestyle Goals Section (原"生活目标")
 
     private var lifestyleGoalsSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            sectionTitle("生活目标")
+            sectionHeader("生活习惯", description: "保持健康的日常习惯")
 
             // Water Goal
             VStack(alignment: .leading, spacing: 8) {
@@ -469,10 +677,17 @@ struct EditProfileView: View {
 
     // MARK: - Helpers
 
-    private func sectionTitle(_ title: String) -> some View {
-        Text(title)
-            .font(.Jakarta.bold(16))
-            .foregroundStyle(.primary)
+    private func sectionHeader(_ title: String, description: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.Jakarta.bold(16))
+                .foregroundStyle(.primary)
+            if let description {
+                Text(description)
+                    .font(.Jakarta.regular(12))
+                    .foregroundStyle(.tertiary)
+            }
+        }
     }
 
     private func fieldLabel(_ label: String) -> some View {

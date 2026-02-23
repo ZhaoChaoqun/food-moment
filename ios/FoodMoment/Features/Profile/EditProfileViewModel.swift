@@ -13,6 +13,10 @@ final class EditProfileViewModel {
 
     private static let logger = Logger(subsystem: "com.foodmoment", category: "EditProfileViewModel")
 
+    // MARK: - Constants
+
+    static let maxNicknameLength = 16
+
     // MARK: - Enums
 
     enum Gender: String, CaseIterable, Identifiable {
@@ -24,7 +28,7 @@ final class EditProfileViewModel {
             switch self {
             case .male: return "男"
             case .female: return "女"
-            case .other: return "不透露"
+            case .other: return "其他"
             }
         }
     }
@@ -73,7 +77,7 @@ final class EditProfileViewModel {
 
     var displayName: String = ""
     var gender: Gender?
-    var birthYear: Int?
+    var birthDate: Date?
     var heightCm: Double?
     var activityLevel: ActivityLevel?
     var targetWeight: Double?
@@ -98,7 +102,58 @@ final class EditProfileViewModel {
 
     var isSaving: Bool { saveState == .saving }
     var isSaveSuccess: Bool { saveState == .success }
-    var canSave: Bool { saveState == .idle && !displayName.isEmpty }
+    var canSave: Bool { saveState == .idle && !displayName.trimmingCharacters(in: .whitespaces).isEmpty }
+
+    // MARK: - Picker Expansion State
+
+    var isBirthDateExpanded: Bool = false
+    var isHeightExpanded: Bool = false
+    var isTargetWeightExpanded: Bool = false
+    var isActivityLevelExpanded: Bool = false
+
+    /// 收起除 `except` 以外的所有 Picker
+    func collapseAllPickers(except: String? = nil) {
+        if except != "birthDate" { isBirthDateExpanded = false }
+        if except != "height" { isHeightExpanded = false }
+        if except != "targetWeight" { isTargetWeightExpanded = false }
+        if except != "activityLevel" { isActivityLevelExpanded = false }
+    }
+
+    // MARK: - Wheel Picker Bindings (Height)
+
+    var heightInteger: Int {
+        get { Int(heightCm ?? 170) }
+        set {
+            let dec = heightCm.map { Int(($0 * 10).truncatingRemainder(dividingBy: 10)) } ?? 0
+            heightCm = Double(newValue) + Double(dec) * 0.1
+        }
+    }
+
+    var heightDecimal: Int {
+        get {
+            guard let h = heightCm else { return 0 }
+            return Int((h * 10).rounded(.down).truncatingRemainder(dividingBy: 10))
+        }
+        set { heightCm = Double(heightInteger) + Double(newValue) * 0.1 }
+    }
+
+    // MARK: - Wheel Picker Bindings (Target Weight)
+
+    var targetWeightInteger: Int {
+        get { Int(targetWeight ?? 65) }
+        set {
+            let dec = targetWeight.map { Int(($0 * 10).truncatingRemainder(dividingBy: 10)) } ?? 0
+            targetWeight = Double(newValue) + Double(dec) * 0.1
+        }
+    }
+
+    var targetWeightDecimal: Int {
+        get {
+            guard let w = targetWeight else { return 0 }
+            return Int((w * 10).rounded(.down).truncatingRemainder(dividingBy: 10))
+        }
+        set { targetWeight = Double(targetWeightInteger) + Double(newValue) * 0.1 }
+    }
 
     // MARK: - TDEE
 
@@ -130,7 +185,12 @@ final class EditProfileViewModel {
             if let g = profile.gender {
                 gender = Gender(rawValue: g)
             }
-            birthYear = profile.birthYear
+            // 优先使用 birthDate，兼容旧 birthYear
+            if let bd = profile.birthDate {
+                birthDate = bd
+            } else if let by = profile.birthYear {
+                birthDate = Calendar.current.date(from: DateComponents(year: by, month: 7, day: 1))
+            }
             heightCm = profile.heightCm
             if let al = profile.activityLevel {
                 activityLevel = ActivityLevel(rawValue: al)
@@ -140,18 +200,15 @@ final class EditProfileViewModel {
 
     // MARK: - TDEE Calculation (Mifflin-St Jeor)
 
-    var canCalculateTDEE: Bool {
-        gender != nil && birthYear != nil && heightCm != nil && currentWeight != nil && activityLevel != nil
-    }
-
     var recommendedCalories: Int? {
         guard let gender,
-              let birthYear,
+              let birthDate,
               let heightCm,
               let weight = currentWeight, weight > 0,
               let activityLevel else { return nil }
 
-        let age = Double(Calendar.current.component(.year, from: Date()) - birthYear)
+        let ageComponents = Calendar.current.dateComponents([.year], from: birthDate, to: Date())
+        let age = Double(ageComponents.year ?? 0)
         guard age > 0 && age < 120 else { return nil }
 
         let bmr: Double
@@ -234,7 +291,8 @@ final class EditProfileViewModel {
             dailyFatGoal: dailyFatGoal,
             targetWeight: targetWeight,
             gender: gender?.rawValue,
-            birthYear: birthYear,
+            birthYear: birthDate.map { Calendar.current.component(.year, from: $0) },
+            birthDate: birthDate,
             heightCm: heightCm,
             activityLevel: activityLevel?.rawValue,
             dailyWaterGoal: dailyWaterGoal,
@@ -263,7 +321,8 @@ final class EditProfileViewModel {
             profile.dailyFatGoal = dailyFatGoal
             profile.targetWeight = targetWeight
             profile.gender = gender?.rawValue
-            profile.birthYear = birthYear
+            profile.birthDate = birthDate
+            profile.birthYear = birthDate.map { Calendar.current.component(.year, from: $0) }
             profile.heightCm = heightCm
             profile.activityLevel = activityLevel?.rawValue
             profile.dailyWaterGoal = dailyWaterGoal

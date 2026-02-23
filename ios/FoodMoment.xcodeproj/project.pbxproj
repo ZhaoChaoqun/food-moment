@@ -128,6 +128,7 @@
 		C7B485E00C5E1C3626BDFC89 /* View+Shimmer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C03354F7CE03C6005E7D6E81 /* View+Shimmer.swift */; };
 		C8960A210582329D17D72E06 /* XCUITestHelpers.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA1A7266051276F7525331EF /* XCUITestHelpers.swift */; };
 		CAAF0BBFD37E767873F35B3B /* UndoToast.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE366784EA6AAAA8190A63FB /* UndoToast.swift */; };
+		D0A1B2C3E4F5A6B7C8D9E0F2 /* WheelValuePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0A1B2C3E4F5A6B7C8D9E0F1 /* WheelValuePicker.swift */; };
 		D137326653659FF06ED36BEC /* DetectedFood.swift in Sources */ = {isa = PBXBuildFile; fileRef = B68D9FE54163994BEB4E178E /* DetectedFood.swift */; };
 		D237628196F30FFBAFBAF01B /* CheckinGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FB6E329B7BC21EDB72E6DDE /* CheckinGrid.swift */; };
 		D2900140CB443E89DBE3E72A /* InsightDTO.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAC20C4280EAAF307EA651D /* InsightDTO.swift */; };
@@ -327,6 +328,7 @@
 		CA397231F644AD151210CEA2 /* ImagePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		CDC407A0D3F7B3FBD8A3B296 /* TokenManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TokenManager.swift; sourceTree = "<group>"; };
 		CE366784EA6AAAA8190A63FB /* UndoToast.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UndoToast.swift; sourceTree = "<group>"; };
+		D0A1B2C3E4F5A6B7C8D9E0F1 /* WheelValuePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WheelValuePicker.swift; sourceTree = "<group>"; };
 		D71662F882790E86BEFA0D3E /* AppTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppTheme.swift; sourceTree = "<group>"; };
 		D7E87C0BDF1052C0A5E8199E /* NutritionRingsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionRingsRow.swift; sourceTree = "<group>"; };
 		DBDF7FCFE765FFF1F17A4C3C /* MultipartFormData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultipartFormData.swift; sourceTree = "<group>"; };
@@ -847,6 +849,7 @@
 				CA397231F644AD151210CEA2 /* ImagePicker.swift */,
 				36A10D0F004CF0A8DA55ED24 /* RingShape.swift */,
 				CE366784EA6AAAA8190A63FB /* UndoToast.swift */,
+				D0A1B2C3E4F5A6B7C8D9E0F1 /* WheelValuePicker.swift */,
 			);
 			path = SharedComponents;
 			sourceTree = "<group>";
@@ -1257,6 +1260,7 @@
 				223E029410BFD07189616C94 /* TokenManager.swift in Sources */,
 				7D69F6713BF1BAD21085EFCA /* UIImage+Resize.swift in Sources */,
 				CAAF0BBFD37E767873F35B3B /* UndoToast.swift in Sources */,
+				D0A1B2C3E4F5A6B7C8D9E0F2 /* WheelValuePicker.swift in Sources */,
 				082B62885EDAEC0A150BDD41 /* UserProfile.swift in Sources */,
 				D8E10BE69720CF3AA7B1352A /* UserProfileDTO.swift in Sources */,
 				7718DAA4551A5E9C7498FFA3 /* UserService.swift in Sources */,
