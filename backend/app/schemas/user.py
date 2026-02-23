@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 
 from app.schemas.base import AppBaseModel
 
@@ -19,6 +19,7 @@ class UserProfileResponse(AppBaseModel):
     target_weight: float | None
     gender: str | None = None
     birth_year: int | None = None
+    birth_date: date | None = None
     height_cm: float | None = None
     activity_level: str | None = None
     daily_water_goal: int = 2500
@@ -28,7 +29,7 @@ class UserProfileResponse(AppBaseModel):
 
 
 class UserProfileUpdate(BaseModel):
-    display_name: str | None = None
+    display_name: str | None = Field(None, min_length=1, max_length=16)
     avatar_url: str | None = None
     daily_calorie_goal: int | None = None
     daily_protein_goal: int | None = None
@@ -37,10 +38,18 @@ class UserProfileUpdate(BaseModel):
     target_weight: float | None = None
     gender: str | None = None
     birth_year: int | None = None
+    birth_date: date | None = None
     height_cm: float | None = None
     activity_level: str | None = None
     daily_water_goal: int | None = None
     daily_step_goal: int | None = None
+
+    @field_validator("display_name")
+    @classmethod
+    def display_name_not_blank(cls, v: str | None) -> str | None:
+        if v is not None and not v.strip():
+            raise ValueError("昵称不能为空白字符")
+        return v
 
 
 class GoalsUpdate(BaseModel):

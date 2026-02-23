@@ -1,7 +1,7 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
-from sqlalchemy import String, Boolean, Integer, Float, DateTime
+from sqlalchemy import String, Boolean, Integer, Float, DateTime, Date
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,6 +29,7 @@ class User(Base):
     target_weight: Mapped[float | None] = mapped_column(Float, nullable=True)
     gender: Mapped[str | None] = mapped_column(String(20), nullable=True)
     birth_year: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     height_cm: Mapped[float | None] = mapped_column(Float, nullable=True)
     activity_level: Mapped[str | None] = mapped_column(String(30), nullable=True)
     daily_water_goal: Mapped[int] = mapped_column(Integer, default=2500)

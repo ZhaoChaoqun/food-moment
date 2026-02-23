@@ -60,6 +60,9 @@ async def update_profile(
         )
 
     update_data = profile.model_dump(exclude_unset=True)
+    # 同步 birth_date -> birth_year 保持兼容
+    if "birth_date" in update_data and update_data["birth_date"] is not None:
+        update_data["birth_year"] = update_data["birth_date"].year
     for field, value in update_data.items():
         setattr(user, field, value)
 
