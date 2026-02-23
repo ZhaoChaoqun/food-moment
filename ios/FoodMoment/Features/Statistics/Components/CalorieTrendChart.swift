@@ -12,7 +12,11 @@ struct CalorieTrendChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             headerSection
-            chartSection
+            if data.isEmpty {
+                chartEmptyState
+            } else {
+                chartSection
+            }
         }
         .padding(20)
         .glassCard()
@@ -32,6 +36,28 @@ struct CalorieTrendChart: View {
                 .font(.Jakarta.regular(13))
                 .foregroundStyle(.secondary)
         }
+    }
+
+    // MARK: - Chart Empty State
+
+    private var chartEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "chart.xyaxis.line")
+                .font(.system(size: 32))
+                .foregroundStyle(AppTheme.Colors.primary.opacity(0.4))
+
+            Text("暂无数据")
+                .font(.Jakarta.semiBold(15))
+                .foregroundStyle(.secondary)
+
+            Text("记录餐食后，热量趋势将在这里展示")
+                .font(.Jakarta.regular(13))
+                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(height: 200)
+        .frame(maxWidth: .infinity)
+        .accessibilityIdentifier("CalorieTrendChart.EmptyState")
     }
 
     // MARK: - Chart Section

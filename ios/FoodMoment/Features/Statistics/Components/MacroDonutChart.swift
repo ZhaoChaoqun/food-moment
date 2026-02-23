@@ -18,6 +18,13 @@ struct MacroDonutChart: View {
         VStack(alignment: .leading, spacing: 12) {
             titleSection
             contentSection
+            if totalMacros <= 0 {
+                Text("记录餐食后将展示营养素分布")
+                    .font(.Jakarta.regular(13))
+                    .foregroundStyle(.tertiary)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityIdentifier("MacroDonutChart.EmptyHint")
+            }
         }
         .padding(20)
         .glassCard()
