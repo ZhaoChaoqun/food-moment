@@ -98,6 +98,10 @@ final class StatisticsViewModel {
         weeklyChange >= 0
     }
 
+    var hasData: Bool {
+        !calorieData.isEmpty || proteinTotal > 0 || carbsTotal > 0 || fatTotal > 0
+    }
+
     var averageLabel: String {
         selectedRange.englishTitle + " Average"
     }

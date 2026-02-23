@@ -22,11 +22,23 @@ struct StatisticsView: View {
                     headerSection
                     timeRangeSelectorSection
                     checkinGridSection
-                    if viewModel.selectedRange != .day {
-                        calorieTrendSection
+                    ZStack {
+                        VStack(spacing: 20) {
+                            if viewModel.selectedRange != .day {
+                                calorieTrendSection
+                            }
+                            macroDonutSection
+                            aiInsightSection
+                        }
+                        .opacity(viewModel.isLoading ? 0.4 : 1.0)
+                        .animation(.easeInOut(duration: 0.2), value: viewModel.isLoading)
+
+                        if viewModel.isLoading {
+                            ProgressView()
+                                .controlSize(.regular)
+                                .tint(.secondary)
+                        }
                     }
-                    macroDonutSection
-                    aiInsightSection
                     tabBarSpacerSection
                 }
                 .padding(.top, 8)
@@ -105,7 +117,9 @@ struct StatisticsView: View {
 
     private var calorieTrendSection: some View {
         VStack(spacing: 16) {
-            weeklyAverageCard
+            if viewModel.hasData {
+                weeklyAverageCard
+            }
             CalorieTrendChart(data: viewModel.calorieData)
         }
         .accessibilityIdentifier("StatisticsView.CalorieTrend")
