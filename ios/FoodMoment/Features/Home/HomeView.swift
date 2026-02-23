@@ -360,9 +360,68 @@ private struct HomeDataContent: View {
     // MARK: - Body
 
     var body: some View {
-        calorieRingCard
+        if todayMeals.isEmpty {
+            emptyCalorieCard
+        } else {
+            calorieRingCard
+        }
         healthMetricsGrid
         foodMomentSection
+    }
+
+    // MARK: - Empty Calorie Card
+
+    private var emptyCalorieCard: some View {
+        Button {
+            onCameraTapped()
+        } label: {
+            VStack(spacing: 16) {
+                ZStack {
+                    CalorieRingChart(progress: 0)
+                        .frame(width: 220, height: 220)
+                        .opacity(0.3)
+
+                    VStack(spacing: 8) {
+                        Image(systemName: "camera.fill")
+                            .font(.Jakarta.regular(32))
+                            .foregroundStyle(AppTheme.Colors.primary)
+
+                        Text("记录第一餐")
+                            .font(.Jakarta.bold(18))
+                            .foregroundStyle(.primary)
+
+                        Text("拍照开始追踪今日营养")
+                            .font(.Jakarta.medium(13))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
+                MacroIndicatorRow(
+                    proteinGrams: 0,
+                    carbsGrams: 0,
+                    fatGrams: 0
+                )
+                .opacity(0.3)
+            }
+            .padding(24)
+            .frame(maxWidth: .infinity)
+            .background(
+                ZStack {
+                    RadialGradient(
+                        colors: [
+                            AppTheme.Colors.primary.opacity(0.06),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 20,
+                        endRadius: 200
+                    )
+                }
+            )
+            .glassCard(cornerRadius: AppTheme.CornerRadius.large)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 20)
     }
 
     // MARK: - Calorie Ring Card
