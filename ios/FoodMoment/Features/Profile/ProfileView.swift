@@ -88,8 +88,35 @@ struct ProfileView: View {
             isShowingEditProfile = true
         } label: {
             VStack(spacing: 16) {
-                avatarWithBadge
-                userNameText
+                ZStack(alignment: .bottomTrailing) {
+                    avatarWithBadge
+
+                    // 编辑指示器
+                    ZStack {
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 28, height: 28)
+                        Image(systemName: "pencil")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(AppTheme.Colors.primary)
+                    }
+                    .shadow(color: .black.opacity(0.1), radius: 4, y: 1)
+                    .offset(x: 4, y: 4)
+                }
+
+                VStack(spacing: 8) {
+                    userNameText
+
+                    Text("编辑资料")
+                        .font(.Jakarta.medium(13))
+                        .foregroundStyle(AppTheme.Colors.primary)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(
+                            Capsule()
+                                .stroke(AppTheme.Colors.primary.opacity(0.3), lineWidth: 1)
+                        )
+                }
             }
             .padding(.top, 16)
             .padding(.bottom, 8)
@@ -203,6 +230,8 @@ struct ProfileView: View {
         Text(viewModel.userName)
             .font(.Jakarta.bold(28))
             .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .accessibilityIdentifier("ProfileUserName")
     }
 
