@@ -78,6 +78,7 @@ struct DiaryView: View {
                         endOfDay: viewModel.selectedDate.endOfDay,
                         selectedDate: viewModel.selectedDate,
                         searchText: viewModel.searchText,
+                        isRefreshing: viewModel.isRefreshing,
                         onSelectMeal: { meal in
                             viewModel.selectedMeal = meal
                         },
@@ -381,6 +382,7 @@ private struct DiaryContentView: View {
     @Environment(AppState.self) private var appState
 
     let searchText: String
+    let isRefreshing: Bool
     let onSelectMeal: (MealRecord) -> Void
     let onDeleteMeal: (MealRecord) -> Void
 
@@ -389,10 +391,12 @@ private struct DiaryContentView: View {
         endOfDay: Date,
         selectedDate: Date,
         searchText: String,
+        isRefreshing: Bool,
         onSelectMeal: @escaping (MealRecord) -> Void,
         onDeleteMeal: @escaping (MealRecord) -> Void
     ) {
         self.searchText = searchText
+        self.isRefreshing = isRefreshing
         self.onSelectMeal = onSelectMeal
         self.onDeleteMeal = onDeleteMeal
         _meals = Query(
@@ -414,7 +418,17 @@ private struct DiaryContentView: View {
     }
 
     var body: some View {
-        if filteredMeals.isEmpty {
+        if isRefreshing && filteredMeals.isEmpty {
+            VStack {
+                Spacer()
+                ProgressView()
+                    .controlSize(.regular)
+                    .tint(.secondary)
+                Spacer()
+                Spacer()
+            }
+            .frame(minHeight: 300)
+        } else if filteredMeals.isEmpty {
             emptyView
         } else {
             mealListContent

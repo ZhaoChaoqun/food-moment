@@ -13,6 +13,9 @@ final class DiaryViewModel {
     var selectedMeal: MealRecord?
     var mealToEdit: MealRecord?
 
+    /// 是否正在从 API 刷新数据
+    var isRefreshing: Bool = false
+
     /// 当前周中有餐食记录的日期集合（以 "yyyy-MM-dd" 字符串标识）
     var datesWithMeals: Set<String> = []
 
@@ -69,6 +72,9 @@ final class DiaryViewModel {
 
     /// 从 API 刷新数据并更新 SwiftData 缓存（Smart Merge：保护未同步的本地记录）
     func refreshFromAPI(modelContext: ModelContext) async {
+        isRefreshing = true
+        defer { isRefreshing = false }
+
         let dateString = selectedDate.apiDateString
 
         // 并发启动所有请求（绿点数据独立获取，不阻塞其他逻辑）
