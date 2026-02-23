@@ -14,6 +14,7 @@ final class HomeViewModel {
     var localAvatarData: Data?
     var stepCount: Int = 0
     var caloriesBurned: Int = 0
+    var refreshError: String?
 
     // MARK: - Private
 
@@ -118,7 +119,7 @@ final class HomeViewModel {
 
             try? modelContext.save()
         } catch {
-            // API 失败时保持缓存数据
+            refreshError = "数据同步失败，显示的是缓存数据"
         }
     }
 
@@ -156,6 +157,12 @@ final class HomeViewModel {
     }
 
     func refresh(modelContext: ModelContext) async {
+        refreshError = nil
         await refreshFromAPI(modelContext: modelContext)
+        if refreshError != nil {
+            HapticManager.error()
+        } else {
+            HapticManager.success()
+        }
     }
 }

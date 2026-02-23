@@ -55,6 +55,22 @@ struct HomeView: View {
             .refreshable {
                 await viewModel.refresh(modelContext: modelContext)
             }
+            .overlay(alignment: .top) {
+                if let error = viewModel.refreshError {
+                    RefreshErrorToast(message: error)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .onAppear {
+                            Task {
+                                try? await Task.sleep(for: .seconds(3))
+                                withAnimation {
+                                    viewModel.refreshError = nil
+                                }
+                            }
+                        }
+                        .padding(.top, 8)
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: viewModel.refreshError != nil)
             .task {
                 await viewModel.refreshFromAPI(modelContext: modelContext)
             }
@@ -558,5 +574,27 @@ private struct HomeDataContent: View {
 
     private func formattedCalories(_ value: Int) -> String {
         Self.calorieFormatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+}
+
+// MARK: - Refresh Error Toast
+
+private struct RefreshErrorToast: View {
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "wifi.exclamationmark")
+                .font(.Jakarta.medium(14))
+                .foregroundStyle(.secondary)
+
+            Text(message)
+                .font(.Jakarta.medium(13))
+                .foregroundStyle(.primary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.ultraThickMaterial, in: Capsule())
+        .shadow(color: .black.opacity(0.08), radius: 8, y: 4)
     }
 }
