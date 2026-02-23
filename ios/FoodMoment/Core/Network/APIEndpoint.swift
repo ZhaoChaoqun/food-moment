@@ -30,15 +30,14 @@ enum APIEndpoint {
         TimeZone.current.secondsFromGMT()
     }
 
-    /// 将后端返回的相对路径或完整 URL 转为可用的完整 URL
+    /// 将后端返回的图片 URL 转为可用的完整 URL
     ///
-    /// 后端 storage_public_url 在开发环境返回相对路径（如 `/api/v1/storage/xxx.jpg`），
-    /// 需要拼接 baseURL 才能在真机上通过 ngrok 访问。
+    /// 后端统一返回完整的 Azure Blob Storage URL（https://...），
+    /// 此方法保留作为兼容性防御。
     static func resolveMediaURL(_ urlString: String) -> URL? {
         if urlString.hasPrefix("http://") || urlString.hasPrefix("https://") {
             return URL(string: urlString)
         }
-        // 相对路径，拼接 baseURL
         return URL(string: baseURL + urlString)
     }
 
