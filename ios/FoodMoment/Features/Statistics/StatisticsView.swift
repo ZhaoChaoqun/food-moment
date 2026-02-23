@@ -26,6 +26,8 @@ struct StatisticsView: View {
                         VStack(spacing: 20) {
                             if viewModel.selectedRange != .day {
                                 calorieTrendSection
+                            } else {
+                                dayModeCalorieTrendHint
                             }
                             macroDonutSection
                             aiInsightSection
@@ -164,6 +166,25 @@ struct StatisticsView: View {
         .glassCard()
         .padding(.horizontal, 20)
         .accessibilityIdentifier("StatisticsView.WeeklyAverageCard")
+    }
+
+    // MARK: - Day Mode Calorie Trend Hint
+
+    private var dayModeCalorieTrendHint: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "info.circle")
+                .font(.Jakarta.regular(16))
+                .foregroundStyle(AppTheme.Colors.primary.opacity(0.7))
+
+            Text("切换至「周」或「月」查看热量趋势")
+                .font(.Jakarta.regular(14))
+                .foregroundStyle(.secondary)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .glassCard()
+        .padding(.horizontal, 20)
+        .accessibilityIdentifier("StatisticsView.DayModeHint")
     }
 
     // MARK: - Macro Donut Section
