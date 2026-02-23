@@ -84,6 +84,35 @@ enum AppTheme {
 
         /// 卡路里标签背景色
         static let calorieBadgeBackground = Color.black.opacity(0.35)
+
+        // MARK: - Health Metric Colors
+
+        /// 热量环进度色 - 黄绿色
+        static let calorieRingProgress = Color(hex: "#C8E64E")
+
+        /// 热量环底色 - 深绿色
+        static let calorieRingTrack = Color(hex: "#2D4A2D")
+
+        /// 热量环溢出高光色
+        static let calorieRingOverflow = Color(hex: "#E8FF6B")
+
+        /// 水分主色 - 蓝色
+        static let water = Color(hex: "#3B82F6")
+
+        /// 水分浅色 - 用于渐变起始
+        static let waterLight = Color(hex: "#93C5FD")
+
+        /// 水分底色 - 用于图标容器
+        static let waterBackground = Color(hex: "#EFF6FF")
+
+        /// 水滴渐变浅色
+        static let waterDropletLight = Color(hex: "#4FC3F7")
+
+        /// 水滴渐变深色
+        static let waterDropletDark = Color(hex: "#0288D1")
+
+        /// 步数主色 - 深绿色
+        static let steps = Color(hex: "#076653")
     }
 
     // MARK: - Corner Radius

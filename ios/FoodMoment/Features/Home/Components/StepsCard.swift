@@ -17,7 +17,7 @@ struct StepsCard: View {
     private let progressHeight: CGFloat = 6
 
     private let stepsGradient = LinearGradient(
-        colors: [Color(hex: "#E3EF26"), Color(hex: "#076653")],
+        colors: [AppTheme.Colors.accent, AppTheme.Colors.steps],
         startPoint: .leading,
         endPoint: .trailing
     )
@@ -49,24 +49,24 @@ struct StepsCard: View {
     private var stepsIcon: some View {
         ZStack {
             Circle()
-                .fill(Color(hex: "#E3EF26").opacity(0.2))
+                .fill(AppTheme.Colors.accent.opacity(0.2))
                 .frame(width: iconSize, height: iconSize)
 
             Image(systemName: "shoeprints.fill")
                 .font(.Jakarta.regular(iconFontSize))
-                .foregroundStyle(Color(hex: "#076653"))
+                .foregroundStyle(AppTheme.Colors.steps)
         }
     }
 
     private var caloriesBadge: some View {
         Text("+\(formattedCalories)")
             .font(.Jakarta.bold(10))
-            .foregroundStyle(Color(hex: "#076653"))
+            .foregroundStyle(AppTheme.Colors.steps)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(Color(hex: "#E3EF26").opacity(0.3))
+                    .fill(AppTheme.Colors.accent.opacity(0.3))
             )
     }
 
@@ -106,7 +106,7 @@ struct StepsCard: View {
                         width: max(geometry.size.width * CGFloat(min(progress, 1.0)), progressHeight),
                         height: progressHeight
                     )
-                    .shadow(color: Color(hex: "#076653").opacity(0.2), radius: 5, y: 0)
+                    .shadow(color: AppTheme.Colors.steps.opacity(0.2), radius: 5, y: 0)
                     .animation(.easeOut(duration: 0.6), value: progress)
             }
         }

@@ -79,8 +79,8 @@ struct WaterTrackingSheet: View {
                 .foregroundStyle(
                     LinearGradient(
                         colors: [
-                            Color(hex: "#4FC3F7"),
-                            Color(hex: "#0288D1")
+                            AppTheme.Colors.waterDropletLight,
+                            AppTheme.Colors.waterDropletDark
                         ],
                         startPoint: .top,
                         endPoint: .bottom

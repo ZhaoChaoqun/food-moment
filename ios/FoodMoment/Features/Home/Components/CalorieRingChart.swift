@@ -15,9 +15,9 @@ struct CalorieRingChart: View {
     private let lineWidth: CGFloat = 24
 
     /// 亮黄绿色（进度弧线）
-    private var progressColor: Color { Color(hex: "#C8E64E") }
+    private var progressColor: Color { AppTheme.Colors.calorieRingProgress }
     /// 深绿色（底部轨道）
-    private var trackColor: Color { Color(hex: "#2D4A2D") }
+    private var trackColor: Color { AppTheme.Colors.calorieRingTrack }
 
     // MARK: - Body
 
@@ -143,7 +143,7 @@ struct CalorieRingChart: View {
                 AngularGradient(
                     gradient: Gradient(colors: [
                         progressColor,
-                        Color(hex: "#E8FF6B"),
+                        AppTheme.Colors.calorieRingOverflow,
                         progressColor
                     ]),
                     center: .center,

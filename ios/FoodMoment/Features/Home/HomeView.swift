@@ -422,12 +422,12 @@ private struct HomeDataContent: View {
             if isOverGoal {
                 Text("已超出目标")
                     .font(.Jakarta.bold(10))
-                    .foregroundStyle(Color(hex: "#C8E64E"))
+                    .foregroundStyle(AppTheme.Colors.calorieRingProgress)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
                         Capsule()
-                            .fill(Color(hex: "#C8E64E").opacity(0.15))
+                            .fill(AppTheme.Colors.calorieRingProgress.opacity(0.15))
                     )
                     .padding(.top, 2)
             }

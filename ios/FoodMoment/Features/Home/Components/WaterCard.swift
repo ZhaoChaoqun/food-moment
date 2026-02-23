@@ -23,7 +23,7 @@ struct WaterCard: View {
     private let progressHeight: CGFloat = 6
 
     private let waterGradient = LinearGradient(
-        colors: [Color(hex: "#93C5FD"), Color(hex: "#3B82F6")],
+        colors: [AppTheme.Colors.waterLight, AppTheme.Colors.water],
         startPoint: .leading,
         endPoint: .trailing
     )
@@ -55,12 +55,12 @@ struct WaterCard: View {
     private var waterIcon: some View {
         ZStack {
             Circle()
-                .fill(Color(hex: "#EFF6FF"))
+                .fill(AppTheme.Colors.waterBackground)
                 .frame(width: iconSize, height: iconSize)
 
             Image(systemName: "drop.fill")
                 .font(.Jakarta.regular(iconFontSize))
-                .foregroundStyle(Color(hex: "#3B82F6"))
+                .foregroundStyle(AppTheme.Colors.water)
         }
     }
 
@@ -123,7 +123,7 @@ struct WaterCard: View {
                         width: max(geometry.size.width * CGFloat(min(progress, 1.0)), progressHeight),
                         height: progressHeight
                     )
-                    .shadow(color: Color(hex: "#3B82F6").opacity(0.2), radius: 5, y: 0)
+                    .shadow(color: AppTheme.Colors.water.opacity(0.2), radius: 5, y: 0)
                     .animation(.easeOut(duration: 0.5), value: progress)
             }
         }
