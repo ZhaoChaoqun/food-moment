@@ -223,7 +223,7 @@ struct DiaryView: View {
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
 
-                TextField("搜索食物、标签...", text: $viewModel.searchText)
+                TextField("搜索食物、标签、AI 分析...", text: $viewModel.searchText)
                     .font(.Jakarta.regular(15))
                     .textFieldStyle(.plain)
                     .autocorrectionDisabled()
@@ -512,6 +512,10 @@ private struct SearchResultsView: View {
             .map { (date: $0.key, meals: $0.value) }
     }
 
+    private var totalResultCount: Int {
+        groupedResults.reduce(0) { $0 + $1.meals.count }
+    }
+
     var body: some View {
         if groupedResults.isEmpty {
             emptySearchView
@@ -522,6 +526,15 @@ private struct SearchResultsView: View {
 
     private var searchResultsList: some View {
         LazyVStack(spacing: 0, pinnedViews: .sectionHeaders) {
+            HStack {
+                Text("找到 \(totalResultCount) 条结果")
+                    .font(.Jakarta.medium(13))
+                    .foregroundStyle(.secondary)
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 10)
+
             ForEach(groupedResults, id: \.date) { group in
                 Section {
                     ForEach(group.meals) { meal in
