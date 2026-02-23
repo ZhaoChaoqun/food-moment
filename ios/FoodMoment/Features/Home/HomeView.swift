@@ -130,52 +130,59 @@ struct HomeView: View {
     // MARK: - User Avatar
 
     private var userAvatarView: some View {
-        ZStack(alignment: .bottomTrailing) {
-            if let imageData = viewModel.localAvatarData,
-               let uiImage = UIImage(data: imageData) {
-                Image(uiImage: uiImage)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 48, height: 48)
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.6), lineWidth: 2)
-                    )
-                    .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
-            } else if let urlString = viewModel.userAvatarUrl, let url = APIEndpoint.resolveMediaURL(urlString) {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFill()
-                            .frame(width: 48, height: 48)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.6), lineWidth: 2)
-                            )
-                            .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
-                    default:
-                        defaultAvatarView
+        Button {
+            appState.selectedTab = .profile
+            HapticManager.impact(.light)
+        } label: {
+            ZStack(alignment: .bottomTrailing) {
+                if let imageData = viewModel.localAvatarData,
+                   let uiImage = UIImage(data: imageData) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 48, height: 48)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                        )
+                        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+                } else if let urlString = viewModel.userAvatarUrl, let url = APIEndpoint.resolveMediaURL(urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                                .frame(width: 48, height: 48)
+                                .clipShape(Circle())
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                                )
+                                .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+                        default:
+                            defaultAvatarView
+                        }
                     }
+                } else if let assetName = viewModel.userAvatarAssetName {
+                    Image(assetName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 48, height: 48)
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.6), lineWidth: 2)
+                        )
+                        .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
+                } else {
+                    defaultAvatarView
                 }
-            } else if let assetName = viewModel.userAvatarAssetName {
-                Image(assetName)
-                    .resizable()
-                    .scaledToFill()
-                    .frame(width: 48, height: 48)
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(Color.white.opacity(0.6), lineWidth: 2)
-                    )
-                    .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
-            } else {
-                defaultAvatarView
-            }
 
-            proBadge
+                proBadge
+            }
         }
+        .buttonStyle(.plain)
+        .contentShape(Circle())
         .accessibilityIdentifier("UserAvatar")
     }
 
