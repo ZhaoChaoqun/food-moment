@@ -142,7 +142,7 @@ struct StatisticsView: View {
                     Capsule()
                         .fill(viewModel.isPositiveChange
                             ? AppTheme.Colors.primary
-                            : Color(hex: "#F87171")
+                            : AppTheme.Colors.calorieWarning
                         )
                 )
         }
