@@ -33,7 +33,9 @@ struct StreakCard: View {
             daysCountText
             streakSubtitle
             Spacer(minLength: 0)
-            Divider()
+            Rectangle()
+                .fill(AppTheme.Colors.divider)
+                .frame(height: 1)
                 .padding(.horizontal, 20)
             motivationLabel
         }
@@ -55,7 +57,7 @@ struct StreakCard: View {
                     endPoint: .top
                 )
             )
-            .shadow(color: Color(hex: "#FF6B35").opacity(0.4), radius: 8, y: 2)
+            .shadow(color: Color(hex: "#FF6B35").opacity(0.25), radius: 8, y: 2)
     }
 
     // MARK: - Days Count Text

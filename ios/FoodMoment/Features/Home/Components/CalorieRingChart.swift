@@ -12,7 +12,7 @@ struct CalorieRingChart: View {
 
     // MARK: - Design Constants
 
-    private let lineWidth: CGFloat = 24
+    private let lineWidth: CGFloat = 20
 
     /// 亮黄绿色（进度弧线）
     private var progressColor: Color { AppTheme.Colors.calorieRingProgress }
@@ -154,7 +154,7 @@ struct CalorieRingChart: View {
             )
             .frame(width: ringDiameter, height: ringDiameter)
             .rotationEffect(.degrees(-90))
-            .shadow(color: progressColor.opacity(0.6), radius: 12, x: 0, y: 0)
+            .shadow(color: progressColor.opacity(0.6), radius: 8, x: 0, y: 0)
 
         // 末端阴影圆
         endCapCircle(

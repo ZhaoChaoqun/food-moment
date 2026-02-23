@@ -72,7 +72,7 @@ struct AIInsightDarkCard: View {
             Circle()
                 .fill(AppTheme.Colors.primary.opacity(0.3))
                 .frame(width: 128, height: 128)
-                .blur(radius: 40)
+                .blur(radius: 50)
                 .offset(
                     x: geometry.size.width - 54,
                     y: -54

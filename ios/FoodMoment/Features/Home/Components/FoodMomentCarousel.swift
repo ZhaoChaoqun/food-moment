@@ -213,7 +213,7 @@ private struct FoodMomentCard: View {
 
     private var gradientOverlay: some View {
         LinearGradient(
-            colors: [.clear, .black.opacity(0.6)],
+            colors: [.clear, .black.opacity(0.5)],
             startPoint: .center,
             endPoint: .bottom
         )
@@ -230,7 +230,7 @@ private struct FoodMomentCard: View {
                 .foregroundStyle(.white)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
-                .background(mealTypeInfo.color.opacity(0.85))
+                .background(.ultraThinMaterial)
                 .clipShape(Capsule())
 
             Text(meal.title)

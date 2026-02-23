@@ -96,7 +96,7 @@ struct CustomTabBar: View {
                     .font(.Jakarta.regular(20))
 
                 Text(tab.title)
-                    .font(.Jakarta.medium(10))
+                    .font(.Jakarta.medium(11))
             }
             .foregroundStyle(selectedTab == tab ? AppTheme.Colors.primary : .secondary)
             .frame(maxWidth: .infinity)

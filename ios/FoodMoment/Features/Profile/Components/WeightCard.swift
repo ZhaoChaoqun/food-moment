@@ -186,9 +186,22 @@ struct WeightCard: View {
     private var emptyState: some View {
         VStack(spacing: 8) {
             Spacer(minLength: 0)
-            Image(systemName: "plus.circle.dashed")
-                .font(.system(size: 28, weight: .light))
-                .foregroundStyle(AppTheme.Colors.primary.opacity(0.5))
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [AppTheme.Colors.primary.opacity(0.15), AppTheme.Colors.primary.opacity(0.04)],
+                            center: .center,
+                            startRadius: 0,
+                            endRadius: 24
+                        )
+                    )
+                    .frame(width: 48, height: 48)
+
+                Image(systemName: "plus.circle.dashed")
+                    .font(.system(size: 28, weight: .light))
+                    .foregroundStyle(AppTheme.Colors.primary.opacity(0.5))
+            }
 
             Text("点击记录第一笔体重")
                 .font(.Jakarta.regular(13))
@@ -254,7 +267,7 @@ private struct MiniSparkline: View {
         }
         .stroke(
             AppTheme.Colors.primary,
-            style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round)
+            style: StrokeStyle(lineWidth: 2.0, lineCap: .round, lineJoin: .round)
         )
     }
 

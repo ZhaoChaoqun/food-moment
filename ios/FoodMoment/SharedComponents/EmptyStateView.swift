@@ -30,7 +30,7 @@ struct EmptyStateView: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 12) {
             iconView
             titleView
             subtitleView
@@ -56,7 +56,7 @@ struct EmptyStateView: View {
                         endRadius: 50
                     )
                 )
-                .frame(width: 100, height: 100)
+                .frame(width: 88, height: 88)
 
             Image(systemName: icon)
                 .font(.Jakarta.regular(48))

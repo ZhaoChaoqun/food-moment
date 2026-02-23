@@ -114,7 +114,7 @@ struct ProfileView: View {
                         .padding(.vertical, 6)
                         .background(
                             Capsule()
-                                .stroke(AppTheme.Colors.primary.opacity(0.3), lineWidth: 1)
+                                .stroke(AppTheme.Colors.primary.opacity(0.4), lineWidth: 1)
                         )
                 }
             }

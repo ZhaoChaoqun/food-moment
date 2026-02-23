@@ -173,6 +173,25 @@ enum AppTheme {
 
         /// 徽章、标签 - 11pt Semibold
         static let micro: CGFloat = 11
+
+        // MARK: - Number Sizes
+
+        /// 大数字（核心卡路里等）- 44pt
+        static let numberLarge: CGFloat = 44
+
+        /// 中数字（统计页、体重等）- 28pt
+        static let numberMedium: CGFloat = 28
+
+        /// 小数字（卡片内数值）- 20pt
+        static let numberSmall: CGFloat = 20
+
+        // MARK: - Tracking
+
+        /// 大数字紧凑 tracking
+        static let displayTracking: CGFloat = -0.5
+
+        /// 全大写微文字 tracking
+        static let microTracking: CGFloat = 1.5
     }
 
     // MARK: - Animation

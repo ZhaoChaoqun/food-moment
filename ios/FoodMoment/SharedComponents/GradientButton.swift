@@ -54,7 +54,7 @@ struct GradientButton: View {
         .frame(maxWidth: .infinity)
         .frame(height: buttonHeight)
         .background(buttonBackground)
-        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .scaleEffect(isPressed ? 0.97 : 1.0)
     }
 
     // MARK: - Button Background

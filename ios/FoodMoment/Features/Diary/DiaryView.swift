@@ -169,7 +169,7 @@ struct DiaryView: View {
             // 底部渐变分隔线
             LinearGradient(
                 colors: [
-                    AppTheme.Colors.primary.opacity(0.2),
+                    AppTheme.Colors.primary.opacity(0.15),
                     AppTheme.Colors.primary.opacity(0.05),
                     Color.clear
                 ],
@@ -370,7 +370,7 @@ private struct DiarySummaryBar: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.gray.opacity(0.12))
+                        .fill(AppTheme.Colors.trackGray)
                         .frame(height: 6)
 
                     Capsule()

@@ -237,7 +237,7 @@ struct HomeView: View {
             )
             .clipShape(Capsule())
             .shadow(color: AppTheme.Colors.primary.opacity(0.3), radius: 4, y: 1)
-            .offset(x: 2, y: 2)
+            .offset(x: 4, y: 4)
     }
 
     // MARK: - Helper Methods

@@ -20,7 +20,7 @@ struct WaterCard: View {
     private let iconSize: CGFloat = 40
     private let buttonSize: CGFloat = 32
     private let iconFontSize: CGFloat = 20
-    private let progressHeight: CGFloat = 6
+    private let progressHeight: CGFloat = 7
 
     private let waterGradient = LinearGradient(
         colors: [AppTheme.Colors.waterLight, AppTheme.Colors.water],
@@ -114,7 +114,7 @@ struct WaterCard: View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.gray.opacity(0.15))
+                    .fill(AppTheme.Colors.trackGray)
                     .frame(height: progressHeight)
 
                 Capsule()

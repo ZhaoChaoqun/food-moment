@@ -119,7 +119,7 @@ struct TimelineEntry: View {
             .frame(width: 10, height: 10)
             .overlay(
                 Circle()
-                    .fill(mealColor.opacity(0.2))
+                    .fill(mealColor.opacity(0.3))
                     .frame(width: 18, height: 18)
             )
             .shadow(color: mealColor.opacity(0.3), radius: 4, y: 1)

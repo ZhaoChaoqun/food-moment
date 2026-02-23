@@ -151,7 +151,7 @@ struct ActivityCalendar: View {
                               ))
                             : AnyShapeStyle(Color.gray.opacity(0.06))
                     )
-                    .shadow(color: isActive ? AppTheme.Colors.primary.opacity(0.25) : .clear, radius: 3, y: 1)
+                    .shadow(color: isActive ? AppTheme.Colors.primary.opacity(0.25) : .clear, radius: 4, y: 1)
             )
             .accessibilityIdentifier("DayCell_\(day)")
     }

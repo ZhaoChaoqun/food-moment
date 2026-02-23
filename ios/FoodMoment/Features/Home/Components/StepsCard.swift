@@ -14,7 +14,7 @@ struct StepsCard: View {
     private let cardCornerRadius: CGFloat = 32
     private let iconSize: CGFloat = 40
     private let iconFontSize: CGFloat = 20
-    private let progressHeight: CGFloat = 6
+    private let progressHeight: CGFloat = 7
 
     private let stepsGradient = LinearGradient(
         colors: [AppTheme.Colors.accent, AppTheme.Colors.steps],
@@ -97,7 +97,7 @@ struct StepsCard: View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(Color.gray.opacity(0.15))
+                    .fill(AppTheme.Colors.trackGray)
                     .frame(height: progressHeight)
 
                 Capsule()

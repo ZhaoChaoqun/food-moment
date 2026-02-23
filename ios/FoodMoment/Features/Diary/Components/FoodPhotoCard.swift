@@ -253,7 +253,7 @@ struct FoodPhotoCard: View {
             .padding(.vertical, 4)
             .background(
                 Capsule()
-                    .fill(AppTheme.Colors.primary.opacity(0.06))
+                    .fill(AppTheme.Colors.primary.opacity(0.12))
                     .background(Capsule().fill(.ultraThinMaterial))
             )
             .overlay(
