@@ -100,7 +100,7 @@ struct EditProfileView: View {
         let count = viewModel.displayName.count
         let max = EditProfileViewModel.maxNicknameLength
         let remaining = max - count
-        let color: Color = remaining <= 0 ? .red : remaining <= 3 ? .orange : .tertiary
+        let color: Color = remaining <= 0 ? .red : remaining <= 3 ? .orange : .gray
 
         return Text("\(count)/\(max)")
             .font(.Jakarta.regular(11))
@@ -441,7 +441,7 @@ struct EditProfileView: View {
             HStack(spacing: 12) {
                 Image(systemName: viewModel.activityLevel == level ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 20))
-                    .foregroundStyle(viewModel.activityLevel == level ? AppTheme.Colors.primary : .tertiary)
+                    .foregroundStyle(viewModel.activityLevel == level ? AnyShapeStyle(AppTheme.Colors.primary) : AnyShapeStyle(.tertiary))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(level.displayName)
