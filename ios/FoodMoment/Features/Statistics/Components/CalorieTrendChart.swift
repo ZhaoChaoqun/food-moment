@@ -16,6 +16,7 @@ struct CalorieTrendChart: View {
                 chartEmptyState
             } else {
                 chartSection
+                chartLegend
             }
         }
         .padding(20)
@@ -58,6 +59,21 @@ struct CalorieTrendChart: View {
         .frame(height: 200)
         .frame(maxWidth: .infinity)
         .accessibilityIdentifier("CalorieTrendChart.EmptyState")
+    }
+
+    // MARK: - Chart Legend
+
+    private var chartLegend: some View {
+        HStack(spacing: 6) {
+            Circle()
+                .fill(AppTheme.Colors.primary)
+                .frame(width: 8, height: 8)
+
+            Text("热量 (kcal)")
+                .font(.Jakarta.regular(12))
+                .foregroundStyle(.secondary)
+        }
+        .accessibilityIdentifier("CalorieTrendChart.Legend")
     }
 
     // MARK: - Chart Section
