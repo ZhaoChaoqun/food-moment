@@ -32,10 +32,10 @@ struct CustomTabBar: View {
     // MARK: - Tab Bar Background
 
     private var tabBarBackground: some View {
-        RoundedRectangle(cornerRadius: 24)
+        RoundedRectangle(cornerRadius: 24, style: .continuous)
             .fill(.regularMaterial)
             .overlay(
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .stroke(Color.white.opacity(0.3), lineWidth: 0.5)
             )
             .shadow(color: .black.opacity(0.08), radius: 12, y: -2)

@@ -37,7 +37,7 @@ struct FoodPhotoCard: View {
         ZStack(alignment: .topLeading) {
             photoView
                 .frame(height: 200)
-                .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium))
+                .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium, style: .continuous))
                 .overlay(gradientOverlay)
 
             mealTypeBadge
@@ -53,7 +53,7 @@ struct FoodPhotoCard: View {
             startPoint: .top,
             endPoint: .bottom
         )
-        .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium))
+        .clipShape(RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium, style: .continuous))
     }
 
     private var calorieBadgeOverlay: some View {

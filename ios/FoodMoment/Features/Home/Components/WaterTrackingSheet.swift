@@ -134,12 +134,12 @@ struct WaterTrackingSheet: View {
     }
 
     private func presetButtonBackground(isSelected: Bool) -> some View {
-        RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+        RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
             .fill(isSelected ? AppTheme.Colors.primary.opacity(0.15) : Color(.secondarySystemBackground))
     }
 
     private func presetButtonBorder(isSelected: Bool) -> some View {
-        RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+        RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
             .stroke(isSelected ? AppTheme.Colors.primary : .clear, lineWidth: 2)
     }
 
@@ -183,7 +183,7 @@ struct WaterTrackingSheet: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(
-                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                         .fill(Color(.secondarySystemBackground))
                 )
 
@@ -224,7 +224,7 @@ struct WaterTrackingSheet: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium, style: .continuous)
                     .fill(AppTheme.Colors.primary)
             )
             .foregroundStyle(.white)

@@ -117,16 +117,16 @@ struct StepsCard: View {
     // MARK: - Card Styling
 
     private var cardBackground: some View {
-        RoundedRectangle(cornerRadius: cardCornerRadius)
+        RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
             .fill(.white.opacity(0.75))
             .background(
-                RoundedRectangle(cornerRadius: cardCornerRadius)
+                RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
                     .fill(.ultraThinMaterial)
             )
     }
 
     private var cardBorder: some View {
-        RoundedRectangle(cornerRadius: cardCornerRadius)
+        RoundedRectangle(cornerRadius: cardCornerRadius, style: .continuous)
             .stroke(Color.white.opacity(0.5), lineWidth: 1)
     }
 

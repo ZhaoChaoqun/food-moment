@@ -20,14 +20,14 @@ enum AppTheme {
         /// 强调色 - 黄绿色
         static let accent = Color(hex: "#E3EF26")
 
-        /// 浅色背景
-        static let background = Color(hex: "#F8F9FA")
+        /// 浅色背景（Light: #F8F9FA / Dark: #000000）
+        static let background = Color("Colors/AppBackground")
 
         /// 深色背景
         static let darkBackground = Color(hex: "#102216")
 
-        /// 卡片背景
-        static let cardBackground = Color(.systemBackground)
+        /// 卡片背景（Light: #FFFFFF / Dark: #1C1C1E）
+        static let cardBackground = Color("Colors/CardBackground")
 
         // MARK: - Meal Type Colors
 
@@ -57,30 +57,30 @@ enum AppTheme {
         /// 膳食纤维颜色 - 紫色
         static let fiber = Color(hex: "#A78BFA")
 
-        // MARK: - Text Colors
+        // MARK: - Text Colors (Dark Mode 自适应)
 
-        /// 主文本色
-        static let textPrimary = Color(hex: "#0F172A")
+        /// 主文本色（Light: #1A1A2E / Dark: #F5F5F7）
+        static let textPrimary = Color("Colors/TextPrimary")
 
-        /// 次文本色
-        static let textSecondary = Color(hex: "#64748B")
+        /// 次文本色（Light: #64748B / Dark: #A1A1AA）
+        static let textSecondary = Color("Colors/TextSecondary")
 
-        /// 辅助文本色
-        static let textTertiary = Color(hex: "#475569")
+        /// 辅助文本色（Light: #475569 / Dark: #71717A）
+        static let textTertiary = Color("Colors/TextTertiary")
 
-        // MARK: - UI Colors
+        // MARK: - UI Colors (Dark Mode 自适应)
 
-        /// 进度条底色
-        static let trackGray = Color(hex: "#E2E8F0")
+        /// 进度条底色（Light: #E2E8F0 / Dark: #2C2C2E）
+        static let trackGray = Color("Colors/TrackGray")
 
-        /// 分割线颜色
-        static let divider = Color(hex: "#F1F5F9")
+        /// 分割线颜色（Light: #F1F5F9 / Dark: #2C2C2E）
+        static let divider = Color("Colors/AppDivider")
 
         /// 热量警告色（超标）
         static let calorieWarning = Color(hex: "#F87171")
 
-        /// 拖拽指示条颜色
-        static let dragIndicator = Color(hex: "#CBD5E1")
+        /// 拖拽指示条颜色（Light: #CBD5E1 / Dark: #48484A）
+        static let dragIndicator = Color("Colors/DragIndicator")
 
         /// 卡路里标签背景色
         static let calorieBadgeBackground = Color.black.opacity(0.35)

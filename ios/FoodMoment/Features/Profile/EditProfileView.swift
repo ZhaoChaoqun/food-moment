@@ -498,7 +498,7 @@ struct EditProfileView: View {
                         .padding(.horizontal, 24)
                         .padding(.vertical, 10)
                         .background(
-                            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                                 .fill(AppTheme.Colors.primary)
                         )
                 }

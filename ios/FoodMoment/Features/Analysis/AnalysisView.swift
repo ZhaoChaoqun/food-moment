@@ -210,7 +210,7 @@ struct AnalysisView: View {
         }
         .frame(minHeight: minContentHeight, alignment: .top)
         .frame(maxWidth: .infinity)
-        .background(Color.white)
+        .background(Color(.systemBackground))
         .clipShape(
             UnevenRoundedRectangle(
                 topLeadingRadius: Layout.contentCornerRadius,
@@ -315,7 +315,7 @@ struct AnalysisView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 36, height: 36)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
 
                 if let result = viewModel.analysisResult {
                     Text("\(result.totalCalories) kcal")
@@ -357,7 +357,7 @@ struct AnalysisView: View {
                         .font(.Jakarta.regular(16))
                         .padding(12)
                         .background(Color(.systemGray6))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                 }
 
                 // Calories
@@ -372,7 +372,7 @@ struct AnalysisView: View {
                             .keyboardType(.numberPad)
                             .padding(12)
                             .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                         Text("kcal")
                             .font(.Jakarta.medium(14))
@@ -392,7 +392,7 @@ struct AnalysisView: View {
                             .keyboardType(.decimalPad)
                             .padding(12)
                             .background(Color(.systemGray6))
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
                         Text("份")
                             .font(.Jakarta.medium(14))

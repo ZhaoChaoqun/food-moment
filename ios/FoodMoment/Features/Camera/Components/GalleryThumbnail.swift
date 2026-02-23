@@ -33,7 +33,7 @@ struct GalleryThumbnail: View {
             matching: .images
         ) {
             ZStack {
-                RoundedRectangle(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color.white.opacity(0.15))
                     .frame(width: size, height: size)
 
@@ -42,14 +42,14 @@ struct GalleryThumbnail: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: size, height: size)
-                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+                        .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                 } else {
                     Image(systemName: "photo.on.rectangle")
                         .font(.Jakarta.regular(18))
                         .foregroundColor(.white)
                 }
 
-                RoundedRectangle(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(Color.white.opacity(0.2), lineWidth: borderWidth)
                     .frame(width: size, height: size)
             }

@@ -37,10 +37,10 @@ struct UndoToast: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                 .fill(Color(.systemGray6).opacity(0.95))
                 .background(
-                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                         .fill(.ultraThickMaterial)
                 )
         )

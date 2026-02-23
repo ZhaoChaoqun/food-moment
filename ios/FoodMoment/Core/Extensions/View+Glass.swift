@@ -49,9 +49,9 @@ extension View {
         self
             .background(.white.opacity(style.whiteOpacity))
             .background(style.material)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(Color.white.opacity(style.strokeOpacity), lineWidth: 0.5)
             )
             .modifier(GlassShadow())
@@ -67,41 +67,9 @@ extension View {
         glassCard(style: .thick, cornerRadius: cornerRadius)
     }
 
-    /// 高级渐变页面背景
+    /// 高级渐变页面背景（自适应 Light / Dark Mode）
     func premiumBackground() -> some View {
-        self.background(
-            ZStack {
-                LinearGradient(
-                    colors: [
-                        Color(hex: "#ECFDF5"),
-                        Color(hex: "#F5F7FA"),
-                        Color(hex: "#EEF2FF")
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-                RadialGradient(
-                    colors: [
-                        AppTheme.Colors.primary.opacity(0.08),
-                        Color.clear
-                    ],
-                    center: .topTrailing,
-                    startRadius: 0,
-                    endRadius: 500
-                )
-                RadialGradient(
-                    colors: [
-                        Color(hex: "#818CF8").opacity(0.04),
-                        Color.clear
-                    ],
-                    center: .bottomLeading,
-                    startRadius: 0,
-                    endRadius: 400
-                )
-            }
-            .drawingGroup()
-            .ignoresSafeArea()
-        )
+        self.modifier(PremiumBackgroundModifier())
     }
 
     /// 玻璃态分组容器
@@ -109,11 +77,97 @@ extension View {
         self
             .background(.white.opacity(0.7))
             .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
             )
             .modifier(GlassShadow())
+    }
+}
+
+// MARK: - Premium Background Modifier
+
+/// 高级渐变背景修饰器（自适应 Light / Dark Mode）
+private struct PremiumBackgroundModifier: ViewModifier {
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        content.background(
+            ZStack {
+                if colorScheme == .dark {
+                    darkBackground
+                } else {
+                    lightBackground
+                }
+            }
+            .drawingGroup()
+            .ignoresSafeArea()
+        )
+    }
+
+    private var lightBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(hex: "#ECFDF5"),
+                    Color(hex: "#F5F7FA"),
+                    Color(hex: "#EEF2FF")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            RadialGradient(
+                colors: [
+                    AppTheme.Colors.primary.opacity(0.08),
+                    Color.clear
+                ],
+                center: .topTrailing,
+                startRadius: 0,
+                endRadius: 500
+            )
+            RadialGradient(
+                colors: [
+                    Color(hex: "#818CF8").opacity(0.04),
+                    Color.clear
+                ],
+                center: .bottomLeading,
+                startRadius: 0,
+                endRadius: 400
+            )
+        }
+    }
+
+    private var darkBackground: some View {
+        ZStack {
+            LinearGradient(
+                colors: [
+                    Color(hex: "#0A0F0C"),
+                    Color(hex: "#0F1114"),
+                    Color(hex: "#0A0D12")
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            RadialGradient(
+                colors: [
+                    AppTheme.Colors.primary.opacity(0.06),
+                    Color.clear
+                ],
+                center: .topTrailing,
+                startRadius: 0,
+                endRadius: 500
+            )
+            RadialGradient(
+                colors: [
+                    Color(hex: "#818CF8").opacity(0.03),
+                    Color.clear
+                ],
+                center: .bottomLeading,
+                startRadius: 0,
+                endRadius: 400
+            )
+        }
     }
 }

@@ -165,7 +165,7 @@ private struct FoodMomentCard: View {
             caloriesBadge
         }
         .frame(width: cardWidth, height: cardHeight)
-        .clipShape(RoundedRectangle(cornerRadius: 32))
+        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
         .modifier(CardShadow())
     }
 

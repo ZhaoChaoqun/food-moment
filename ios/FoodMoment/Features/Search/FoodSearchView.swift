@@ -120,7 +120,7 @@ struct FoodSearchView: View {
                             .padding(.horizontal, 14)
                             .padding(.vertical, 8)
                             .background(
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
                                     .fill(Color(.secondarySystemBackground))
                             )
                     }
@@ -176,7 +176,7 @@ struct FoodSearchView: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                     .fill(Color(.secondarySystemBackground))
             )
         }
@@ -229,7 +229,7 @@ struct FoodSearchView: View {
                 }
             }
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(Color(.systemBackground))
                     .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
             )
@@ -341,7 +341,7 @@ struct FoodSearchView: View {
                     .font(.Jakarta.regular(36))
                     .frame(width: 52, height: 52)
                     .background(
-                        RoundedRectangle(cornerRadius: 14)
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
                             .fill(Color(.secondarySystemBackground))
                     )
 
@@ -360,7 +360,7 @@ struct FoodSearchView: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 4)
+                                    RoundedRectangle(cornerRadius: 4, style: .continuous)
                                         .fill(sourceColor(source))
                                 )
                         }
@@ -394,7 +394,7 @@ struct FoodSearchView: View {
             .padding(.vertical, 6)
             .padding(.horizontal, 12)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                     .fill(Color(.systemBackground))
             )
             .modifier(CardShadow())

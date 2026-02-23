@@ -150,7 +150,7 @@ private struct DateCell: View {
     }
 
     private var backgroundView: some View {
-        RoundedRectangle(cornerRadius: 16)
+        RoundedRectangle(cornerRadius: 16, style: .continuous)
             .fill(
                 isSelected
                     ? AnyShapeStyle(LinearGradient(

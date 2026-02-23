@@ -128,7 +128,7 @@ struct WeightInputSheet: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(
-                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+                RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium, style: .continuous)
                     .fill(AppTheme.Colors.primary)
             )
             .foregroundStyle(.white)

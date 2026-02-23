@@ -248,7 +248,7 @@ private struct AchievementDetailSheet: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
                 .background(
-                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                         .fill(Color.gray.opacity(0.08))
                 )
         }

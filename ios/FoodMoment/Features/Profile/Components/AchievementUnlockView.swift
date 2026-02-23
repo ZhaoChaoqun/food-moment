@@ -145,10 +145,10 @@ struct AchievementUnlockView: View {
         .padding(.vertical, 24)
         .padding(.horizontal, 24)
         .background(
-            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+            RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium, style: .continuous)
                 .fill(.ultraThinMaterial)
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium)
+                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.medium, style: .continuous)
                         .stroke(
                             LinearGradient(
                                 colors: [
@@ -181,7 +181,7 @@ struct AchievementUnlockView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 16)
                 .background(
-                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                         .fill(
                             LinearGradient(
                                 colors: [primaryColor, shadowColor],
@@ -191,7 +191,7 @@ struct AchievementUnlockView: View {
                         )
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small)
+                    RoundedRectangle(cornerRadius: AppTheme.CornerRadius.small, style: .continuous)
                         .stroke(Color.white.opacity(0.15), lineWidth: 1)
                 )
                 .shadow(color: primaryColor.opacity(0.3), radius: 12, y: 4)

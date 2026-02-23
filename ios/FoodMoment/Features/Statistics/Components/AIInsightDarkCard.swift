@@ -16,7 +16,7 @@ struct AIInsightDarkCard: View {
         .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(backgroundGradient)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         .modifier(CardShadow())
         .padding(.horizontal, 20)
         .accessibilityIdentifier("AIInsightDarkCard")

@@ -263,7 +263,7 @@ struct DiaryView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
             .background(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color(.systemGray6))
             )
 
@@ -666,7 +666,7 @@ private struct SearchResultRow: View {
                 .resizable()
                 .scaledToFill()
                 .frame(width: 44, height: 44)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         } else if let urlString = meal.imageURL, let url = APIEndpoint.resolveMediaURL(urlString) {
             AsyncImage(url: url) { phase in
                 if case .success(let image) = phase {
@@ -676,14 +676,14 @@ private struct SearchResultRow: View {
                 }
             }
             .frame(width: 44, height: 44)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
         } else {
             defaultThumbnail
         }
     }
 
     private var defaultThumbnail: some View {
-        RoundedRectangle(cornerRadius: 8)
+        RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(Color(.systemGray6))
             .frame(width: 44, height: 44)
             .overlay {

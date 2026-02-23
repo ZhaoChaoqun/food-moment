@@ -353,7 +353,7 @@ struct ProfileView: View {
             }
             .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 16)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .fill(Color(.systemGray6).opacity(0.7))
             )
         }

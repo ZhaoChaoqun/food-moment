@@ -103,7 +103,7 @@ struct IntakeChartCard: View {
 
     private func barColumn(for index: Int) -> some View {
         VStack(spacing: 4) {
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
