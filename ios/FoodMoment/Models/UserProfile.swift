@@ -50,6 +50,9 @@ final class UserProfile {
     /// 出生年份
     var birthYear: Int?
 
+    /// 出生日期
+    var birthDate: Date?
+
     /// 身高（厘米）
     var heightCm: Double?
 

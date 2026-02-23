@@ -302,6 +302,7 @@ final class ProfileViewModel {
         profile.dailyStepGoal = dto.dailyStepGoal
         profile.gender = dto.gender
         profile.birthYear = dto.birthYear
+        profile.birthDate = dto.birthDate
         profile.heightCm = dto.heightCm
         profile.activityLevel = dto.activityLevel
         profile.updatedAt = Date()

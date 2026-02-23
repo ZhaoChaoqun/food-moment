@@ -15,6 +15,7 @@ struct UserProfileResponseDTO: Decodable, Sendable {
     let targetWeight: Double?
     let gender: String?
     let birthYear: Int?
+    let birthDate: Date?
     let heightCm: Double?
     let activityLevel: String?
     let dailyWaterGoal: Int
@@ -35,6 +36,7 @@ struct UserProfileUpdateDTO: Encodable, Sendable {
     let targetWeight: Double?
     let gender: String?
     let birthYear: Int?
+    let birthDate: Date?
     let heightCm: Double?
     let activityLevel: String?
     let dailyWaterGoal: Int?
