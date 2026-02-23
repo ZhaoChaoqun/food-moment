@@ -89,7 +89,7 @@ struct TimelineEntry: View {
     private func lineAboveDot(midY: CGFloat) -> some View {
         if !isFirst {
             Rectangle()
-                .fill(Color.gray.opacity(0.2))
+                .fill(AppTheme.Colors.trackGray)
                 .frame(width: 1)
                 .frame(height: midY)
                 .position(x: 12, y: midY / 2)
@@ -100,7 +100,7 @@ struct TimelineEntry: View {
     private func lineBelowDot(midY: CGFloat, height: CGFloat) -> some View {
         if !isLast {
             Rectangle()
-                .fill(Color.gray.opacity(0.2))
+                .fill(AppTheme.Colors.trackGray)
                 .frame(width: 1)
                 .frame(height: height - midY - 8)
                 .position(x: 12, y: midY + 8 + (height - midY - 8) / 2)
