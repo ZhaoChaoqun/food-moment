@@ -221,8 +221,7 @@ struct DiaryView: View {
                 .frame(width: 36, height: 36)
                 .background(
                     Circle()
-                        .fill(.white.opacity(0.7))
-                        .background(Circle().fill(.ultraThinMaterial))
+                        .fill(.ultraThinMaterial)
                 )
                 .overlay(
                     Circle()

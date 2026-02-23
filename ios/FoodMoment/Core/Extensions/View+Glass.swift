@@ -17,8 +17,8 @@ enum GlassStyle {
         }
     }
 
-    /// 对应的白底透明度
-    var whiteOpacity: Double {
+    /// Light Mode 白底透明度
+    var lightWhiteOpacity: Double {
         switch self {
         case .ultraThin: return 0.6
         case .regular: return 0.5
@@ -26,9 +26,27 @@ enum GlassStyle {
         }
     }
 
-    /// 对应的边框透明度
-    var strokeOpacity: Double {
-        whiteOpacity
+    /// Dark Mode 白底透明度（极低，保留通透感）
+    var darkWhiteOpacity: Double {
+        switch self {
+        case .ultraThin: return 0.05
+        case .regular: return 0.06
+        case .thick: return 0.08
+        }
+    }
+
+    /// Light Mode 边框透明度
+    var lightStrokeOpacity: Double {
+        lightWhiteOpacity
+    }
+
+    /// Dark Mode 边框透明度
+    var darkStrokeOpacity: Double {
+        switch self {
+        case .ultraThin: return 0.08
+        case .regular: return 0.10
+        case .thick: return 0.12
+        }
     }
 }
 
@@ -46,15 +64,7 @@ extension View {
         style: GlassStyle = .ultraThin,
         cornerRadius: CGFloat = AppTheme.CornerRadius.medium
     ) -> some View {
-        self
-            .background(.white.opacity(style.whiteOpacity))
-            .background(style.material)
-            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(style.strokeOpacity), lineWidth: 0.5)
-            )
-            .modifier(GlassShadow())
+        self.modifier(GlassCardModifier(style: style, cornerRadius: cornerRadius))
     }
 
     /// 常规毛玻璃卡片效果（便利方法）
@@ -81,6 +91,32 @@ extension View {
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .stroke(Color.white.opacity(0.5), lineWidth: 0.5)
+            )
+            .modifier(GlassShadow())
+    }
+}
+
+// MARK: - Glass Card Modifier
+
+/// 毛玻璃卡片效果修饰器（自适应 Light / Dark Mode）
+private struct GlassCardModifier: ViewModifier {
+
+    let style: GlassStyle
+    let cornerRadius: CGFloat
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        let whiteOpacity = colorScheme == .dark ? style.darkWhiteOpacity : style.lightWhiteOpacity
+        let strokeOpacity = colorScheme == .dark ? style.darkStrokeOpacity : style.lightStrokeOpacity
+
+        content
+            .background(.white.opacity(whiteOpacity))
+            .background(style.material)
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(strokeOpacity), lineWidth: 0.5)
             )
             .modifier(GlassShadow())
     }

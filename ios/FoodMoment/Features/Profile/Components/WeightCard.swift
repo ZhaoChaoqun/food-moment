@@ -48,7 +48,7 @@ struct WeightCard: View {
                 emptyState
             }
         }
-        .padding(16)
+        .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .glassCard()
         .accessibilityIdentifier("WeightCard")

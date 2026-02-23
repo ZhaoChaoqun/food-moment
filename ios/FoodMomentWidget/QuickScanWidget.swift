@@ -39,15 +39,15 @@ struct QuickScanWidgetEntryView: View {
     var entry: QuickScanProvider.Entry
     @Environment(\.widgetFamily) var family
 
-    private let primaryColor = Color(hex: "#13EC5B")
+    private let primaryColor = Color(hex: "#34C759")
 
     var body: some View {
         ZStack {
             // 背景渐变
             LinearGradient(
                 colors: [
-                    Color(hex: "#102216"),
-                    Color(hex: "#0A1610")
+                    Color(hex: "#0D1F16"),
+                    Color(hex: "#081410")
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

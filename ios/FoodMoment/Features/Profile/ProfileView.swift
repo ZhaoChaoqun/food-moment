@@ -26,7 +26,7 @@ struct ProfileView: View {
                     intakeChartSection
                     bottomPadding
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 20)
                 .padding(.top, 8)
             }
             .premiumBackground()
@@ -94,7 +94,7 @@ struct ProfileView: View {
                     // 编辑指示器
                     ZStack {
                         Circle()
-                            .fill(.white)
+                            .fill(Color(.systemBackground))
                             .frame(width: 28, height: 28)
                         Image(systemName: "pencil")
                             .font(.system(size: 12, weight: .semibold))

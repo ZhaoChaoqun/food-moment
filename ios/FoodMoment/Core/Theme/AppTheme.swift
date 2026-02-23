@@ -14,17 +14,17 @@ enum AppTheme {
 
         // MARK: - Primary Colors
 
-        /// 主色调 - 活力绿
-        static let primary = Color(hex: "#13EC5B")
+        /// 主色调 - 翡翠绿（Apple System Green）
+        static let primary = Color(hex: "#34C759")
 
         /// 强调色 - 黄绿色
-        static let accent = Color(hex: "#E3EF26")
+        static let accent = Color(hex: "#A8D84E")
 
         /// 浅色背景（Light: #F8F9FA / Dark: #000000）
         static let background = Color("Colors/AppBackground")
 
         /// 深色背景
-        static let darkBackground = Color(hex: "#102216")
+        static let darkBackground = Color(hex: "#0D1F16")
 
         /// 卡片背景（Light: #FFFFFF / Dark: #1C1C1E）
         static let cardBackground = Color("Colors/CardBackground")
@@ -87,14 +87,14 @@ enum AppTheme {
 
         // MARK: - Health Metric Colors
 
-        /// 热量环进度色 - 黄绿色
-        static let calorieRingProgress = Color(hex: "#C8E64E")
+        /// 热量环进度色 - 柔和黄绿色
+        static let calorieRingProgress = Color(hex: "#7BC67E")
 
         /// 热量环底色 - 深绿色
-        static let calorieRingTrack = Color(hex: "#2D4A2D")
+        static let calorieRingTrack = Color(hex: "#1E3A2A")
 
         /// 热量环溢出高光色
-        static let calorieRingOverflow = Color(hex: "#E8FF6B")
+        static let calorieRingOverflow = Color(hex: "#A8E86B")
 
         /// 水分主色 - 蓝色
         static let water = Color(hex: "#3B82F6")
@@ -119,17 +119,20 @@ enum AppTheme {
 
     /// 圆角半径配置
     enum CornerRadius {
-        /// 小圆角 - 16pt
-        static let small: CGFloat = 16
+        /// 超小圆角 - 8pt（缩略图、小标签、进度条）
+        static let xs: CGFloat = 8
 
-        /// 中等圆角 - 24pt
-        static let medium: CGFloat = 24
+        /// 小圆角 - 12pt（输入框、搜索框、小卡片）
+        static let small: CGFloat = 12
 
-        /// 大圆角 - 32pt
-        static let large: CGFloat = 32
+        /// 中等圆角 - 20pt（标准卡片、Sheet）
+        static let medium: CGFloat = 20
 
-        /// 超大圆角 - 40pt
-        static let extraLarge: CGFloat = 40
+        /// 大圆角 - 28pt（大卡片、FoodMoment Card）
+        static let large: CGFloat = 28
+
+        /// 超大圆角 - 36pt（TabBar、特殊全宽容器）
+        static let extraLarge: CGFloat = 36
     }
 
     // MARK: - Shadows
@@ -144,6 +147,32 @@ enum AppTheme {
 
         /// 卡片阴影
         static func card() -> some ViewModifier { CardShadow() }
+    }
+
+    // MARK: - Typography
+
+    /// 排版阶梯配置（对齐 HIG Dynamic Type Scale）
+    enum Typography {
+        /// 核心数字（卡路里百分比等） - 44pt Bold
+        static let displayLarge: CGFloat = 44
+
+        /// 页面主标题、用户名 - 28pt Bold
+        static let displaySmall: CGFloat = 28
+
+        /// Section 标题 - 20pt Semibold
+        static let headline: CGFloat = 20
+
+        /// 卡片标题 - 17pt Semibold
+        static let titleSmall: CGFloat = 17
+
+        /// 正文 - 15pt Regular
+        static let body: CGFloat = 15
+
+        /// 辅助信息 - 13pt Medium
+        static let caption: CGFloat = 13
+
+        /// 徽章、标签 - 11pt Semibold
+        static let micro: CGFloat = 11
     }
 
     // MARK: - Animation
@@ -216,7 +245,7 @@ enum AppTheme {
 struct GlassShadow: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .shadow(color: .black.opacity(0.05), radius: 8, y: 8)
+            .shadow(color: Color(hex: "#0F172A").opacity(0.06), radius: 10, y: 4)
     }
 }
 
@@ -224,7 +253,7 @@ struct GlassShadow: ViewModifier {
 struct GlowShadow: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .shadow(color: AppTheme.Colors.primary.opacity(0.4), radius: 15)
+            .shadow(color: AppTheme.Colors.primary.opacity(0.25), radius: 10)
     }
 }
 
@@ -232,6 +261,6 @@ struct GlowShadow: ViewModifier {
 struct CardShadow: ViewModifier {
     func body(content: Content) -> some View {
         content
-            .shadow(color: .black.opacity(0.08), radius: 20, y: 10)
+            .shadow(color: Color(hex: "#0F172A").opacity(0.08), radius: 16, y: 6)
     }
 }

@@ -187,7 +187,7 @@ final class Achievement {
             switch self {
             case .firstGlimpse:
                 return BadgeTheme(
-                    primaryHex: "#13EC5B",
+                    primaryHex: "#34C759",
                     highlightHex: "#B8FFD0",
                     shadowHex: "#0A7A2E"
                 )

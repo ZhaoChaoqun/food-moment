@@ -43,7 +43,7 @@ struct MealRecordingLiveActivity: Widget {
                     HStack(spacing: 8) {
                         Image(systemName: "fork.knife.circle.fill")
                             .font(.system(size: 28))
-                            .foregroundStyle(Color(hex: "#13EC5B"))
+                            .foregroundStyle(Color(hex: "#34C759"))
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text(context.attributes.mealTypeName)
@@ -62,7 +62,7 @@ struct MealRecordingLiveActivity: Widget {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text("\(context.state.estimatedCalories)")
                             .font(.system(size: 22, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(hex: "#13EC5B"))
+                            .foregroundStyle(Color(hex: "#34C759"))
 
                         Text("kcal")
                             .font(.system(size: 11))
@@ -86,7 +86,7 @@ struct MealRecordingLiveActivity: Widget {
                                     .frame(height: 6)
 
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color(hex: "#13EC5B"))
+                                    .fill(Color(hex: "#34C759"))
                                     .frame(width: geometry.size.width * context.state.progress, height: 6)
                             }
                         }
@@ -103,17 +103,17 @@ struct MealRecordingLiveActivity: Widget {
                 // 紧凑模式 - 左侧
                 Image(systemName: "fork.knife")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#13EC5B"))
+                    .foregroundStyle(Color(hex: "#34C759"))
             } compactTrailing: {
                 // 紧凑模式 - 右侧
                 Text("\(context.state.estimatedCalories)")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(hex: "#13EC5B"))
+                    .foregroundStyle(Color(hex: "#34C759"))
             } minimal: {
                 // 最小模式
                 Image(systemName: "fork.knife")
                     .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color(hex: "#13EC5B"))
+                    .foregroundStyle(Color(hex: "#34C759"))
             }
         }
     }
@@ -138,7 +138,7 @@ struct MealRecordingLiveActivity: Widget {
 struct LockScreenMealRecordingView: View {
     let context: ActivityViewContext<MealRecordingAttributes>
 
-    private let primaryColor = Color(hex: "#13EC5B")
+    private let primaryColor = Color(hex: "#34C759")
 
     var body: some View {
         HStack(spacing: 16) {

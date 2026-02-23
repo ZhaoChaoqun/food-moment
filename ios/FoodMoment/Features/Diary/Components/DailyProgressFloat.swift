@@ -105,7 +105,7 @@ struct DailyProgressFloat: View {
         Capsule()
             .fill(
                 LinearGradient(
-                    colors: [Color(hex: "#34C759"), Color(hex: "#30B350")],
+                    colors: [AppTheme.Colors.primary, AppTheme.Colors.primary.opacity(0.85)],
                     startPoint: .leading,
                     endPoint: .trailing
                 )

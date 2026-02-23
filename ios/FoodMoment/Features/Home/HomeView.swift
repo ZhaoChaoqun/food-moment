@@ -117,7 +117,7 @@ struct HomeView: View {
                 Text(formattedDate)
                     .font(.Jakarta.semiBold(14))
                     .foregroundStyle(.secondary)
-                    .tracking(1.2)
+                    .tracking(0.8)
                     .textCase(.uppercase)
                     .accessibilityIdentifier("DateLabel")
 
@@ -125,7 +125,7 @@ struct HomeView: View {
                     .font(.Jakarta.bold(28))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.primary, .primary.opacity(0.7)],
+                            colors: [.primary, .primary.opacity(0.85)],
                             startPoint: .leading,
                             endPoint: .trailing
                         )

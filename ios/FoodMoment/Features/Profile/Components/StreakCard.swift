@@ -37,7 +37,7 @@ struct StreakCard: View {
                 .padding(.horizontal, 20)
             motivationLabel
         }
-        .padding(16)
+        .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .glassCard()
         .accessibilityIdentifier("StreakCard")

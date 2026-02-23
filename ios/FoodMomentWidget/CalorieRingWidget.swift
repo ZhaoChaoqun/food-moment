@@ -56,7 +56,7 @@ struct CalorieRingWidgetEntryView: View {
 struct SmallCalorieRingView: View {
     let data: SharedDataManager.WidgetData
 
-    private let primaryColor = Color(hex: "#13EC5B")
+    private let primaryColor = Color(hex: "#34C759")
     private let proteinColor = Color(hex: "#60A5FA")
     private let carbsColor = Color(hex: "#34D399")
 
@@ -65,8 +65,8 @@ struct SmallCalorieRingView: View {
             // 背景渐变
             LinearGradient(
                 colors: [
-                    Color(hex: "#102216"),
-                    Color(hex: "#0A1610")
+                    Color(hex: "#0D1F16"),
+                    Color(hex: "#081410")
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -140,7 +140,7 @@ struct SmallCalorieRingView: View {
 struct MediumCalorieRingView: View {
     let data: SharedDataManager.WidgetData
 
-    private let primaryColor = Color(hex: "#13EC5B")
+    private let primaryColor = Color(hex: "#34C759")
     private let proteinColor = Color(hex: "#60A5FA")
     private let carbsColor = Color(hex: "#34D399")
     private let fatColor = Color(hex: "#FBBF24")
@@ -150,8 +150,8 @@ struct MediumCalorieRingView: View {
             // 背景渐变
             LinearGradient(
                 colors: [
-                    Color(hex: "#102216"),
-                    Color(hex: "#0A1610")
+                    Color(hex: "#0D1F16"),
+                    Color(hex: "#081410")
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

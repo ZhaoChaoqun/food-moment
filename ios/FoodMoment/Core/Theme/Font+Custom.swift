@@ -145,54 +145,43 @@ extension Font.Weight {
 
 extension View {
 
-    /// 应用标题样式
+    /// 大标题样式 - 28pt Bold
     ///
-    /// 使用 28pt Bold 字体。
+    /// 用于页面主标题、用户名等。
     func titleStyle() -> some View {
-        self.font(.Jakarta.bold(28))
+        self.font(.appFont(.bold, size: AppTheme.Typography.displaySmall))
     }
 
-    /// 应用大标题样式
+    /// Section 标题样式 - 20pt SemiBold
     ///
-    /// 使用 36pt ExtraBold 字体。
-    func largeTitleStyle() -> some View {
-        self.font(.Jakarta.extraBold(36))
-    }
-
-    /// 应用标题行样式
-    ///
-    /// 使用 20pt SemiBold 字体。
+    /// 用于模块标题（成就、今日食刻等）。
     func headlineStyle() -> some View {
-        self.font(.Jakarta.semiBold(20))
+        self.font(.appFont(.semibold, size: AppTheme.Typography.headline))
     }
 
-    /// 应用正文样式
-    ///
-    /// 使用 16pt Regular 字体。
+    /// 正文样式 - 15pt Regular
     func bodyStyle() -> some View {
-        self.font(.Jakarta.regular(16))
+        self.font(.appFont(.regular, size: AppTheme.Typography.body))
     }
 
-    /// 应用说明文字样式
-    ///
-    /// 使用 12pt Medium 字体，次要颜色。
+    /// 辅助信息样式 - 13pt Medium，次要颜色
     func captionStyle() -> some View {
         self
-            .font(.Jakarta.medium(12))
+            .font(.appFont(.medium, size: AppTheme.Typography.caption))
             .foregroundStyle(.secondary)
     }
 
-    /// 应用小标签样式
+    /// 小标签样式 - 11pt SemiBold
     ///
-    /// 使用 11pt SemiBold 字体，适用于徽章和标签。
+    /// 用于徽章、标签和极小文字。
     func labelStyle() -> some View {
-        self.font(.Jakarta.semiBold(11))
+        self.font(.appFont(.semibold, size: AppTheme.Typography.micro))
     }
 
-    /// 应用数字显示样式
+    /// 数字显示样式 - 44pt Bold
     ///
-    /// 使用 48pt ExtraBold 字体，适用于大数字显示。
+    /// 用于核心数字（卡路里百分比等）。
     func numberStyle() -> some View {
-        self.font(.Jakarta.extraBold(48))
+        self.font(.appFont(.bold, size: AppTheme.Typography.displayLarge))
     }
 }
